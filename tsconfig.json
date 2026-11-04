@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": { "@/*": ["./apps/web/src/*"] },
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "packages/**/*.ts",
+    "tests/**/*.ts",
+    "apps/web/src/**/*.ts",
+    "vitest.config.ts",
+    "scripts/**/*.ts"
+  ],
+  "exclude": ["node_modules", "apps/web/.next"]
+}
