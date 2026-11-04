@@ -1,0 +1,50 @@
+@layer theme, base, mui, components, utilities;
+@import 'tailwindcss';
+@import '../theme/tokens.css';
+
+@theme inline {
+  --font-sans:
+    var(--font-outfit), var(--font-noto-sans-thai), Arial, sans-serif;
+  --text-display: var(--type-display-size);
+  --text-display--line-height: var(--type-display-line);
+  --text-display--font-weight: var(--type-display-weight);
+  --text-h1: var(--type-h1-size);
+  --text-h1--line-height: var(--type-h1-line);
+  --text-h1--font-weight: var(--type-h1-weight);
+  --text-h2: var(--type-h2-size);
+  --text-h2--line-height: var(--type-h2-line);
+  --text-h2--font-weight: var(--type-h2-weight);
+  --text-h3: var(--type-h3-size);
+  --text-h3--line-height: var(--type-h3-line);
+  --text-h3--font-weight: var(--type-h3-weight);
+  --text-h4: var(--type-h4-size);
+  --text-h4--line-height: var(--type-h4-line);
+  --text-h4--font-weight: var(--type-h4-weight);
+  --text-h5: var(--type-h5-size);
+  --text-h5--line-height: var(--type-h5-line);
+  --text-h5--font-weight: var(--type-h5-weight);
+  --text-body-lg: var(--type-body-lg-size);
+  --text-body-lg--line-height: var(--type-body-lg-line);
+  --text-body-lg--font-weight: var(--type-body-lg-weight);
+  --text-body: var(--type-body-size);
+  --text-body--line-height: var(--type-body-line);
+  --text-body--font-weight: var(--type-body-weight);
+  --text-body-sm: var(--type-body-sm-size);
+  --text-body-sm--line-height: var(--type-body-sm-line);
+  --text-body-sm--font-weight: var(--type-body-sm-weight);
+  --text-caption: var(--type-caption-size);
+  --text-caption--line-height: var(--type-caption-line);
+  --text-caption--font-weight: var(--type-caption-weight);
+  --text-button: var(--type-button-size);
+  --text-button--line-height: var(--type-button-line);
+  --text-button--font-weight: var(--type-button-weight);
+}
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+    font-weight: var(--type-body-weight);
+    letter-spacing: normal;
+  }
+}
