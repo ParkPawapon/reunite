@@ -1,0 +1,50 @@
+name: Repository policy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  repository-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify ownership and tracked file boundaries
+        run: |
+          test "$(cat .github/CODEOWNERS)" = '* @ParkPawapon'
+          blocked="$(git ls-files -- ':(glob)**/.env*' ':(glob)**/*.pem' ':(glob)**/*.key' ':(glob)**/*.pfx' ':(glob)**/*.p12' ':(glob)**/*.kdbx' ':(glob)**/id_ed25519' ':(glob)**/id_rsa' ':(glob)tmp/**' ':(glob)**/node_modules/**' ':(glob)**/.next/**' ':(glob)**/coverage/**' 'CODEX_LOST_FOUND_MONOREPO_MASTER_PROMPT.md' 'DATABASE SYSTEMS (4).pdf' 'Web Programming I (1).pdf' ':(exclude,glob)**/.env.example' ':(exclude,glob)**/.env.local.example')"
+          if [[ -n "$blocked" ]]; then
+            printf 'Blocked tracked files:\n%s\n' "$blocked"
+            exit 1
+          fi
+      - name: Verify task branch and typed commits
+        if: github.event_name == 'pull_request'
+        env:
+          TASK_BRANCH: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ ! "$TASK_BRANCH" =~ ^[A-Z]{2,4}[0-9]{3}/[a-z0-9]+(-[a-z0-9]+)*$ && "$TASK_BRANCH" != dependabot/* ]]; then
+            printf 'Use TASK001/short-description format.\n'
+            exit 1
+          fi
+          git diff --check "$BASE_SHA" "$HEAD_SHA"
+          subjects="$(git log --format=%s "$BASE_SHA..$HEAD_SHA")"
+          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9-]+\))?!?: .+'
+          if [[ "$TASK_BRANCH" != dependabot/* ]]; then
+            while IFS= read -r subject; do
+              if [[ ! "$subject" =~ $pattern ]]; then
+                printf 'Commit subjects must start with a Conventional Commit type.\n'
+                exit 1
+              fi
+            done <<< "$subjects"
+          fi

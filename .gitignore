@@ -1,0 +1,23 @@
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+!.env.local.example
+tmp/
+*.log
+.DS_Store
+
+# Local reference material and credentials
+/CODEX_LOST_FOUND_MONOREPO_MASTER_PROMPT.md
+/DATABASE SYSTEMS (4).pdf
+/Web Programming I (1).pdf
+*.pem
+*.key
+*.pfx
+*.p12
+*.kdbx
+id_ed25519
+id_rsa
