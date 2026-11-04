@@ -30,17 +30,22 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           TASK_BRANCH: ${{ github.head_ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if [[ ! "$TASK_BRANCH" =~ ^[A-Z]{2,4}[0-9]{3}/[a-z0-9]+(-[a-z0-9]+)*$ && "$TASK_BRANCH" != dependabot/* ]]; then
+          automated=false
+          if [[ "$PR_AUTHOR" == 'dependabot[bot]' && "$TASK_BRANCH" == dependabot/* ]]; then
+            automated=true
+          fi
+          if [[ ! "$TASK_BRANCH" =~ ^[A-Z]{2,4}[0-9]{3}/[a-z0-9]+(-[a-z0-9]+)*$ && "$automated" == false ]]; then
             printf 'Use TASK001/short-description format.\n'
             exit 1
           fi
           git diff --check "$BASE_SHA" "$HEAD_SHA"
           subjects="$(git log --format=%s "$BASE_SHA..$HEAD_SHA")"
           pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9-]+\))?!?: .+'
-          if [[ "$TASK_BRANCH" != dependabot/* ]]; then
+          if [[ "$automated" == false ]]; then
             while IFS= read -r subject; do
               if [[ ! "$subject" =~ $pattern ]]; then
                 printf 'Commit subjects must start with a Conventional Commit type.\n'

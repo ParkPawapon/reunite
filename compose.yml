@@ -1,0 +1,57 @@
+x-server-environment: &server-environment
+  DATABASE_URL: postgresql://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:?Run bun run env:setup}@postgres:5432/${POSTGRES_DB:-lost_found}
+  APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+  DB_POOL_MAX: ${DB_POOL_MAX:-10}
+  DB_SSL: disable
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-lost_found_session}
+  SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-7}
+
+services:
+  postgres:
+    image: postgres:18.4-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lost_found}
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run bun run env:setup}
+    ports:
+      - '127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+      target: runtime
+      args:
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Lost & Found}
+    environment: *server-environment
+    ports:
+      - '127.0.0.1:${PORT:-3000}:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+  migrate:
+    profiles: ['tools']
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+      target: dependencies
+    working_dir: /app
+    volumes:
+      - ./packages/database:/app/packages/database:ro
+    environment: *server-environment
+    command: ['bun', 'run', 'db:migrate']
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
