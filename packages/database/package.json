@@ -1,0 +1,17 @@
+{
+  "name": "@campus/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./password": "./src/password.ts"
+  },
+  "dependencies": {
+    "@campus/shared": "workspace:*",
+    "pg": "8.23.1",
+    "zod": "4.6.7",
+    "argon2": "0.45.2",
+    "server-only": "0.0.1"
+  }
+}
