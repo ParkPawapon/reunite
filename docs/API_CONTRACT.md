@@ -1,5 +1,11 @@
 # API contract v1
 
+## Backend task starter (BE002 / BE003)
+
+The handoff revision deliberately removes the category/location list implementations for the two assignees. Both GET endpoints currently return HTTP 501 with `error.code: NOT_IMPLEMENTED` through the existing error wrapper. Their former HTTP orchestration, application implementation and SQL adapters have been removed; domain/service contracts, route wiring and database tables remain. The list behavior and pagination described below are the target contracts to restore, not currently implemented behavior for these two endpoints. See [the assignment and spoken handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
+
+Existing automated checks remain enabled. The existing catalog integration case now verifies both explicit 501 responses, request IDs, no-store headers and service placeholders; its unauthorized/cross-origin write assertions remain active. The integrator must restore assertions against real seeded catalog data and 200 responses when each endpoint is implemented. No test skips or relaxed CI rules are introduced. The teammates' assignments do not include writing tests.
+
 Base path: `/api/v1`. JSON success: `{ "data": ... }`, with `{ "meta": { "limit": 20, "offset": 0 } }` for lists. Errors: `{ "error": { "code": "NOT_FOUND", "message": "Report not found", "requestId": "generated UUID" } }`. Every response includes `X-Request-Id` and `Cache-Control: no-store`. Incoming request IDs are not trusted. Unsupported HTTP methods are handled by Next.js (405).
 
 All list endpoints accept `limit` (integer 1–100, default 20) and `offset` (0–100000, default 0). Reports/claims sort by descending primary key; categories/locations ascending. Offset pagination can shift under concurrent inserts; no total count is claimed. Unknown or duplicate query parameters are rejected.
@@ -11,8 +17,8 @@ All list endpoints accept `limit` (integer 1–100, default 20) and `offset` (0�
 | POST `/auth/login`        | credentials      | Profile and opaque HttpOnly cookie; previous browser token revoked after valid login |
 | POST `/auth/logout`       | optional session | Revoke current token and clear cookie; idempotent                                    |
 | GET `/auth/me`            | session          | Own `{userId,name,email}`                                                            |
-| GET `/categories`         | none             | `[{categoryId,categoryName}]`                                                        |
-| GET `/locations`          | none             | `[{locationId,locationName,detail}]`                                                 |
+| GET `/categories`         | none             | Currently 501; BE002 restores `[{categoryId,categoryName}]`                          |
+| GET `/locations`          | none             | Currently 501; BE003 restores `[{locationId,locationName,detail}]`                   |
 | GET `/item-reports`       | none             | Paginated reports; optional `type`, `status`, `categoryId`, `locationId`             |
 | GET `/item-reports/:id`   | none             | Single report or 404                                                                 |
 | POST `/item-reports`      | session          | Create report as current user, `OPEN`; 201                                           |

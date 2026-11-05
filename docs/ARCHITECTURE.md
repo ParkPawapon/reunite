@@ -11,3 +11,7 @@ Domain types and ports contain no React, Next, Zod, SQL or database imports. App
 Next standalone output traces from the repository root, retaining workspace and native Argon2 dependencies. The runtime entry is `apps/web/server.js` inside standalone. Docker uses Node's non-root `node` user. Web startup does not migrate or provision users.
 
 Each API response is no-store. A generated request ID links sanitized status/duration logs to errors without logging request bodies, query strings, passwords, cookies, evidence or SQL exceptions.
+
+## Backend assignment starter
+
+BE002 and BE003 deliberately leave the category/location list endpoints at 501 while teammates implement them. Their application files currently contain interfaces, their SQL adapters were removed, and their module-owned composition/presentation files contain explicit placeholders. Central routing delegates to those module entry points so the assignees can work in separate directories without editing shared handlers/composition. See `docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md` for the target contracts and current verification limits.
