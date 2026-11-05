@@ -25,6 +25,15 @@ const config: NextConfig = {
           },
         ],
       },
+      {
+        source: '/research/kmutt-bangmod',
+        headers: [
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(self)',
+          },
+        ],
+      },
     ];
   },
 };

@@ -1,0 +1,40 @@
+﻿feature_id,code,name_th,route_endpoint_basis,gap_to_footprint_m,latitude,longitude,source,door_coordinate,field_verification
+N1,N1,อาคารศูนย์ต้อนรับ,approach,5.9,13.6514819,100.4950418,https://www.openstreetmap.org/node/12337609655,requires-survey,required
+N2,N2,อาคารสำนักงานอธิการบดี,approach,8.8,13.6516395,100.494726,https://www.openstreetmap.org/node/291427823,requires-survey,required
+N3,N3,อาคารภาควิชาเคมี,approach,7.0,13.6524497,100.4953683,https://www.openstreetmap.org/node/5928057820,requires-survey,required
+N4,N4,อาคารภาควิชาฟิสิกส์–คณิตศาสตร์,approach,10.8,13.6522673,100.4945602,https://www.openstreetmap.org/node/12337609679,requires-survey,required
+N5,N5,อาคารศูนย์เครื่องมือวิทยาศาสตร์เพื่อมาตรฐานและอุตสาหกรรม,approach,17.6,13.6531243,100.4945788,https://www.openstreetmap.org/node/4202416092,requires-survey,required
+N6,N6,อาคารภาควิชาจุลชีววิทยา,approach,8.3,13.6531243,100.4945788,https://www.openstreetmap.org/node/4202416092,requires-survey,required
+N7,N7,อาคารปฏิบัติการพื้นฐานทางวิทยาศาสตร์,approach,6.6,13.6528948,100.4950131,https://www.openstreetmap.org/node/4202450897,requires-survey,required
+N8,N8,สถานีสูบน้ำ,approach,7.0,13.653632,100.4953592,https://www.openstreetmap.org/node/4202411384,requires-survey,required
+N9,N9,อาคารสถาบันวิทยาการหุ่นยนต์ภาคสนาม,approach,5.2,13.6544374,100.4939694,https://www.openstreetmap.org/node/4202517314,requires-survey,required
+N10,N10,อาคารสำนักหอสมุด,approach,1.6,13.6523581,100.4938707,https://www.openstreetmap.org/node/2338308603,requires-survey,required
+N11,N11,อาคารคณะเทคโนโลยีสารสนเทศ,approach,12.0,13.6528249,100.4933529,https://www.openstreetmap.org/node/8382866663,requires-survey,required
+N12,N12,อาคารอเนกประสงค์,approach,1.5,13.6519622,100.4929884,https://www.openstreetmap.org/node/4202386067,requires-survey,required
+N13,N13,อาคาร Workshop และเรือนกระจก,approach,5.8,13.6519231,100.4928811,https://www.openstreetmap.org/node/12337609529,requires-survey,required
+N14,N14,อาคารไฟฟ้าแรงสูง,approach,5.2,13.6516912,100.4925666,https://www.openstreetmap.org/node/12196600611,requires-survey,required
+N15,N15,อาคารเรียนและปฏิบัติการทางศิลปศาสตร์,approach,2.0,13.6518417,100.4935001,https://www.openstreetmap.org/node/12337609688,requires-survey,required
+N16,N16,อาคารการเรียนรู้พหุวิทยาการ,approach,4.1,13.6516324,100.4938838,https://www.openstreetmap.org/node/12337609681,requires-survey,required
+N17,N17,อาคารเรียนรวม 2,approach,0.0,13.6515301,100.4940531,https://www.openstreetmap.org/node/6209762585,requires-survey,required
+N18,N18,อาคารปฏิบัติการวิศวกรรมการผลิต 4,approach,11.2,13.6510333,100.4936643,https://www.openstreetmap.org/node/5942155755,requires-survey,required
+N19,N19,อาคารปฏิบัติการวิศวกรรมการผลิต 5,missing-connection,,,,,requires-survey,required
+N20,N20,อาคารเรียนรวม 1,approach,0.0,13.6515985,100.4935022,https://www.openstreetmap.org/node/12337609689,requires-survey,required
+S1,S1,อาคารวิศวกรรมเครื่องกล 4,approach,9.6,13.6503882,100.4952812,https://www.openstreetmap.org/node/6206955602,requires-survey,required
+S2-parking,S2,อาคารจอดรถ,approach,0.0,13.6506198,100.4956066,https://www.openstreetmap.org/node/3815717935,requires-survey,required
+S2-seminar,S2,อาคารสัมมนา,approach,0.0,13.6503568,100.4953288,https://www.openstreetmap.org/node/6209760182,requires-survey,required
+S3,S3,อาคารสถาบันนวัตกรรมการเรียนรู้เฉลิมพระเกียรติ 80 พรรษา,mapped-entrance,0.0,13.65017,100.4951709,https://www.openstreetmap.org/node/4200363888,mapped-unverified,required
+S4-3-floors,S4,อาคารวิศววัฒนะ 3 ชั้น,approach,7.2,13.649741,100.4942787,https://www.openstreetmap.org/node/13799289379,requires-survey,required
+S4-4-floors,S4,อาคารวิศววัฒนะ 4 ชั้น,approach,0.0,13.650298,100.4939044,https://www.openstreetmap.org/node/6207310457,requires-survey,required
+S4-8-floors,S4,อาคารวิศววัฒนะ 8 ชั้น,approach,0.0,13.6501548,100.494711,https://www.openstreetmap.org/node/4200341983,requires-survey,required
+S4-11-floors,S4,อาคารวิศววัฒนะ 11 ชั้น,approach,0.0,13.649858,100.4943461,https://www.openstreetmap.org/node/4200356314,requires-survey,required
+S5,S5,บ้านธรรมรักษา 2,approach,0.0,13.6495536,100.4945198,https://www.openstreetmap.org/node/4200396651,requires-survey,required
+S6,S6,บ้านธรรมรักษา 1,approach,0.0,13.6489811,100.4947812,https://www.openstreetmap.org/node/4200396649,requires-survey,required
+S7,S7,อาคารพัฒนาเด็กเล็ก มจธ.,approach,7.1,13.6493922,100.4942469,https://www.openstreetmap.org/node/4200391192,requires-survey,required
+S8,S8,อาคารวิจัยและพัฒนาเทคโนโลยีวัสดุ,approach,5.7,13.6488331,100.4940221,https://www.openstreetmap.org/node/5942232344,requires-survey,required
+S9,S9,อาคารเรียนและปฏิบัติการคณะพลังงาน สิ่งแวดล้อมและวัสดุ,approach,4.5,13.6488331,100.4940221,https://www.openstreetmap.org/node/5942232344,requires-survey,required
+S10,S10,อาคารสังคมสีเขียว มจธ.,approach,12.1,13.6493626,100.4938247,https://www.openstreetmap.org/node/3176409914,requires-survey,required
+S11,S11,อาคารเรียนรวม 5,approach,8.4,13.6499132,100.493809,https://www.openstreetmap.org/node/6207310458,requires-survey,required
+S12,S12,อาคารเรียนรวม 4,approach,5.4,13.6493271,100.4929469,https://www.openstreetmap.org/node/3176409889,requires-survey,required
+S13,S13,อาคารเรียนรวม 3,approach,4.3,13.6500349,100.4922514,https://www.openstreetmap.org/node/12196600608,requires-survey,required
+S14,S14,อาคารพระจอมเกล้าราชานุสรณ์ 190 ปี,approach,2.7,13.6508876,100.4919996,https://www.openstreetmap.org/node/6207310449,requires-survey,required
+S15,S15,อาคารภาควิชาวิศวกรรมเคมี,approach,5.8,13.6506306,100.4936084,https://www.openstreetmap.org/node/291427866,requires-survey,required

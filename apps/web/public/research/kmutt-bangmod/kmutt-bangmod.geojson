@@ -1,0 +1,2215 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "name": "KMUTT Bangmod Campus – 126 Pracha Uthit Road",
+    "scope": "Main Bangmod campus only; 35 master-plan codes; exterior study model",
+    "capturedOn": "2026-11-04",
+    "projectedCrs": "EPSG:32647",
+    "originWgs84": [100.49385, 13.65145],
+    "license": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "attribution": "© OpenStreetMap contributors; Overture Maps Foundation; Microsoft Global ML Building Footprints; Google Open Buildings. Campus codes and approximate locations cross-checked against KMUTT publications.",
+    "sources": {
+      "officialPlan": "https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html",
+      "officialInventory": "https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf",
+      "osm": "https://www.openstreetmap.org/copyright",
+      "overture": "https://docs.overturemaps.org/attribution/",
+      "overtureRelease": "2026-10-21.0",
+      "microsoft": "https://github.com/microsoft/GlobalMLBuildingFootprints",
+      "google": "https://sites.research.google/gr/open-buildings/"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "N1",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4949517, 13.6514257],
+            [100.4953224, 13.6514356],
+            [100.4953249, 13.6513444],
+            [100.4950313, 13.6513366],
+            [100.4950345, 13.6512246],
+            [100.4949573, 13.6512226],
+            [100.4949517, 13.6514257]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารศูนย์ต้อนรับ",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "overture",
+            "id": "a865e023-052e-4f2c-b07e-b9be1101e91b",
+            "release": "2026-10-21.0",
+            "upstream": "Google Open Buildings",
+            "upstreamId": "7P52MF2W+G2XF",
+            "url": "https://explore.overturemaps.org/#map=18/13.65145/100.49385"
+          }
+        ],
+        "code": "N1",
+        "nameEn": "Welcome Center",
+        "part": null,
+        "heightM": 8,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N2",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4948627, 13.6519347],
+            [100.4948639, 13.6518942],
+            [100.4949107, 13.6518955],
+            [100.4949081, 13.6519866],
+            [100.495087, 13.6519915],
+            [100.4950897, 13.6519002],
+            [100.4951403, 13.6519016],
+            [100.4951388, 13.6519551],
+            [100.4952487, 13.6519581],
+            [100.4952553, 13.6517274],
+            [100.4947558, 13.6517138],
+            [100.4947495, 13.6519316],
+            [100.4948627, 13.6519347]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารสำนักงานอธิการบดี",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420327738",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/420327738"
+          }
+        ],
+        "code": "N2",
+        "nameEn": "Office of the President",
+        "part": null,
+        "heightM": 32.4,
+        "heightBasis": "at-least-levels",
+        "floorCount": 9,
+        "floorHeightM": 3.6,
+        "heightSource": "https://hrd.kmutt.ac.th/wp-content/uploads/2024/04/HRD-KMUTT-Anual-Report-2558_1585813300604.pdf#page=19"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N3",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4947851, 13.6525817],
+            [100.4948024, 13.6526847],
+            [100.4950209, 13.652649],
+            [100.4950187, 13.6525502],
+            [100.4951464, 13.6525439],
+            [100.4951745, 13.6524682],
+            [100.4953043, 13.6524387],
+            [100.4952762, 13.6522979],
+            [100.495049, 13.652342],
+            [100.4950382, 13.652424],
+            [100.4949538, 13.6524366],
+            [100.4949495, 13.6524156],
+            [100.4949322, 13.6524009],
+            [100.4949041, 13.6523904],
+            [100.4948781, 13.652403],
+            [100.4948673, 13.6524093],
+            [100.4948478, 13.6524303],
+            [100.4948392, 13.652445],
+            [100.494824, 13.6524556],
+            [100.4947829, 13.6524577],
+            [100.494573, 13.6524577],
+            [100.4945752, 13.6525796],
+            [100.4947851, 13.6525817]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารภาควิชาเคมี",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/436983064",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/436983064"
+          }
+        ],
+        "code": "N3",
+        "nameEn": "Chemistry",
+        "part": null,
+        "heightM": 11,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N4",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4944108, 13.6528592],
+            [100.4944194, 13.6527835],
+            [100.4946358, 13.6527814],
+            [100.4946531, 13.6526364],
+            [100.494573, 13.6526111],
+            [100.4945752, 13.6525796],
+            [100.494573, 13.6524577],
+            [100.4947829, 13.6524577],
+            [100.4947764, 13.6523567],
+            [100.4944043, 13.6523715],
+            [100.4944043, 13.652485],
+            [100.4944865, 13.6524913],
+            [100.4944865, 13.6525375],
+            [100.4942593, 13.6525375],
+            [100.4942442, 13.6528739],
+            [100.4944108, 13.6528592]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารภาควิชาฟิสิกส์–คณิตศาสตร์",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/436983063",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/436983063"
+          }
+        ],
+        "code": "N4",
+        "nameEn": "Physics and Mathematics",
+        "part": null,
+        "heightM": 14.4,
+        "heightBasis": "mapped-levels",
+        "floorCount": 4,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.openstreetmap.org/way/436983063"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N5",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.49413473, 13.65301897],
+            [100.49435478, 13.65302764],
+            [100.4943505, 13.65312396],
+            [100.49413046, 13.65311529],
+            [100.49412618, 13.65321161],
+            [100.49441177, 13.65322286],
+            [100.49441635, 13.65311966],
+            [100.49437187, 13.65311791],
+            [100.49438032, 13.65292756],
+            [100.49413921, 13.65291806],
+            [100.49413473, 13.65301897]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารศูนย์เครื่องมือวิทยาศาสตร์เพื่อมาตรฐานและอุตสาหกรรม",
+        "footprintBasis": "plan-approximation",
+        "footprintSources": [
+          {
+            "kind": "plan-approximation",
+            "url": "https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html",
+            "note": "Manually approximated from the campus plan registered to open building footprints."
+          }
+        ],
+        "code": "N5",
+        "nameEn": "Scientific Instrument Center",
+        "part": null,
+        "heightM": 15,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N6",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [100.49474357, 13.65330256],
+              [100.49474784, 13.65320623],
+              [100.49451844, 13.6531972],
+              [100.49451416, 13.65329352],
+              [100.49474357, 13.65330256]
+            ]
+          ],
+          [
+            [
+              [100.4943219, 13.65345136],
+              [100.49431763, 13.65354768],
+              [100.49473431, 13.65356409],
+              [100.49473858, 13.65346777],
+              [100.49456068, 13.65346076],
+              [100.49456729, 13.65331169],
+              [100.49449004, 13.65330865],
+              [100.49448343, 13.65345772],
+              [100.4943219, 13.65345136]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารภาควิชาจุลชีววิทยา",
+        "footprintBasis": "plan-approximation",
+        "footprintSources": [
+          {
+            "kind": "plan-approximation",
+            "url": "https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html",
+            "note": "Manually approximated from the campus plan registered to open building footprints."
+          },
+          {
+            "kind": "plan-approximation",
+            "url": "https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html",
+            "note": "Manually approximated from the campus plan registered to open building footprints."
+          }
+        ],
+        "code": "N6",
+        "nameEn": "Microbiology",
+        "part": null,
+        "heightM": 18,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N7",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [100.4949888, 13.6534776],
+              [100.4949893, 13.6535751],
+              [100.4952508, 13.653574],
+              [100.4952493, 13.6532391],
+              [100.4949401, 13.6529042],
+              [100.4949428, 13.6534776],
+              [100.4949888, 13.6534776]
+            ]
+          ],
+          [
+            [
+              [100.4942946, 13.653902],
+              [100.4942967, 13.6538617],
+              [100.4944045, 13.6538616],
+              [100.4951148, 13.6538609],
+              [100.4951112, 13.6539011],
+              [100.4951555, 13.6538609],
+              [100.4952331, 13.6538617],
+              [100.4952792, 13.6536787],
+              [100.4950734, 13.653675],
+              [100.4941682, 13.653664],
+              [100.4941603, 13.6538608],
+              [100.4942382, 13.6538616],
+              [100.4942946, 13.653902]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารปฏิบัติการพื้นฐานทางวิทยาศาสตร์",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420302821",
+            "version": 8,
+            "url": "https://www.openstreetmap.org/way/420302821"
+          },
+          {
+            "kind": "osm",
+            "id": "way/420302823",
+            "version": 3,
+            "url": "https://www.openstreetmap.org/way/420302823"
+          },
+          {
+            "kind": "osm",
+            "id": "way/420327849",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/420327849"
+          }
+        ],
+        "code": "N7",
+        "nameEn": "Fundamental Science Laboratory",
+        "part": null,
+        "heightM": 36.0,
+        "heightBasis": "at-least-levels",
+        "floorCount": 10,
+        "floorHeightM": 3.6,
+        "heightSource": "https://chem.kmutt.ac.th/2019-09-19-03-23-40/th-contract"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N8",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4953896, 13.6536885],
+            [100.4954616, 13.6537924],
+            [100.4955437, 13.6537387],
+            [100.4954716, 13.6536348],
+            [100.4953896, 13.6536885]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "สถานีสูบน้ำ",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420303666",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/420303666"
+          }
+        ],
+        "code": "N8",
+        "nameEn": "Water Pump Station",
+        "part": null,
+        "heightM": 5,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N9",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4944452, 13.6545532],
+            [100.4943782, 13.6543844],
+            [100.4943439, 13.6543972],
+            [100.4943228, 13.6543439],
+            [100.4940112, 13.6544605],
+            [100.4940202, 13.654483],
+            [100.4939937, 13.6544929],
+            [100.4940453, 13.654623],
+            [100.4940714, 13.6546132],
+            [100.494099, 13.6546828],
+            [100.4944452, 13.6545532]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารสถาบันวิทยาการหุ่นยนต์ภาคสนาม",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/346450376",
+            "version": 10,
+            "url": "https://www.openstreetmap.org/way/346450376"
+          }
+        ],
+        "code": "N9",
+        "nameEn": "Institute of Field Robotics (FIBO)",
+        "part": null,
+        "heightM": 28.8,
+        "heightBasis": "at-least-levels",
+        "floorCount": 8,
+        "floorHeightM": 3.6,
+        "heightSource": "https://fibo.kmutt.ac.th/about/new-building/"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N10",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.493818, 13.652797],
+            [100.4936696, 13.6527907],
+            [100.4936525, 13.6531715],
+            [100.4941107, 13.6531909],
+            [100.4941287, 13.65279],
+            [100.4940489, 13.6527866],
+            [100.4940672, 13.6523809],
+            [100.4938358, 13.6523711],
+            [100.493819, 13.6524521],
+            [100.4938159, 13.6527578],
+            [100.493818, 13.652797]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารสำนักหอสมุด",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/311879209",
+            "version": 6,
+            "url": "https://www.openstreetmap.org/way/311879209"
+          }
+        ],
+        "code": "N10",
+        "nameEn": "KMUTT Library",
+        "part": null,
+        "heightM": 21.6,
+        "heightBasis": "at-least-levels",
+        "floorCount": 6,
+        "floorHeightM": 3.6,
+        "heightSource": "https://cc.kmutt.ac.th/KMUTT-AIS.html"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N11",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4938159, 13.6527578],
+            [100.493819, 13.6524521],
+            [100.4934406, 13.6524513],
+            [100.4934398, 13.6527568],
+            [100.4938159, 13.6527578]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารคณะเทคโนโลยีสารสนเทศ",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/224982053",
+            "version": 3,
+            "url": "https://www.openstreetmap.org/way/224982053"
+          }
+        ],
+        "code": "N11",
+        "nameEn": "School of Information Technology",
+        "part": null,
+        "heightM": 18.0,
+        "heightBasis": "published-levels",
+        "floorCount": 5,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.sit.kmutt.ac.th/wp-content/uploads/2025/02/SIT_Annual-report-2024_14-02-2568_compressed.pdf#page=131"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N12",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.49311765, 13.65221158],
+            [100.49307959, 13.65217103],
+            [100.4931258, 13.65213379],
+            [100.49296926, 13.65196222],
+            [100.49289082, 13.6520161],
+            [100.4928946, 13.6520205],
+            [100.49285216, 13.65205356],
+            [100.49305425, 13.65226652],
+            [100.49311765, 13.65221158]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารอเนกประสงค์",
+        "footprintBasis": "plan-approximation",
+        "footprintSources": [
+          {
+            "kind": "plan-approximation",
+            "url": "https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html",
+            "note": "Manually approximated from the campus plan registered to open building footprints."
+          }
+        ],
+        "code": "N12",
+        "nameEn": "Utility Exchange (UX)",
+        "part": null,
+        "heightM": 25.2,
+        "heightBasis": "at-least-levels",
+        "floorCount": 7,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.kmutt.ac.th/event/07/04/2026/104570/",
+        "footprintNote": "Base geometry adjusted to remove the overlap with N13."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N13",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4926063, 13.6519862],
+            [100.4926901, 13.6520569],
+            [100.492762, 13.6521238],
+            [100.4928946, 13.6520205],
+            [100.4927406, 13.6518413],
+            [100.4926063, 13.6519862]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคาร Workshop และเรือนกระจก",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/1333533936",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/1333533936"
+          }
+        ],
+        "code": "N13",
+        "nameEn": "Workshop and Greenhouse",
+        "part": null,
+        "heightM": 6,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N14",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4926195, 13.6517056],
+            [100.4924967, 13.6518304],
+            [100.4926271, 13.6519515],
+            [100.4927499, 13.6518268],
+            [100.4926195, 13.6517056]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารไฟฟ้าแรงสูง",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/1333533937",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/1333533937"
+          }
+        ],
+        "code": "N14",
+        "nameEn": "High Voltage Laboratory",
+        "part": null,
+        "heightM": 5,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N15",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4930597, 13.6518815],
+            [100.4933201, 13.651884],
+            [100.4933194, 13.6519513],
+            [100.4932084, 13.6519503],
+            [100.4932072, 13.6520641],
+            [100.4933308, 13.6520653],
+            [100.4933848, 13.6520658],
+            [100.4935968, 13.6520673],
+            [100.4935954, 13.6519518],
+            [100.4935246, 13.6519513],
+            [100.4934924, 13.651951],
+            [100.4934934, 13.6518588],
+            [100.4934456, 13.6518584],
+            [100.4934466, 13.6517636],
+            [100.4930609, 13.6517599],
+            [100.4930597, 13.6518815]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารเรียนและปฏิบัติการทางศิลปศาสตร์",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420534007",
+            "version": 6,
+            "url": "https://www.openstreetmap.org/way/420534007"
+          }
+        ],
+        "code": "N15",
+        "nameEn": "School of Liberal Arts",
+        "part": null,
+        "heightM": 32.4,
+        "heightBasis": "at-least-levels",
+        "floorCount": 9,
+        "floorHeightM": 3.6,
+        "heightSource": "https://hrd.kmutt.ac.th/wp-content/uploads/2024/04/HRD-KMUTT-Anual-Report-2558_1585813300604.pdf#page=18"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N16",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4941028, 13.6516744],
+            [100.4940916, 13.6516693],
+            [100.4938666, 13.651669],
+            [100.493854, 13.6516724],
+            [100.4938475, 13.651681],
+            [100.4938461, 13.6516901],
+            [100.4938406, 13.6519249],
+            [100.4936561, 13.6519198],
+            [100.4936439, 13.651926],
+            [100.4936398, 13.6521213],
+            [100.4936437, 13.6521373],
+            [100.4936518, 13.6521472],
+            [100.4936624, 13.6521526],
+            [100.4936797, 13.6521564],
+            [100.4939768, 13.6521621],
+            [100.4942572, 13.6521671],
+            [100.4944468, 13.6521755],
+            [100.4944636, 13.6521761],
+            [100.494474, 13.6521727],
+            [100.4944816, 13.6521668],
+            [100.4944863, 13.6521571],
+            [100.4944874, 13.6521457],
+            [100.4944844, 13.6521352],
+            [100.4944327, 13.6520264],
+            [100.4944201, 13.6520009],
+            [100.4944027, 13.6519819],
+            [100.4943837, 13.6519655],
+            [100.4943673, 13.6519573],
+            [100.4943489, 13.6519523],
+            [100.4941682, 13.6519456],
+            [100.4941605, 13.6519397],
+            [100.4941535, 13.6519374],
+            [100.4941424, 13.651937],
+            [100.4941145, 13.6519384],
+            [100.4941051, 13.6519378],
+            [100.4940985, 13.651935],
+            [100.4940969, 13.6519279],
+            [100.4940975, 13.6519177],
+            [100.4940993, 13.651908],
+            [100.4941066, 13.6519037],
+            [100.4941182, 13.6519017],
+            [100.494242, 13.6518925],
+            [100.4942656, 13.6518912],
+            [100.4942871, 13.6518851],
+            [100.4943018, 13.6518754],
+            [100.4943151, 13.6518634],
+            [100.494323, 13.6518504],
+            [100.4943267, 13.6518385],
+            [100.4943272, 13.6518232],
+            [100.4943254, 13.6518094],
+            [100.4943101, 13.6517332],
+            [100.4943046, 13.6517087],
+            [100.4942987, 13.6516985],
+            [100.4942922, 13.651691],
+            [100.4942806, 13.6516864],
+            [100.4941076, 13.6516824],
+            [100.4941028, 13.6516744]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารการเรียนรู้พหุวิทยาการ",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/1333533935",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/1333533935"
+          }
+        ],
+        "code": "N16",
+        "nameEn": "Learning Exchange (LX)",
+        "part": null,
+        "heightM": 54.0,
+        "heightBasis": "published-levels",
+        "floorCount": 15,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.lib.kmutt.ac.th/lx-building/"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N17",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4937522, 13.6518327],
+            [100.493754, 13.6517051],
+            [100.4937346, 13.6516846],
+            [100.493731, 13.6516745],
+            [100.4937017, 13.6516741],
+            [100.4937027, 13.6516056],
+            [100.4938917, 13.6516082],
+            [100.4938919, 13.6515966],
+            [100.4939486, 13.6515974],
+            [100.4939493, 13.651549],
+            [100.4939942, 13.6515496],
+            [100.4939944, 13.6515303],
+            [100.4940531, 13.6515301],
+            [100.4941718, 13.6515328],
+            [100.4941722, 13.6515045],
+            [100.4942448, 13.6515055],
+            [100.494247, 13.6513559],
+            [100.494174, 13.6513549],
+            [100.4941744, 13.6513281],
+            [100.4943411, 13.6513304],
+            [100.4943444, 13.6511077],
+            [100.4940441, 13.6511036],
+            [100.4940235, 13.6511033],
+            [100.4940192, 13.651396],
+            [100.4939921, 13.6513957],
+            [100.4939922, 13.6513863],
+            [100.493909, 13.6513852],
+            [100.4939093, 13.6513673],
+            [100.4935555, 13.6513626],
+            [100.4935537, 13.6514911],
+            [100.4935801, 13.6514914],
+            [100.4935793, 13.6515514],
+            [100.4935786, 13.6515995],
+            [100.4935784, 13.6516163],
+            [100.4935231, 13.6516156],
+            [100.4935224, 13.6516639],
+            [100.4935763, 13.6516646],
+            [100.4935762, 13.6516716],
+            [100.4935414, 13.6516712],
+            [100.4935411, 13.6516943],
+            [100.4935146, 13.651694],
+            [100.4935127, 13.6518295],
+            [100.4937522, 13.6518327]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารเรียนรวม 2",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420534143",
+            "version": 6,
+            "url": "https://www.openstreetmap.org/way/420534143"
+          }
+        ],
+        "code": "N17",
+        "nameEn": "Classroom Building 2",
+        "part": null,
+        "heightM": 21.6,
+        "heightBasis": "mapped-levels",
+        "floorCount": 6,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.openstreetmap.org/way/420534143"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N18",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4934984, 13.6511325],
+            [100.4934964, 13.6513227],
+            [100.4940033, 13.6513279],
+            [100.4940053, 13.6511376],
+            [100.4934984, 13.6511325]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารปฏิบัติการวิศวกรรมการผลิต 4",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "overture",
+            "id": "d2272a2d-a636-4947-9695-a428d4b4b68b",
+            "release": "2026-10-21.0",
+            "upstream": "Microsoft ML Buildings",
+            "upstreamId": null,
+            "url": "https://explore.overturemaps.org/#map=18/13.65145/100.49385"
+          }
+        ],
+        "code": "N18",
+        "nameEn": "Production Engineering Laboratory 4",
+        "part": null,
+        "heightM": 6,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N19",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4934144, 13.6510848],
+            [100.4934133, 13.6511147],
+            [100.493217, 13.6511079],
+            [100.4932137, 13.6512001],
+            [100.4932102, 13.6512959],
+            [100.4931777, 13.6512947],
+            [100.493176, 13.6513417],
+            [100.4934229, 13.6513503],
+            [100.4934325, 13.6510854],
+            [100.4934144, 13.6510848]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารปฏิบัติการวิศวกรรมการผลิต 5",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "overture",
+            "id": "9d43137b-d5bc-463b-acfa-8aca59ecc1c7",
+            "release": "2026-10-21.0",
+            "upstream": "Google Open Buildings",
+            "upstreamId": "7P52MF2V+F8W6",
+            "url": "https://explore.overturemaps.org/#map=18/13.65145/100.49385"
+          }
+        ],
+        "code": "N19",
+        "nameEn": "Production Engineering Laboratory 5",
+        "part": null,
+        "heightM": 17,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "N20",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.493213, 13.6516653],
+            [100.4932132, 13.6516414],
+            [100.4932474, 13.6516411],
+            [100.4932489, 13.6516815],
+            [100.4934779, 13.6516848],
+            [100.4934794, 13.651599],
+            [100.4935022, 13.6515985],
+            [100.4935786, 13.6515995],
+            [100.4935793, 13.6515514],
+            [100.4934784, 13.651548],
+            [100.493481, 13.651367],
+            [100.4931995, 13.6513631],
+            [100.4931962, 13.651509],
+            [100.4931115, 13.6515079],
+            [100.4931086, 13.651665],
+            [100.493213, 13.6516653]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารเรียนรวม 1",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/436983061",
+            "version": 5,
+            "url": "https://www.openstreetmap.org/way/436983061"
+          }
+        ],
+        "code": "N20",
+        "nameEn": "Classroom Building 1",
+        "part": null,
+        "heightM": 18.0,
+        "heightBasis": "mapped-levels",
+        "floorCount": 5,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.openstreetmap.org/way/436983061"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S1",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4951499, 13.6504791],
+            [100.4950415, 13.6504661],
+            [100.4950452, 13.6504369],
+            [100.4950209, 13.650434],
+            [100.4949957, 13.6506346],
+            [100.4952039, 13.6506596],
+            [100.4952291, 13.650459],
+            [100.4951834, 13.6504535],
+            [100.4951897, 13.6504026],
+            [100.4951599, 13.6503991],
+            [100.4951499, 13.6504791]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารวิศวกรรมเครื่องกล 4",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "overture",
+            "id": "8d4a5321-9298-4304-b400-3e99dd92c855",
+            "release": "2026-10-21.0",
+            "upstream": "Google Open Buildings",
+            "upstreamId": "7P52MF2W+629W",
+            "url": "https://explore.overturemaps.org/#map=18/13.65145/100.49385"
+          }
+        ],
+        "code": "S1",
+        "nameEn": "Mechanical Engineering Building 4",
+        "part": null,
+        "heightM": 8,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S2-parking",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4958731, 13.6503378],
+            [100.495693, 13.650177],
+            [100.4956575, 13.6501453],
+            [100.4955828, 13.6502243],
+            [100.4953909, 13.6504273],
+            [100.4956066, 13.6506198],
+            [100.4958731, 13.6503378]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารจอดรถ",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/378153794",
+            "version": 10,
+            "url": "https://www.openstreetmap.org/way/378153794"
+          }
+        ],
+        "code": "S2",
+        "nameEn": "Parking Building",
+        "part": "parking",
+        "heightM": 43.4,
+        "heightBasis": "published-levels",
+        "floorCount": 14,
+        "floorHeightM": 3.1,
+        "heightSource": "https://bgm.kmutt.ac.th/parking/"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S2-seminar",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4955828, 13.6502243],
+            [100.4955489, 13.6501583],
+            [100.495365, 13.6501498],
+            [100.4952945, 13.650205],
+            [100.4952894, 13.6503119],
+            [100.4953288, 13.6503568],
+            [100.4953909, 13.6504273],
+            [100.4955828, 13.6502243]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารสัมมนา",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/663430214",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/663430214"
+          }
+        ],
+        "code": "S2",
+        "nameEn": "Seminar Building",
+        "part": "seminar",
+        "heightM": 11,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S3",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4953993, 13.6498051],
+            [100.4950372, 13.649986],
+            [100.4949458, 13.6499893],
+            [100.4949976, 13.6500292],
+            [100.4950297, 13.6501061],
+            [100.4950539, 13.6500905],
+            [100.4951709, 13.65017],
+            [100.4952296, 13.6502169],
+            [100.4952541, 13.6499835],
+            [100.4953749, 13.6499832],
+            [100.4953993, 13.6498051]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารสถาบันนวัตกรรมการเรียนรู้เฉลิมพระเกียรติ 80 พรรษา",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "relation/9183623",
+            "version": 5,
+            "url": "https://www.openstreetmap.org/relation/9183623"
+          }
+        ],
+        "code": "S3",
+        "nameEn": "Innovation Learning Institute (Darunsikkhalai)",
+        "part": null,
+        "heightM": 50.4,
+        "heightBasis": "mapped-levels",
+        "floorCount": 14,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.openstreetmap.org/relation/9183623"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S4-3-floors",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4939088, 13.6498533],
+            [100.4942112, 13.6498574],
+            [100.4942134, 13.6496071],
+            [100.4941383, 13.6496071],
+            [100.4939112, 13.6496056],
+            [100.4939088, 13.6498533]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารวิศววัฒนะ 3 ชั้น",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420299241",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/420299241"
+          }
+        ],
+        "code": "S4",
+        "nameEn": "Wissawa Wattana – 3 floors",
+        "part": "3-floors",
+        "heightM": 10.8,
+        "heightBasis": "published-levels",
+        "floorCount": 3,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf#page=77"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S4-4-floors",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4939044, 13.650298],
+            [100.4939021, 13.6505275],
+            [100.4942119, 13.6505321],
+            [100.4942179, 13.6501489],
+            [100.4939059, 13.6501461],
+            [100.4939044, 13.650298]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารวิศววัฒนะ 4 ชั้น",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420044930",
+            "version": 5,
+            "url": "https://www.openstreetmap.org/way/420044930"
+          }
+        ],
+        "code": "S4",
+        "nameEn": "Wissawa Wattana – 4 floors",
+        "part": "4-floors",
+        "heightM": 14.4,
+        "heightBasis": "published-levels",
+        "floorCount": 4,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf#page=77"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S4-8-floors",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4944049, 13.6504451],
+            [100.4944415, 13.650446],
+            [100.494807, 13.6504559],
+            [100.4948068, 13.6501562],
+            [100.494711, 13.6501548],
+            [100.4946241, 13.6501503],
+            [100.4945204, 13.6501521],
+            [100.494414, 13.6501512],
+            [100.4944049, 13.6504451]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารวิศววัฒนะ 8 ชั้น",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420044929",
+            "version": 7,
+            "url": "https://www.openstreetmap.org/way/420044929"
+          }
+        ],
+        "code": "S4",
+        "nameEn": "Wissawa Wattana – 8 floors",
+        "part": "8-floors",
+        "heightM": 28.8,
+        "heightBasis": "published-levels",
+        "floorCount": 8,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf#page=77"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S4-11-floors",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4942179, 13.6501489],
+            [100.4942714, 13.6501494],
+            [100.494414, 13.6501512],
+            [100.4945204, 13.6501521],
+            [100.4945232, 13.6498588],
+            [100.4943461, 13.649858],
+            [100.4942112, 13.6498574],
+            [100.4939088, 13.6498533],
+            [100.4939076, 13.6499733],
+            [100.4939059, 13.6501461],
+            [100.4942179, 13.6501489]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารวิศววัฒนะ 11 ชั้น",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420044928",
+            "version": 6,
+            "url": "https://www.openstreetmap.org/way/420044928"
+          }
+        ],
+        "code": "S4",
+        "nameEn": "Wissawa Wattana – 11 floors",
+        "part": "11-floors",
+        "heightM": 39.6,
+        "heightBasis": "published-levels",
+        "floorCount": 11,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf#page=77"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S5",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4943442, 13.6493757],
+            [100.4943684, 13.6494129],
+            [100.4943273, 13.6494381],
+            [100.4944067, 13.6495616],
+            [100.4944514, 13.6495345],
+            [100.4944794, 13.6495782],
+            [100.4945198, 13.6495536],
+            [100.4947406, 13.6494195],
+            [100.4946088, 13.6492146],
+            [100.4943442, 13.6493757]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "บ้านธรรมรักษา 2",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420045662",
+            "version": 4,
+            "url": "https://www.openstreetmap.org/way/420045662"
+          }
+        ],
+        "code": "S5",
+        "nameEn": "Dhammaraksa Residence Hall 2",
+        "part": null,
+        "heightM": 32.0,
+        "heightBasis": "mapped-levels",
+        "floorCount": 10,
+        "floorHeightM": 3.2,
+        "heightSource": "https://www.openstreetmap.org/way/420045662"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S6",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4943698, 13.6489558],
+            [100.4944295, 13.649048],
+            [100.4944503, 13.6490353],
+            [100.4945188, 13.6491413],
+            [100.4947812, 13.6489811],
+            [100.4950778, 13.6488],
+            [100.4949496, 13.6486018],
+            [100.4943698, 13.6489558]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "บ้านธรรมรักษา 1",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420051710",
+            "version": 4,
+            "url": "https://www.openstreetmap.org/way/420051710"
+          }
+        ],
+        "code": "S6",
+        "nameEn": "Dhammaraksa Residence Hall 1",
+        "part": null,
+        "heightM": 35.2,
+        "heightBasis": "mapped-levels",
+        "floorCount": 11,
+        "floorHeightM": 3.2,
+        "heightSource": "https://www.openstreetmap.org/way/420051710"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S7",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4944493, 13.6491948],
+            [100.4943044, 13.6489883],
+            [100.4941209, 13.6491229],
+            [100.4942336, 13.6493293],
+            [100.4944493, 13.6491948]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารพัฒนาเด็กเล็ก มจธ.",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/436983066",
+            "version": 3,
+            "url": "https://www.openstreetmap.org/way/436983066"
+          }
+        ],
+        "code": "S7",
+        "nameEn": "KMUTT Child Development Building",
+        "part": null,
+        "heightM": 5,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S8",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.49377238, 13.64908308],
+            [100.4939737, 13.64909101],
+            [100.49398357, 13.64886856],
+            [100.49378225, 13.64886063],
+            [100.49377238, 13.64908308]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารวิจัยและพัฒนาเทคโนโลยีวัสดุ",
+        "footprintBasis": "plan-approximation",
+        "footprintSources": [
+          {
+            "kind": "plan-approximation",
+            "url": "https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html",
+            "note": "Manually approximated from the campus plan registered to open building footprints."
+          }
+        ],
+        "code": "S8",
+        "nameEn": "Materials Technology Research and Development",
+        "part": null,
+        "heightM": 19,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S9",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4939754, 13.6491686],
+            [100.49397822, 13.64898911],
+            [100.4939737, 13.64909101],
+            [100.49377238, 13.64908308],
+            [100.49378225, 13.64886063],
+            [100.49398012, 13.64886842],
+            [100.4939809, 13.6488187],
+            [100.4936026, 13.6487105],
+            [100.4931385, 13.6489555],
+            [100.4931458, 13.6491402],
+            [100.493339, 13.6491468],
+            [100.4939754, 13.6491686]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารเรียนและปฏิบัติการคณะพลังงาน สิ่งแวดล้อมและวัสดุ",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/651713745",
+            "version": 4,
+            "url": "https://www.openstreetmap.org/way/651713745"
+          }
+        ],
+        "code": "S9",
+        "nameEn": "Energy, Environment and Materials",
+        "part": null,
+        "heightM": 18,
+        "heightBasis": "at-least-levels",
+        "floorCount": 5,
+        "floorHeightM": 3.6,
+        "heightSource": "https://p-prof.kmutt.ac.th/Meeting%20Conclusion/Meeting%20report%20P-PROF_2010_4%20%28July%29.pdf#page=1",
+        "footprintNote": "Base geometry adjusted to remove the overlap with S8."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S10",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4937614, 13.6496973],
+            [100.493767, 13.6494565],
+            [100.4935647, 13.649452],
+            [100.493559, 13.6496928],
+            [100.4937614, 13.6496973]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารสังคมสีเขียว มจธ.",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/1333533934",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/1333533934"
+          }
+        ],
+        "code": "S10",
+        "nameEn": "Green Society Building",
+        "part": null,
+        "heightM": 4,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S11",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4930855, 13.6499419],
+            [100.4937034, 13.6499616],
+            [100.4937074, 13.6498437],
+            [100.4937742, 13.6498458],
+            [100.4937786, 13.6497135],
+            [100.4934713, 13.6497037],
+            [100.4934741, 13.6496218],
+            [100.4935468, 13.6496241],
+            [100.4935511, 13.6494965],
+            [100.4931221, 13.6494829],
+            [100.4931186, 13.6495874],
+            [100.4930191, 13.6495843],
+            [100.4930144, 13.6497253],
+            [100.4932283, 13.6497321],
+            [100.4932262, 13.6497959],
+            [100.4930906, 13.6497916],
+            [100.4930855, 13.6499419]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารเรียนรวม 5",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420533543",
+            "version": 6,
+            "url": "https://www.openstreetmap.org/way/420533543"
+          }
+        ],
+        "code": "S11",
+        "nameEn": "Classroom Building 5 (CB5)",
+        "part": null,
+        "heightM": 36.0,
+        "heightBasis": "at-least-levels",
+        "floorCount": 10,
+        "floorHeightM": 3.6,
+        "heightSource": "https://steco.kmutt.ac.th/contact-us/"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S12",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4926549, 13.649371],
+            [100.4926539, 13.6494638],
+            [100.4924142, 13.6494576],
+            [100.4924109, 13.6496152],
+            [100.4925574, 13.6496152],
+            [100.4925565, 13.6496736],
+            [100.4923452, 13.6496761],
+            [100.4923476, 13.6498334],
+            [100.492691, 13.6498335],
+            [100.4926906, 13.6497436],
+            [100.4929385, 13.6497419],
+            [100.49294, 13.6495666],
+            [100.492775, 13.6495636],
+            [100.4927744, 13.6495171],
+            [100.4930402, 13.6495162],
+            [100.4930392, 13.6493773],
+            [100.4926549, 13.649371]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารเรียนรวม 4",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420534334",
+            "version": 6,
+            "url": "https://www.openstreetmap.org/way/420534334"
+          }
+        ],
+        "code": "S12",
+        "nameEn": "Classroom Building 4",
+        "part": null,
+        "heightM": 36.0,
+        "heightBasis": "at-least-levels",
+        "floorCount": 10,
+        "floorHeightM": 3.6,
+        "heightSource": "https://www.kmutt.ac.th/procurement/kmutt_procurement/%E0%B8%AA%E0%B8%B3%E0%B8%99%E0%B8%B1%E0%B8%81%E0%B8%87%E0%B8%B2%E0%B8%99%E0%B8%88%E0%B8%B1%E0%B8%94%E0%B8%AB%E0%B8%B2%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B8%88%E0%B8%B1%E0%B8%94%E0%B8%81%E0%B8%B2-1400/?cate=cost-estimate"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S13",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4920654, 13.6500377],
+            [100.4922112, 13.6500387],
+            [100.4922138, 13.6498929],
+            [100.4920757, 13.6498898],
+            [100.4920747, 13.6498228],
+            [100.492288, 13.6498247],
+            [100.4922889, 13.6496764],
+            [100.4923046, 13.6496766],
+            [100.4923058, 13.6495992],
+            [100.4922929, 13.649577],
+            [100.4920966, 13.6495751],
+            [100.4920762, 13.6495957],
+            [100.4920757, 13.6496739],
+            [100.4919221, 13.6496704],
+            [100.4919208, 13.6496931],
+            [100.4919016, 13.6496937],
+            [100.4919001, 13.6498078],
+            [100.4917508, 13.6498088],
+            [100.4917514, 13.6498989],
+            [100.4918272, 13.6499025],
+            [100.491824, 13.649998],
+            [100.4915987, 13.6499986],
+            [100.4915238, 13.6499976],
+            [100.4915215, 13.6502312],
+            [100.4915347, 13.6502434],
+            [100.4918363, 13.6502487],
+            [100.4918354, 13.6501397],
+            [100.4920657, 13.6501488],
+            [100.4920654, 13.6500377]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารเรียนรวม 3",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420534582",
+            "version": 5,
+            "url": "https://www.openstreetmap.org/way/420534582"
+          },
+          {
+            "kind": "osm",
+            "id": "way/420534581",
+            "version": 3,
+            "url": "https://www.openstreetmap.org/way/420534581"
+          }
+        ],
+        "code": "S13",
+        "nameEn": "Classroom Building 3",
+        "part": null,
+        "heightM": 28.8,
+        "heightBasis": "at-least-levels",
+        "floorCount": 8,
+        "floorHeightM": 3.6,
+        "heightSource": "https://c3.kmutt.ac.th/lab/22"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S14",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.491675, 13.6511674],
+            [100.491677, 13.6512623],
+            [100.491743, 13.6512849],
+            [100.4917428, 13.6512766],
+            [100.4918353, 13.6512758],
+            [100.4918332, 13.6512136],
+            [100.4918886, 13.6512136],
+            [100.4918658, 13.6512272],
+            [100.4918542, 13.6512389],
+            [100.4918468, 13.6512559],
+            [100.4918451, 13.6512699],
+            [100.491847, 13.6512841],
+            [100.4918521, 13.6512953],
+            [100.4918626, 13.6513085],
+            [100.4918736, 13.6513161],
+            [100.4918874, 13.6513213],
+            [100.4919078, 13.6513232],
+            [100.4919322, 13.6513148],
+            [100.4919447, 13.6513045],
+            [100.4919493, 13.651298],
+            [100.4919528, 13.6512882],
+            [100.491955, 13.6512752],
+            [100.491982, 13.6512745],
+            [100.4919747, 13.6508895],
+            [100.4919624, 13.6503785],
+            [100.4916575, 13.6503832],
+            [100.4916592, 13.6505141],
+            [100.4916706, 13.6505137],
+            [100.4916709, 13.6505415],
+            [100.4916601, 13.6505291],
+            [100.4916511, 13.6505214],
+            [100.4916388, 13.6505156],
+            [100.4916244, 13.6505156],
+            [100.4916086, 13.6505184],
+            [100.4915948, 13.6505248],
+            [100.4915832, 13.6505351],
+            [100.4915741, 13.6505472],
+            [100.4915702, 13.6505589],
+            [100.4915681, 13.650573],
+            [100.4915457, 13.6505799],
+            [100.4915459, 13.6506125],
+            [100.4915185, 13.6506137],
+            [100.4915221, 13.651168],
+            [100.491675, 13.6511674]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารพระจอมเกล้าราชานุสรณ์ 190 ปี",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/346449664",
+            "version": 6,
+            "url": "https://www.openstreetmap.org/way/346449664"
+          }
+        ],
+        "code": "S14",
+        "nameEn": "King Mongkut 190th Anniversary Memorial",
+        "part": null,
+        "heightM": 13.0,
+        "heightBasis": "at-least-levels",
+        "floorCount": 3,
+        "floorHeightM": 4.333333333333333,
+        "heightSource": "https://megajob.kmutt.ac.th/"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "S15",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.493603, 13.6505784],
+            [100.4936119, 13.6500368],
+            [100.4930575, 13.6500283],
+            [100.4930486, 13.6505699],
+            [100.493603, 13.6505784]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "building",
+        "nameTh": "อาคารภาควิชาวิศวกรรมเคมี",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/436983067",
+            "version": 4,
+            "url": "https://www.openstreetmap.org/way/436983067"
+          }
+        ],
+        "code": "S15",
+        "nameEn": "Chemical Engineering",
+        "part": null,
+        "heightM": 13,
+        "heightBasis": "assumed",
+        "floorCount": null,
+        "floorHeightM": null,
+        "heightSource": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "campus",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4955994, 13.6525772],
+            [100.4955815, 13.6525488],
+            [100.495885, 13.6522489],
+            [100.4959607, 13.6523397],
+            [100.4959877, 13.6523259],
+            [100.4962523, 13.6521941],
+            [100.4962041, 13.6520068],
+            [100.4964104, 13.6518518],
+            [100.4965453, 13.6516801],
+            [100.496483, 13.6514768],
+            [100.4963984, 13.651093],
+            [100.4963817, 13.6510149],
+            [100.4963659, 13.6509466],
+            [100.4963234, 13.6507658],
+            [100.4963047, 13.6506618],
+            [100.4960094, 13.6507914],
+            [100.4958333, 13.6506261],
+            [100.4958392, 13.6505595],
+            [100.4959792, 13.6503364],
+            [100.4957495, 13.6500645],
+            [100.4955963, 13.6498988],
+            [100.4955538, 13.6498454],
+            [100.4955156, 13.649755],
+            [100.4954803, 13.6496776],
+            [100.4952715, 13.6497734],
+            [100.4949852, 13.6499047],
+            [100.4948255, 13.6495261],
+            [100.4947257, 13.6492889],
+            [100.4951986, 13.6489022],
+            [100.4951525, 13.6488266],
+            [100.49496, 13.6484923],
+            [100.4941745, 13.6490167],
+            [100.4940999, 13.6488342],
+            [100.4939622, 13.6486154],
+            [100.4937775, 13.6483652],
+            [100.493672, 13.6484332],
+            [100.492853, 13.6489746],
+            [100.4927892, 13.6490175],
+            [100.492728, 13.6490573],
+            [100.4913247, 13.6500054],
+            [100.4912889, 13.6500316],
+            [100.4916321, 13.6504577],
+            [100.4916348, 13.650473],
+            [100.4916189, 13.6504872],
+            [100.4915858, 13.6505063],
+            [100.4915287, 13.650535],
+            [100.4911343, 13.6507407],
+            [100.4913594, 13.6510987],
+            [100.4914858, 13.6512316],
+            [100.4920437, 13.6515108],
+            [100.4921411, 13.6516043],
+            [100.4922485, 13.6516917],
+            [100.4926864, 13.6520585],
+            [100.4930183, 13.6523664],
+            [100.4932927, 13.652805],
+            [100.4937786, 13.6534184],
+            [100.4942507, 13.6540919],
+            [100.4945728, 13.6540755],
+            [100.4945783, 13.6541706],
+            [100.4944561, 13.6541747],
+            [100.4944028, 13.6542418],
+            [100.4938588, 13.6544488],
+            [100.494203, 13.6551862],
+            [100.495284, 13.654704],
+            [100.4948754, 13.6542203],
+            [100.4948411, 13.6541827],
+            [100.4947982, 13.6541716],
+            [100.4947574, 13.6541684],
+            [100.4946458, 13.6541702],
+            [100.4946411, 13.6540748],
+            [100.4947703, 13.6540707],
+            [100.4949411, 13.6541235],
+            [100.4953491, 13.6538961],
+            [100.4956013, 13.6537838],
+            [100.4954124, 13.6535103],
+            [100.4954639, 13.6534739],
+            [100.4950718, 13.6529597],
+            [100.4952719, 13.6528146],
+            [100.4954163, 13.6527099],
+            [100.4954357, 13.6526958],
+            [100.4954827, 13.6526594],
+            [100.4955994, 13.6525772]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "boundary",
+        "nameTh": "ขอบเขตวิทยาเขตบางมด",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420312611",
+            "version": 13,
+            "url": "https://www.openstreetmap.org/way/420312611"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "emerald-pond",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4947938, 13.6516],
+            [100.4948531, 13.6515389],
+            [100.4948605, 13.6511347],
+            [100.4945644, 13.6511334],
+            [100.4945641, 13.6511048],
+            [100.4943947, 13.6511003],
+            [100.4943943, 13.6510522],
+            [100.4941534, 13.6510487],
+            [100.4941494, 13.6516015],
+            [100.4944708, 13.651605],
+            [100.4947938, 13.6516]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "water",
+        "nameTh": "สระมรกต",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/311879219",
+            "version": 5,
+            "url": "https://www.openstreetmap.org/way/311879219"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "monument-pond",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4962374, 13.6516058],
+            [100.496159, 13.6516366],
+            [100.4960329, 13.6516449],
+            [100.4959428, 13.6516068],
+            [100.4958909, 13.6515399],
+            [100.4958973, 13.6514781],
+            [100.4959238, 13.6514348],
+            [100.495982, 13.6514091],
+            [100.4960107, 13.6514112],
+            [100.4960488, 13.6514215],
+            [100.4960912, 13.6514585],
+            [100.496141, 13.6514245],
+            [100.4961653, 13.6513813],
+            [100.4961367, 13.6513257],
+            [100.4960975, 13.651335],
+            [100.4960605, 13.6513031],
+            [100.4960446, 13.6513092],
+            [100.4960615, 13.6513556],
+            [100.4960297, 13.6513803],
+            [100.4959799, 13.6513823],
+            [100.4959397, 13.6513607],
+            [100.4959195, 13.6513113],
+            [100.4959089, 13.6512804],
+            [100.4958687, 13.6512773],
+            [100.4958062, 13.6512711],
+            [100.4957108, 13.6512917],
+            [100.4956441, 13.6513247],
+            [100.4956027, 13.6514245],
+            [100.4955996, 13.6515275],
+            [100.495626, 13.6516078],
+            [100.4956547, 13.6516789],
+            [100.4957468, 13.6516552],
+            [100.4958613, 13.6516675],
+            [100.4959492, 13.6517067],
+            [100.495999, 13.6517849],
+            [100.4960213, 13.6517952],
+            [100.4960922, 13.6517962],
+            [100.4961378, 13.6517962],
+            [100.4961802, 13.6517705],
+            [100.4962162, 13.6517365],
+            [100.496249, 13.6517056],
+            [100.4962999, 13.6516737],
+            [100.4963476, 13.6516469],
+            [100.4963497, 13.6515996],
+            [100.4963105, 13.6515769],
+            [100.4962374, 13.6516058]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "water",
+        "nameTh": "สระน้ำหลังลานพระจอม",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/224999657",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/224999657"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "learning-garden",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4944407, 13.6506083],
+            [100.4944349, 13.6507265],
+            [100.4945932, 13.650734],
+            [100.4945842, 13.6509164],
+            [100.4947982, 13.6509194],
+            [100.4947943, 13.6510625],
+            [100.49532, 13.6510742],
+            [100.4953052, 13.6508248],
+            [100.495133, 13.6502948],
+            [100.4949922, 13.6504609],
+            [100.494807, 13.6504559],
+            [100.4944415, 13.650446],
+            [100.4944407, 13.6506083]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "green",
+        "nameTh": "สวนการเรียนรู้",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420044998",
+            "version": 4,
+            "url": "https://www.openstreetmap.org/way/420044998"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "commemoration-park",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4949811, 13.652775],
+            [100.4949731, 13.6528506],
+            [100.4950131, 13.6528948],
+            [100.4950718, 13.6529597],
+            [100.4952719, 13.6528146],
+            [100.4954163, 13.6527099],
+            [100.4954357, 13.6526958],
+            [100.4953616, 13.6525921],
+            [100.4953191, 13.6525326],
+            [100.4949811, 13.652775]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "green",
+        "nameTh": "สวนเฉลิมพระเกียรติ",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/420306038",
+            "version": 2,
+            "url": "https://www.openstreetmap.org/way/420306038"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sports-field",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.492165, 13.6504534],
+            [100.4921755, 13.6512712],
+            [100.4928382, 13.6512625],
+            [100.4928309, 13.6504487],
+            [100.492165, 13.6504534]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "sport",
+        "nameTh": "สนามกีฬา",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/1317832382",
+            "version": 1,
+            "url": "https://www.openstreetmap.org/way/1317832382"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "running-track",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [100.4921569, 13.651303],
+            [100.4921843, 13.6513646],
+            [100.4922141, 13.6514058],
+            [100.4922614, 13.6514543],
+            [100.492322, 13.6514978],
+            [100.4923701, 13.6515218],
+            [100.4924077, 13.6515334],
+            [100.4924615, 13.6515428],
+            [100.4925062, 13.6515458],
+            [100.4925596, 13.6515434],
+            [100.4926019, 13.6515325],
+            [100.4926607, 13.6515132],
+            [100.4927061, 13.651488],
+            [100.4927633, 13.651438],
+            [100.4928036, 13.6513904],
+            [100.492826, 13.6513506],
+            [100.4928484, 13.6513039],
+            [100.4928595, 13.6512502],
+            [100.4928598, 13.6505172],
+            [100.4928555, 13.6504706],
+            [100.4928441, 13.6504171],
+            [100.4928154, 13.6503558],
+            [100.4927728, 13.6502928],
+            [100.4927307, 13.6502496],
+            [100.4926795, 13.6502107],
+            [100.4926215, 13.6501861],
+            [100.4925518, 13.6501699],
+            [100.4924879, 13.6501648],
+            [100.4924235, 13.6501745],
+            [100.4923528, 13.6501955],
+            [100.4923031, 13.6502201],
+            [100.4922436, 13.6502738],
+            [100.4921977, 13.6503211],
+            [100.4921674, 13.6503759],
+            [100.4921443, 13.6504383],
+            [100.4921364, 13.6504927],
+            [100.4921408, 13.6508822],
+            [100.4921455, 13.6512283],
+            [100.4921569, 13.651303]
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "track",
+        "nameTh": "ลู่วิ่ง",
+        "footprintBasis": "mapped",
+        "footprintSources": [
+          {
+            "kind": "osm",
+            "id": "way/663113963",
+            "version": 3,
+            "url": "https://www.openstreetmap.org/way/663113963"
+          }
+        ]
+      }
+    }
+  ]
+}

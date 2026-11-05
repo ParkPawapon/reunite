@@ -1,0 +1,62 @@
+KMUTT Bangmod Campus — educational building massing model
+Data snapshot: 2026-11-04. See kmutt-bangmod.geojson for feature-level provenance.
+
+© OpenStreetMap contributors. Open Database License (ODbL) 1.0:
+https://www.openstreetmap.org/copyright
+https://opendatacommons.org/licenses/odbl/1-0/
+
+Overture Maps Foundation, Buildings release 2026-10-21.0 (ODbL 1.0).
+Upstream footprints used in this model:
+- Microsoft Global ML Building Footprints (ODbL): https://github.com/microsoft/GlobalMLBuildingFootprints
+- Google Open Buildings (CC BY 4.0): https://sites.research.google/gr/open-buildings/
+  https://creativecommons.org/licenses/by/4.0/
+Attribution and licensing: https://docs.overturemaps.org/attribution/
+
+KMUTT Office of Building and Ground Management. Bangmod campus master plan
+for building identity and approximate outlines; the source artwork is not included.
+https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html
+KMUTT Information 2568, physical PDF pages 76–77 (inventory) and 161 (master plan).
+https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf
+
+The derived geographic data are provided under ODbL 1.0. The GLB is a produced
+work based on those data. Keep this notice and make the accompanying GeoJSON
+available when redistributing the model. No university endorsement is implied.
+
+Geometries were selected, grouped, clipped, or approximated for this study.
+Heights are model estimates. This is not a survey, construction drawing, or BIM.
+
+Detailed exterior edition
+Building materials and visible facade rhythms for all 35 campus codes were interpreted from
+KMUTT Building and Ground Management exterior photos. The KMUTT Bangmod Virtual
+Tour was consulted for supplementary exterior angles. Dimensions, elevations without
+photographs, and roofs are modeled estimates. Images remain at source.
+https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html
+https://www.kmutt.ac.th/virtual/bangmod/
+
+LX podium and roof references include the KMUTT SoA+D publication
+On Physical University, the rooftop solar study and campus photographs.
+The model uses independently drawn geometry and approximate dimensions.
+https://soad.kmutt.ac.th/wp-content/uploads/2020/09/60_25_On-Physical-University_eboook.pdf#page=66
+https://directivepublications.org/journal-of-environmental-and-sciences/analysis-of-solar-power-generation-system-for-green-building-prototype-in-king-mongkuts-university-of-technology-thonburi
+https://commons.wikimedia.org/wiki/File:KMUTT_View.jpg
+https://commons.wikimedia.org/wiki/File:KMUTT_Bangmod_4.jpg
+
+Building sign lettering was drawn from transcriptions of exterior photographs
+using Outfit and Noto Sans Thai under the SIL Open Font License 1.1.
+Source references for the signs are stored on the building nodes of the GLB.
+
+The accompanying site-context.geojson contains campus drive and path centerlines
+from OpenStreetMap (ODbL 1.0). Keep it available with the detailed GLB. Widths,
+paint markings, facade dimensions and most landscape placements are schematic.
+walking-network.json contains a filtered OpenStreetMap snapshot (ODbL 1.0)
+with way and node IDs for the walking graph, plus reviewed gate and approach
+references. Gate locations and access tags are map observations, without a field survey.
+Google Maps satellite view is linked for independent comparison on Google Maps.
+The GLB, render and geographic dataset use the independently attributed sources above.
+
+Exterior review 2026-11-05: the N7 upper-floor evidence comes from the official
+Chemistry contact page. N7/S3 height breaks, S14 barrel roof, sign dimensions,
+and entrance columns are photograph interpretations with estimated dimensions.
+The local Virtual Tour screenshot collection is a separate research reference,
+not part of the public web assets. No source-image redistribution license is claimed.
+https://chem.kmutt.ac.th/2019-09-19-03-23-40/th-contract

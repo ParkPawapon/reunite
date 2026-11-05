@@ -139,3 +139,48 @@ test('keeps a useful static server-rendered screen without JavaScript', async ({
   await expect(page.getByRole('button')).toHaveCount(0);
   await context.close();
 });
+
+test('shows the real map download state and replaces it on success or failure', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  let releaseDownload: () => void = () => {};
+  const downloadGate = new Promise<void>((resolve) => {
+    releaseDownload = resolve;
+  });
+  await page.route('**/kmutt-bangmod-web.glb', async (route) => {
+    await downloadGate;
+    await route.continue();
+  });
+  await page.goto('/research/kmutt-bangmod#place=N16');
+  await expect(page.locator('[data-render-state=plan]')).toBeVisible();
+  await expect(page.locator('[data-loading-screen]')).toHaveCount(0);
+  await page
+    .getByRole('button', { name: '3D แบบละเอียด', exact: true })
+    .click();
+  await expect(page.locator('[data-loading-screen]')).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'กำลังโหลด…' }),
+  ).toBeVisible();
+  releaseDownload();
+  await expect(page.locator('[data-render-state=ready]')).toBeVisible({
+    timeout: 60_000,
+  });
+  await expect(page.locator('[data-loading-screen]')).toHaveCount(0);
+  await page
+    .getByRole('button', { name: 'แผนที่ 2 มิติ', exact: true })
+    .click();
+  await page.unroute('**/kmutt-bangmod-web.glb');
+  await page.route('**/kmutt-bangmod-web.glb', (route) => route.abort());
+  await page
+    .getByRole('button', { name: '3D แบบละเอียด', exact: true })
+    .click();
+  await expect(page.locator('[data-render-state=unavailable]')).toBeVisible();
+  await expect(page.locator('[data-loading-screen]')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'ใช้แผนที่ 2 มิติ', exact: true }),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
+});

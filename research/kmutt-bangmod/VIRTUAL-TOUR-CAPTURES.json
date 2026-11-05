@@ -1,0 +1,1066 @@
+{
+  "source": "https://www.kmutt.ac.th/virtual/bangmod/",
+  "captureDate": "2026-11-05",
+  "publishedCameraCount": 147,
+  "registeredSets": 52,
+  "registeredFrames": 1424,
+  "distinctCameras": 49,
+  "exteriorContextCameras": 43,
+  "indoorContextCameras": [
+    33,
+    34,
+    35,
+    40,
+    41,
+    42
+  ],
+  "byteIdenticalDuplicateFrames": 0,
+  "orientation": "Relative UI drags, not surveyed azimuths. Repeated rotations and sky frames do not add building coverage.",
+  "rights": "Public university tour; image ownership retained. No redistribution or texture-use license confirmed.",
+  "excludedIncompleteSet": "P066: interrupted sweep, retained locally and excluded from totals.",
+  "sets": [
+    {
+      "station": "01-sky-view",
+      "cameraIndex": 102,
+      "mediaId": "panorama_A42F4105_B0F9_486B_41C1_12E9B28480AD",
+      "label": "Camera 102",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=102",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "02-N15-sola",
+      "cameraIndex": 90,
+      "mediaId": "panorama_3E7FB1E1_1D34_1775_41B4_BCCA317C6ECF",
+      "label": "คณะศิลปศาสตร์",
+      "subtitle": "SCHOOL OF LIBERAL ARTS",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=90",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "03-S4-engineering",
+      "cameraIndex": 90,
+      "mediaId": "panorama_3E7FB1E1_1D34_1775_41B4_BCCA317C6ECF",
+      "label": "คณะศิลปศาสตร์",
+      "subtitle": "SCHOOL OF LIBERAL ARTS",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=90",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": "SoLA camera 90; the menu category only expanded. Replaced for engineering evidence by P018."
+    },
+    {
+      "station": "04-N7-science",
+      "cameraIndex": 65,
+      "mediaId": "panorama_3E655A59_1D34_3555_41B3_8D3AD892BF9A",
+      "label": "อาคารปฏิบัติการทางวิทยาศาสตร์ ",
+      "subtitle": "SCIENCE LABORATORIES BUILDING",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=65",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "05-S9-seem",
+      "cameraIndex": 17,
+      "mediaId": "panorama_3E6A670D_1D3C_1CCD_41B8_55C0E5B0530A",
+      "label": "คณะพลังงานสิ่งแวดล้อมและวัสดุ",
+      "subtitle": "School of Energy, Environment and Materials (SEEM)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=17",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "06-S14-fiet",
+      "cameraIndex": 15,
+      "mediaId": "panorama_3E6B8CDF_1D3C_0D4D_417B_15F9127F60F0",
+      "label": "คณะครุศาสตร์อุตสาหกรรมและเทคโนโลยี  ",
+      "subtitle": "FACULTY OF INDUSTRIAL EDUCATION AND TECHNOLOGY",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=15",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": "FIET camera 15 is not proof of a facade/sign on the S14 memorial gym."
+    },
+    {
+      "station": "07-N11-sit",
+      "cameraIndex": 16,
+      "mediaId": "panorama_3E6A4BBD_1D3C_0BCD_41A7_0E23E2051F1B",
+      "label": "คณะเทคโนโลยีสารสนเทศ ",
+      "subtitle": "School of Information Technology",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=16",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "08-N19-gmi",
+      "cameraIndex": 20,
+      "mediaId": "panorama_3E6AEBB9_1D3C_0BD5_41B6_81497118EBA7",
+      "label": "บัณฑิตวิทยาลัยการจัดการและนวัตกรรม",
+      "subtitle": "GRADUATE SCHOOL OF MANAGEMENT AND INNOVATION (GMI)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=20",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "09-N9-fibo",
+      "cameraIndex": 83,
+      "mediaId": "panorama_3E6AF4F8_1D34_1D53_41A2_937952AC783A",
+      "label": "สถาบันวิทยาการหุ่นยนต์ภาคสนาม",
+      "subtitle": "INSTITUTE OF FIELD ROBOTICS",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=83",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "10-ddct",
+      "cameraIndex": 4,
+      "mediaId": "panorama_E41AA652_F971_E5F9_419F_7879B1B1E03D",
+      "label": "สวนสุขภาพ มจธ.",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=4",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": "Health Park camera 4; the DDCT category did not navigate. No DDCT exterior assertion."
+    },
+    {
+      "station": "11-S3-darun",
+      "cameraIndex": 107,
+      "mediaId": "panorama_C7CDC026_D2D5_F054_41A4_CC1322276499",
+      "label": "ดรุณสิกขาลัยโรงเรียนนวัตกรรมแห่งการเรียนรู้",
+      "subtitle": "Darunsikkhalai School for Innovative Learning",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=107",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "12-N10-library",
+      "cameraIndex": 43,
+      "mediaId": "panorama_3E6BED0C_1D34_0CB3_41B4_A9B86CDAB78B",
+      "label": "สำนักหอสมุด",
+      "subtitle": "KMUTT Library",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=43",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "13-memorial",
+      "cameraIndex": 3,
+      "mediaId": "panorama_E40B7ABE_F976_22A9_41E6_A1247D56F1EC",
+      "label": "สนามฟุตบอล",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=3",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": "Football field camera 3, not the indoor memorial gym camera 5."
+    },
+    {
+      "station": "14-N16-lx",
+      "cameraIndex": 64,
+      "mediaId": "panorama_3E64BE04_1D34_0CB3_4196_C28C1CE6D56B",
+      "label": "อาคารการเรียนรู้พหุวิทยาการ",
+      "subtitle": "LEARNING EXCHANGE",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=64",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "15-book-store",
+      "cameraIndex": 35,
+      "mediaId": "panorama_3E69090B_1D34_34B5_41B4_D9DEC1BD5361",
+      "label": "ศูนย์หนังสือพระจอมเกล้าธนบุรี",
+      "subtitle": "KMUTT BOOK STORE",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=35",
+      "frameCount": 32,
+      "use": "indoor-context-only",
+      "correction": ""
+    },
+    {
+      "station": "16-hub",
+      "cameraIndex": 34,
+      "mediaId": "panorama_3E68556F_1D34_7F4D_4195_25E68A7AA9F1",
+      "label": "ศูนย์บริการนักศึกษา อาคารสำนักงานอธิการบดี",
+      "subtitle": "THE HUB OFFICE OF THE PRESIDENT BUILDING",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=34",
+      "frameCount": 32,
+      "use": "indoor-context-only",
+      "correction": ""
+    },
+    {
+      "station": "17-stadium",
+      "cameraIndex": 3,
+      "mediaId": "panorama_E40B7ABE_F976_22A9_41E6_A1247D56F1EC",
+      "label": "สนามฟุตบอล",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=3",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "18-health-park",
+      "cameraIndex": 4,
+      "mediaId": "panorama_E41AA652_F971_E5F9_419F_7879B1B1E03D",
+      "label": "สวนสุขภาพ มจธ.",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=4",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "19-main-gate",
+      "cameraIndex": 1,
+      "mediaId": "panorama_E64F8F17_F976_2367_41C0_B595281D18C7",
+      "label": "มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี",
+      "subtitle": "KING MONGKUT'S UNIVERSITY OF TECHNOLOGY THONBURI",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=1",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "20-monument",
+      "cameraIndex": 2,
+      "mediaId": "panorama_EB5EFF08_F8B2_2369_41E6_E8865B1C7FF0",
+      "label": "พระบรมราชานุสาวรีย์พระบาทสมเด็จพระจอมเกล้าเจ้าอยู่หัว ",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=2",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "P018",
+      "cameraIndex": 18,
+      "mediaId": "panorama_3E6AE290_1D3C_35D3_41A0_383EF440B0E9",
+      "label": "คณะวิศวกรรมศาสตร์",
+      "subtitle": "FACULTY FO ENGINEERING",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=18",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "P024",
+      "cameraIndex": 24,
+      "mediaId": "panorama_3E691856_1D3C_155F_41BB_EB150F64E1E1",
+      "label": "พื้นที่วิจัยดาดฟ้าตึกกลม ชั้น 6",
+      "subtitle": "คณะพลังงานสิ่งแวดล้อมและวัสดุ",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=24",
+      "frameCount": 32,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q066",
+      "cameraIndex": 66,
+      "mediaId": "panorama_3E65D5D9_1D34_1F55_4186_E07028879FC8",
+      "label": "อุทยานการเรียนรู้",
+      "subtitle": "Learning Garden (LG)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=66",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q067",
+      "cameraIndex": 67,
+      "mediaId": "panorama_3E628D49_1D34_0CB5_41BC_9DC268C1263A",
+      "label": "อุทยานการเรียนรู้",
+      "subtitle": "Learning Garden (LG)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=67",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q068",
+      "cameraIndex": 68,
+      "mediaId": "panorama_3E62C92D_1D34_14CD_41B0_C441F7C258DB",
+      "label": "อุทยานการเรียนรู้",
+      "subtitle": "Learning Garden (LG)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=68",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q069",
+      "cameraIndex": 69,
+      "mediaId": "panorama_3E62C4AE_1D34_3DCF_41AC_70A534CED945",
+      "label": "อุทยานการเรียนรู้",
+      "subtitle": "Learning Garden (LG)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=69",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q070",
+      "cameraIndex": 70,
+      "mediaId": "panorama_3E620FF5_1D34_0B5D_4191_974BF28580E1",
+      "label": "อุทยานการเรียนรู้",
+      "subtitle": "Learning Garden (LG)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=70",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q071",
+      "cameraIndex": 71,
+      "mediaId": "panorama_3E620B32_1D34_14D7_4196_EB1DBB3E6A8D",
+      "label": "อุทยานการเรียนรู้",
+      "subtitle": "Learning Garden (LG)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=71",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q072",
+      "cameraIndex": 72,
+      "mediaId": "panorama_3E63D6C1_1D34_7DB5_41A3_4B89599A3DE8",
+      "label": "อุทยานการเรียนรู้",
+      "subtitle": "Learning Garden (LG)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=72",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q103",
+      "cameraIndex": 103,
+      "mediaId": "panorama_A404A66C_B0F9_C8B9_41BF_8E9DB09B14D2",
+      "label": "Camera 103",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=103",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q104",
+      "cameraIndex": 104,
+      "mediaId": "panorama_A5F3669D_B0F9_499B_41D3_AD3686E6976C",
+      "label": "Camera 104",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=104",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q105",
+      "cameraIndex": 105,
+      "mediaId": "panorama_A44D1A9D_B0F8_F99B_41E4_AA65A614016B",
+      "label": "Camera 105",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=105",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q106",
+      "cameraIndex": 106,
+      "mediaId": "panorama_A44D736F_B0FB_48B7_41C9_ED02307BD3C5",
+      "label": "Camera 106",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=106",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q108",
+      "cameraIndex": 108,
+      "mediaId": "panorama_C1152E0B_D2D5_F05C_41DD_399FA5C41FDA",
+      "label": "ดรุณสิกขาลัยโรงเรียนนวัตกรรมแห่งการเรียนรู้",
+      "subtitle": "Darunsikkhalai School for Innovative Learning",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=108",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q109",
+      "cameraIndex": 109,
+      "mediaId": "panorama_C117BB47_D2D5_D0D4_41C5_C685943C2BF7",
+      "label": "ทางขึ้นอาคารโรงเรียน",
+      "subtitle": "Entrance",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=109",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q110",
+      "cameraIndex": 110,
+      "mediaId": "panorama_C116980C_D2D5_3054_41E6_FDB62C14AC24",
+      "label": "ทางขึ้นอาคารโรงเรียน",
+      "subtitle": "Entrance",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=110",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q111",
+      "cameraIndex": 111,
+      "mediaId": "panorama_C1169503_D2D5_504C_41C4_C18BFB1F32B2",
+      "label": "ฟาร์มอัจฉริยะบนชั้นดาดฟ้า ",
+      "subtitle": "Smart Farm on The Top Floor",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=111",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q112",
+      "cameraIndex": 112,
+      "mediaId": "panorama_C116C175_D2D5_70B4_41E2_F12E4067E8A8",
+      "label": "ฟาร์มอัจฉริยะบนชั้นดาดฟ้า",
+      "subtitle": "Smart Farm on The Top Floor",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=112",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q113",
+      "cameraIndex": 113,
+      "mediaId": "panorama_C116CE8D_D2D5_7054_41E3_91BCCE50EB24",
+      "label": "ฟาร์มอัจฉริยะบนชั้นดาดฟ้า",
+      "subtitle": "Smart Farm on The Top Floor",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=113",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q114",
+      "cameraIndex": 114,
+      "mediaId": "panorama_C1164BA1_D2D5_504C_41E1_79AE03F4B6BD",
+      "label": "ฟาร์มอัจฉริยะบนชั้นดาดฟ้า",
+      "subtitle": "Smart Farm on The Top Floor",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=114",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q115",
+      "cameraIndex": 115,
+      "mediaId": "panorama_C115996A_D2D5_30DC_419F_138D23F31AE3",
+      "label": "ฟาร์มอัจฉริยะบนชั้นดาดฟ้า ",
+      "subtitle": "Smart Farm on The Top Floor",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=115",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q116",
+      "cameraIndex": 116,
+      "mediaId": "panorama_C115E640_D2D4_D0CC_41E1_869F0423A792",
+      "label": "ฟาร์มอัจฉริยะบนชั้นดาดฟ้า",
+      "subtitle": "Smart Farm on The Top Floor",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=116",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q117",
+      "cameraIndex": 117,
+      "mediaId": "panorama_C115C2E3_D2D4_F1CC_41E3_80ECE33D7C66",
+      "label": "ฟาร์มอัจฉริยะบนชั้นดาดฟ้า",
+      "subtitle": "Smart Farm on The Top Floor",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=117",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q119",
+      "cameraIndex": 119,
+      "mediaId": "panorama_C113351C_D2D3_5074_41C8_516043CE5697",
+      "label": "ลานกิจกรรม ชั้น 1",
+      "subtitle": "Activity Ground",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=119",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q120",
+      "cameraIndex": 120,
+      "mediaId": "panorama_C1138123_D2D3_704C_41D0_760DE8FC6F5E",
+      "label": "ลานกิจกรรม ชั้น 1",
+      "subtitle": "Activity Ground",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=120",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q121",
+      "cameraIndex": 121,
+      "mediaId": "panorama_C113ED4B_D2D3_70DC_41C8_127DE0FCF027",
+      "label": "ลานกิจกรรม ชั้น 1",
+      "subtitle": "Activity Ground",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=121",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q122",
+      "cameraIndex": 122,
+      "mediaId": "panorama_C10C19A6_D2D3_5054_41DB_2B91557F0CC9",
+      "label": "ลานกิจกรรม ชั้น 1",
+      "subtitle": "Activity Ground",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=122",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q123",
+      "cameraIndex": 123,
+      "mediaId": "panorama_C10C6634_D2D3_30B4_41E8_66287258A05A",
+      "label": "สนามฟุตซอล ชั้น 5",
+      "subtitle": "futsal field 5fl",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=123",
+      "frameCount": 24,
+      "use": "exterior-roof-aerial-context",
+      "correction": ""
+    },
+    {
+      "station": "Q033",
+      "cameraIndex": 33,
+      "mediaId": "panorama_3E6FD736_1D34_1CDF_4195_701010CFEDFC",
+      "label": "โรงประลองเทคโนโลยีวัสดุ อาคารวิจัยและพัฒนาเทคโนโลยีวัสดุ คณะพลังงานสิ่งแวดล้อมและวัสดุ",
+      "subtitle": "",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=33",
+      "frameCount": 24,
+      "use": "indoor-context-only",
+      "correction": ""
+    },
+    {
+      "station": "Q040",
+      "cameraIndex": 40,
+      "mediaId": "panorama_3E6B7065_1D3C_357D_4184_7F8BF628C480",
+      "label": " ชมรมฟอร์มูล่า ",
+      "subtitle": "KMUTT FORMULA STUDENT",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=40",
+      "frameCount": 24,
+      "use": "indoor-context-only",
+      "correction": ""
+    },
+    {
+      "station": "Q041",
+      "cameraIndex": 41,
+      "mediaId": "panorama_3E6AD693_1D34_7DD5_4195_55FD0502CBA5",
+      "label": "สถานีเก็บจ่ายเชื้อเพลิง ED95 โครงการสาธิตการใช้รถไฟฟ้าโดยสารขนาดใหญ่ที่ใช้เอทานอลเป็นเชื้อเพลิง",
+      "subtitle": "(Demonstration of Thailand’s First Ethanal Bus)   Combustion and Energy Research Laboratory (CERL)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=41",
+      "frameCount": 24,
+      "use": "indoor-context-only",
+      "correction": ""
+    },
+    {
+      "station": "Q042",
+      "cameraIndex": 42,
+      "mediaId": "panorama_3E6967FE_1D34_1B4F_41B6_D5D1EDB42FAF",
+      "label": "สถานีเก็บจ่ายเชื้อเพลิง ED95 โครงการสาธิตการใช้รถไฟฟ้าโดยสารขนาดใหญ่ที่ใช้เอทานอลเป็นเชื้อเพลิง ",
+      "subtitle": "(Demonstration of Thailand’s First Ethanal Bus)   Combustion and Energy Research Laboratory (CERL)",
+      "source": "https://www.kmutt.ac.th/virtual/bangmod/#media-index=42",
+      "frameCount": 24,
+      "use": "indoor-context-only",
+      "correction": ""
+    }
+  ],
+  "buildingReferenceCoverage": [
+    {
+      "featureId": "N1",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N1.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N2",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N2.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N3",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N3.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N4",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N4.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N5",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N5.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N6",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N6.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N7",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N7.html",
+      "contextCameras": [
+        65,
+        104
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N8",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N8.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N9",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N9.html",
+      "contextCameras": [
+        83
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N10",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N10.html",
+      "contextCameras": [
+        43
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N11",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N11.html",
+      "contextCameras": [
+        16
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N12",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N12.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N13",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N13.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N14",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N14.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N15",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N15.html",
+      "contextCameras": [
+        90
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N16",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N16.html",
+      "contextCameras": [
+        64
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N17",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N17.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N18",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N18.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N19",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N19.html",
+      "contextCameras": [
+        20
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "N20",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/N20.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S1",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S1.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S2-parking",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S2.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S2-seminar",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S2.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S3",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S3.html",
+      "contextCameras": [
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        119,
+        120,
+        121,
+        122,
+        123
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S4-3-floors",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S4.html",
+      "contextCameras": [
+        18
+      ],
+      "scope": "Complex/neighboring context only; not every elevation or each S4 block is visible.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S4-4-floors",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S4.html",
+      "contextCameras": [
+        18
+      ],
+      "scope": "Complex/neighboring context only; not every elevation or each S4 block is visible.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S4-8-floors",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S4.html",
+      "contextCameras": [
+        18
+      ],
+      "scope": "Complex/neighboring context only; not every elevation or each S4 block is visible.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S4-11-floors",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S4.html",
+      "contextCameras": [
+        18
+      ],
+      "scope": "Complex/neighboring context only; not every elevation or each S4 block is visible.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S5",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S5.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S6",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S6.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S7",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S7.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S8",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S8.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S9",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S9.html",
+      "contextCameras": [
+        17,
+        24
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S10",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S10.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S11",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S11.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S12",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S12.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S13",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S13.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S14",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S14.html",
+      "contextCameras": [
+        3,
+        105
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    },
+    {
+      "featureId": "S15",
+      "atlasSource": "https://bgm.kmutt.ac.th/MapNavi/S15.html",
+      "contextCameras": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "scope": "Visible portions only; no four-elevation coverage certification.",
+      "dimensions": "not-surveyed"
+    }
+  ]
+}
