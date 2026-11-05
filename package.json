@@ -26,7 +26,9 @@
     "db:create-user": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/create-user.ts",
     "db:cleanup-auth": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/cleanup-auth.ts",
     "env:setup": "node scripts/setup-env.mjs",
-    "env:check": "node --env-file-if-exists=.env --conditions=react-server --import tsx scripts/check-env.ts"
+    "env:check": "node --env-file-if-exists=.env --conditions=react-server --import tsx scripts/check-env.ts",
+    "design:tokens": "node scripts/design-tokens.mjs",
+    "design:tokens:check": "node scripts/design-tokens.mjs --check"
   },
   "devDependencies": {
     "@campus/database": "workspace:*",

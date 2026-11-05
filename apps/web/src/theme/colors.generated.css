@@ -1,0 +1,46 @@
+/* Generated from colors.json by scripts/design-tokens.mjs. */
+:root {
+  --color-brand-orange: #fa4616;
+  --color-brand-yellow: #ffc72c;
+  --color-brand-blue-grey: #7b8189;
+  --color-brand-logo-orange: #e74011;
+  --color-orange-50: #fff3ed;
+  --color-orange-100: #ffe4d6;
+  --color-orange-200: #ffc8af;
+  --color-orange-300: #ffa17f;
+  --color-orange-400: #ff7447;
+  --color-orange-500: #fa4616;
+  --color-orange-600: #c83a13;
+  --color-orange-700: #a32e10;
+  --color-orange-800: #822910;
+  --color-orange-900: #682511;
+  --color-orange-950: #391309;
+  --color-neutral-white: #ffffff;
+  --color-neutral-page: #f8f9fa;
+  --color-neutral-ink: #212529;
+  --color-neutral-muted: #58616b;
+  --color-neutral-border: #dde1e5;
+  --color-status-success-light: #166534;
+  --color-status-success-dark: #86efac;
+  --color-status-warning-light: #92400e;
+  --color-status-warning-dark: #fcd34d;
+  --color-status-danger-light: #b42318;
+  --color-status-danger-dark: #fda4af;
+  --color-status-information-light: #1d4ed8;
+  --color-status-information-dark: #93c5fd;
+  --color-background: var(--color-neutral-page);
+  --color-surface: var(--color-neutral-white);
+  --color-text: var(--color-neutral-ink);
+  --color-text-muted: var(--color-neutral-muted);
+  --color-border: var(--color-neutral-border);
+  --color-action-primary: var(--color-orange-600);
+  --color-action-hover: var(--color-orange-700);
+  --color-on-action: var(--color-neutral-white);
+  --color-action-secondary: var(--color-brand-yellow);
+  --color-on-secondary: var(--color-neutral-ink);
+  --color-focus: var(--color-orange-600);
+  --color-success: var(--color-status-success-light);
+  --color-warning: var(--color-status-warning-light);
+  --color-danger: var(--color-status-danger-light);
+  --color-information: var(--color-status-information-light);
+}

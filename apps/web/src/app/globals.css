@@ -1,10 +1,14 @@
 @layer theme, base, mui, components, utilities;
 @import 'tailwindcss';
 @import '../theme/tokens.css';
+@import '../theme/colors.generated.css';
 
 @theme inline {
   --font-sans:
     var(--font-outfit), var(--font-noto-sans-thai), Arial, sans-serif;
+  --color-primary: var(--color-action-primary);
+  --color-primary-hover: var(--color-action-hover);
+  --color-page: var(--color-background);
   --text-display: var(--type-display-size);
   --text-display--line-height: var(--type-display-line);
   --text-display--font-weight: var(--type-display-weight);
@@ -41,6 +45,8 @@
 }
 @layer base {
   body {
+    color: var(--color-text);
+    background: var(--color-background);
     font-family: var(--font-sans);
     font-size: var(--type-body-size);
     line-height: var(--type-body-line);
