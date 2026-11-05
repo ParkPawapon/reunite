@@ -1,8 +1,35 @@
 'use client';
 import { createTheme } from '@mui/material/styles';
 import { fontFamily, textToken } from './typography';
+import { colorPrimitives, semanticColor } from './colors';
 
 export const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: semanticColor('action-primary'),
+      dark: semanticColor('action-hover'),
+      light: colorPrimitives['orange-400'],
+      contrastText: semanticColor('on-action'),
+    },
+    secondary: {
+      main: semanticColor('action-secondary'),
+      contrastText: semanticColor('on-secondary'),
+    },
+    background: {
+      default: semanticColor('background'),
+      paper: semanticColor('surface'),
+    },
+    text: {
+      primary: semanticColor('text'),
+      secondary: semanticColor('text-muted'),
+    },
+    divider: semanticColor('border'),
+    success: { main: semanticColor('success') },
+    warning: { main: semanticColor('warning') },
+    error: { main: semanticColor('danger') },
+    info: { main: semanticColor('information') },
+  },
   typography: {
     fontFamily,
     fontWeightLight: 400,

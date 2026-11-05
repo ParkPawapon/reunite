@@ -12,6 +12,9 @@
 **/id_rsa
 **/*.pdf
 tmp
+.superdesign
+playwright-report
+test-results
 coverage
 *.log
 CODEX_LOST_FOUND_MONOREPO_MASTER_PROMPT.md
