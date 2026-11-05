@@ -186,6 +186,47 @@ test('recovers from a failed login-form chunk with a working reload action', asy
   expect(errors).toEqual([]);
 });
 
+test('offers a working reload when the login-form download stalls', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const pattern = formChunkPattern();
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let pending: Promise<void> | undefined;
+  await page.route(pattern, async (route) => {
+    pending = gate.then(() => route.abort());
+    await pending;
+  });
+  try {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-login-skeleton]')).toBeVisible();
+    // Use real time here: the pending request must outlive the welcome screen.
+    await page.waitForTimeout(2000);
+    await expect(page.locator('[data-login-skeleton]')).toBeVisible();
+    await expect(page.locator('[data-login-screen]')).toHaveCount(0);
+    await expect(page.locator('[data-login-load-error]')).toBeVisible({
+      timeout: 18_000,
+    });
+    await expect(page.locator('input')).toHaveCount(0);
+    release();
+    await pending;
+    await page.unroute(pattern);
+    await page
+      .getByRole('button', { name: 'ลองโหลดใหม่', exact: true })
+      .click();
+    await expect(page.locator('[data-login-screen]')).toBeVisible();
+    await expect(page.getByLabel('อีเมล', { exact: true })).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    release();
+    await pending;
+  }
+});
+
 test('validates locally, supports password visibility and closes the goose eye', async ({
   page,
 }) => {
