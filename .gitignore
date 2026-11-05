@@ -2,12 +2,16 @@ node_modules/
 .next/
 next-env.d.ts
 coverage/
+playwright-report/
+test-results/
 *.tsbuildinfo
+__pycache__/
 .env
 .env.*
 !.env.example
 !.env.local.example
 tmp/
+/.superdesign/
 *.log
 .DS_Store
 

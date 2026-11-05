@@ -51,11 +51,16 @@ jobs:
       - run: bun run db:migrate:status
       - run: bun run db:cleanup-auth
       - run: bun run format:check
+      - run: bun run design:tokens:check
+      - run: bun run design:mascot:check
       - run: bun run lint
       - run: bun run typecheck
       - run: bun run test:unit
       - run: bun run test:integration
       - run: bun run build
+      - name: Install browser for login and loading-screen checks
+        run: bunx playwright install --with-deps chromium
+      - run: bun run test:browser
       - name: Build container
         run: docker build -f infra/docker/Dockerfile -t campus-foundation:ci .
       - name: Verify non-root container liveness and database readiness

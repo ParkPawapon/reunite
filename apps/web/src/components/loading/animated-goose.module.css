@@ -1,0 +1,22 @@
+.scope {
+  display: contents;
+}
+.art [data-honk-part] {
+  transform-box: fill-box;
+}
+.art [data-honk-part='lookout'] {
+  transform-origin: 36% 97%;
+}
+.art [data-honk-part='goose-body'] {
+  transform-origin: 50% 92%;
+}
+.art [data-honk-part='eye'],
+.art [data-honk-part='ground-shadow'] {
+  transform-origin: center;
+}
+.art [data-honk-part='left-foot'] {
+  transform-origin: 50% 10%;
+}
+.scope[data-private='true'] [data-honk-part='eye'] {
+  transform: scaleY(0.08) !important;
+}

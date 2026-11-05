@@ -11,18 +11,20 @@
   "dependencies": {
     "@campus/database": "workspace:*",
     "@campus/shared": "workspace:*",
+    "@emotion/cache": "11.14.0",
+    "@emotion/react": "11.14.0",
+    "@emotion/server": "11.11.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/material": "9.5.0",
+    "@mui/material-nextjs": "9.5.0",
+    "@tailwindcss/postcss": "4.3.4",
+    "motion": "14.9.1",
     "next": "16.4.5",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "@mui/material": "9.5.0",
-    "@mui/material-nextjs": "9.5.0",
-    "@emotion/react": "11.14.0",
-    "@emotion/styled": "11.14.1",
-    "@emotion/cache": "11.14.0",
-    "@emotion/server": "11.11.0",
+    "server-only": "0.0.1",
     "tailwindcss": "4.3.4",
-    "@tailwindcss/postcss": "4.3.4",
-    "zod": "4.6.7",
-    "server-only": "0.0.1"
-  }
+    "zod": "4.6.7"
+  },
+  "devDependencies": {}
 }

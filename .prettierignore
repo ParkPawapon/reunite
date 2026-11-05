@@ -2,7 +2,13 @@ node_modules
 .next
 bun.lock
 tmp
+.superdesign/tmp
 coverage
+playwright-report
+test-results
 CODEX_LOST_FOUND_MONOREPO_MASTER_PROMPT.md
 *.pdf
 next-env.d.ts
+apps/web/src/app/research/kmutt-bangmod/catalog.generated.json
+apps/web/src/app/research/kmutt-bangmod/anchors.generated.json
+research/kmutt-bangmod/VIRTUAL-TOUR-CAPTURES.json
