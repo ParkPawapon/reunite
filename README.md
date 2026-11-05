@@ -14,7 +14,7 @@ bun run db:migrate
 bun run dev
 ```
 
-Open <http://localhost:3000>. The root redirects to `/login`, shows the Agent Honk intro for two seconds, then reveals the email/password form connected to the existing session API. See [Login design and verification](docs/design/login.md). `GET /api/v1/health/live` checks the process; `/api/v1/health/ready` checks PostgreSQL. Catalogs are initially empty: no campus locations or production categories have been invented.
+Open <http://localhost:3000>. The root redirects to `/login`, shows a 1.3-second welcome sequence with Agent Honk and a matching form skeleton, then reveals the email/password form connected to the existing session API. The skeleton also covers the real form-chunk download on slower networks. See [Login design and verification](docs/design/login.md). `GET /api/v1/health/live` checks the process; `/api/v1/health/ready` checks PostgreSQL. Catalogs are initially empty: no campus locations or production categories have been invented.
 
 The [BE002/BE003 assignment starter](docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md) intentionally leaves `GET /api/v1/categories` and `GET /api/v1/locations` unimplemented (501) for two teammates. Existing tests and repository checks stay enabled. The catalog assertions verify the explicit 501 responses and service placeholders; the integrator must restore real-data 200 assertions as each assignment is completed.
 
