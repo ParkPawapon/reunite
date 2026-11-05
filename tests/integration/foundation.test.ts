@@ -274,15 +274,42 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     expect((await json(me)).data.userId).toBe(userId);
     expect((await apiHandlers.me(request('auth/me'))).status).toBe(401);
   });
-  it('lists catalogs deterministically and rejects unauthenticated/cross-origin writes', async () => {
-    const categories = await apiHandlers.categories(request('categories'));
-    expect(await categories.json()).toEqual({
-      data: [{ categoryId, categoryName: 'Test only หมวดหมู่' }],
-      meta: { limit: 20, offset: 0 },
-    });
-    expect((await apiHandlers.locations(request('locations'))).status).toBe(
-      200,
-    );
+  it('exposes explicit catalog handoffs and rejects unauthenticated/cross-origin writes', async () => {
+    for (const [path, handler, task, service] of [
+      [
+        'categories',
+        apiHandlers.categories,
+        'BE002',
+        createServices(pool).categories,
+      ],
+      [
+        'locations',
+        apiHandlers.locations,
+        'BE003',
+        createServices(pool).locations,
+      ],
+    ] as const) {
+      const response = await handler(request(path));
+      const requestId = response.headers.get('X-Request-Id');
+      expect(response.status).toBe(501);
+      expect(requestId).toMatch(
+        /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/,
+      );
+      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      expect(await response.json()).toEqual({
+        error: {
+          code: 'NOT_IMPLEMENTED',
+          message: `${task} is awaiting implementation`,
+          requestId,
+        },
+      });
+      await expect(
+        service.list({ limit: 20, offset: 0 }),
+      ).rejects.toMatchObject({
+        code: 'NOT_IMPLEMENTED',
+        status: 501,
+      });
+    }
     expect(
       (await apiHandlers.createReport(request('item-reports', 'POST', {})))
         .status,
