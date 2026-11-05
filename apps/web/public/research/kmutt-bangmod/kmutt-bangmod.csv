@@ -1,0 +1,40 @@
+﻿featureId,code,nameTh,nameEn,part,footprintAreaM2,footprintBasis,footprintNote,heightM,heightBasis,floorCount,floorHeightM,heightSource,footprintSources
+N1,N1,อาคารศูนย์ต้อนรับ,Welcome Center,,508.3,mapped,,8,assumed,,,,https://explore.overturemaps.org/#map=18/13.65145/100.49385
+N2,N2,อาคารสำนักงานอธิการบดี,Office of the President,,1381.4,mapped,,32.4,at-least-levels,9,3.6,https://hrd.kmutt.ac.th/wp-content/uploads/2024/04/HRD-KMUTT-Anual-Report-2558_1585813300604.pdf#page=19,https://www.openstreetmap.org/way/420327738
+N3,N3,อาคารภาควิชาเคมี,Chemistry,,1549.4,mapped,,11,assumed,,,,https://www.openstreetmap.org/way/436983064
+N4,N4,อาคารภาควิชาฟิสิกส์–คณิตศาสตร์,Physics and Mathematics,,1777.5,mapped,,14.4,mapped-levels,4,3.6,https://www.openstreetmap.org/way/436983063,https://www.openstreetmap.org/way/436983063
+N5,N5,อาคารศูนย์เครื่องมือวิทยาศาสตร์เพื่อมาตรฐานและอุตสาหกรรม,Scientific Instrument Center,,649.5,plan-approximation,,15,assumed,,,,https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html
+N6,N6,อาคารภาควิชาจุลชีววิทยา,Microbiology,,884.2,plan-approximation,,18,assumed,,,,https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html | https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html
+N7,N7,อาคารปฏิบัติการพื้นฐานทางวิทยาศาสตร์,Fundamental Science Laboratory,,4313.2,mapped,,36.0,at-least-levels,10,3.6,https://chem.kmutt.ac.th/2019-09-19-03-23-40/th-contract,https://www.openstreetmap.org/way/420302821 | https://www.openstreetmap.org/way/420302823 | https://www.openstreetmap.org/way/420327849
+N8,N8,สถานีสูบน้ำ,Water Pump Station,,148.3,mapped,,5,assumed,,,,https://www.openstreetmap.org/way/420303666
+N9,N9,อาคารสถาบันวิทยาการหุ่นยนต์ภาคสนาม,Institute of Field Robotics (FIBO),,1078.5,mapped,,28.8,at-least-levels,8,3.6,https://fibo.kmutt.ac.th/about/new-building/,https://www.openstreetmap.org/way/346450376
+N10,N10,อาคารสำนักหอสมุด,KMUTT Library,,3328.2,mapped,,21.6,at-least-levels,6,3.6,https://cc.kmutt.ac.th/KMUTT-AIS.html,https://www.openstreetmap.org/way/311879209
+N11,N11,อาคารคณะเทคโนโลยีสารสนเทศ,School of Information Technology,,1379.8,mapped,,18.0,published-levels,5,3.6,https://www.sit.kmutt.ac.th/wp-content/uploads/2025/02/SIT_Annual-report-2024_14-02-2568_compressed.pdf#page=131,https://www.openstreetmap.org/way/224982053
+N12,N12,อาคารอเนกประสงค์,Utility Exchange (UX),,467.9,plan-approximation,Base geometry adjusted to remove the overlap with N13.,25.2,at-least-levels,7,3.6,https://www.kmutt.ac.th/event/07/04/2026/104570/,https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html
+N13,N13,อาคาร Workshop และเรือนกระจก,Workshop and Greenhouse,,479.9,mapped,,6,assumed,,,,https://www.openstreetmap.org/way/1333533936
+N14,N14,อาคารไฟฟ้าแรงสูง,High Voltage Laboratory,,372.8,mapped,,5,assumed,,,,https://www.openstreetmap.org/way/1333533937
+N15,N15,อาคารเรียนและปฏิบัติการทางศิลปศาสตร์,School of Liberal Arts,,1247.0,mapped,,32.4,at-least-levels,9,3.6,https://hrd.kmutt.ac.th/wp-content/uploads/2024/04/HRD-KMUTT-Anual-Report-2558_1585813300604.pdf#page=18,https://www.openstreetmap.org/way/420534007
+N16,N16,อาคารการเรียนรู้พหุวิทยาการ,Learning Exchange (LX),,3527.3,mapped,,54.0,published-levels,15,3.6,https://www.lib.kmutt.ac.th/lx-building/,https://www.openstreetmap.org/way/1333533935
+N17,N17,อาคารเรียนรวม 2,Classroom Building 2,,3152.6,mapped,,21.6,mapped-levels,6,3.6,https://www.openstreetmap.org/way/420534143,https://www.openstreetmap.org/way/420534143
+N18,N18,อาคารปฏิบัติการวิศวกรรมการผลิต 4,Production Engineering Laboratory 4,,1154.4,mapped,,6,assumed,,,,https://explore.overturemaps.org/#map=18/13.65145/100.49385
+N19,N19,อาคารปฏิบัติการวิศวกรรมการผลิต 5,Production Engineering Laboratory 5,,628.4,mapped,,17,assumed,,,,https://explore.overturemaps.org/#map=18/13.65145/100.49385
+N20,N20,อาคารเรียนรวม 1,Classroom Building 1,,1274.3,mapped,,18.0,mapped-levels,5,3.6,https://www.openstreetmap.org/way/436983061,https://www.openstreetmap.org/way/436983061
+S1,S1,อาคารวิศวกรรมเครื่องกล 4,Mechanical Engineering Building 4,,487.4,mapped,,8,assumed,,,,https://explore.overturemaps.org/#map=18/13.65145/100.49385
+S2-parking,S2,อาคารจอดรถ,Parking Building,parking,1341.9,mapped,,43.4,published-levels,14,3.1,https://bgm.kmutt.ac.th/parking/,https://www.openstreetmap.org/way/378153794
+S2-seminar,S2,อาคารสัมมนา,Seminar Building,seminar,615.2,mapped,,11,assumed,,,,https://www.openstreetmap.org/way/663430214
+S3,S3,อาคารสถาบันนวัตกรรมการเรียนรู้เฉลิมพระเกียรติ 80 พรรษา,Innovation Learning Institute (Darunsikkhalai),,819.1,mapped,,50.4,mapped-levels,14,3.6,https://www.openstreetmap.org/relation/9183623,https://www.openstreetmap.org/relation/9183623
+S4-3-floors,S4,อาคารวิศววัฒนะ 3 ชั้น,Wissawa Wattana – 3 floors,3-floors,900.3,mapped,,10.8,published-levels,3,3.6,https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf#page=77,https://www.openstreetmap.org/way/420299241
+S4-4-floors,S4,อาคารวิศววัฒนะ 4 ชั้น,Wissawa Wattana – 4 floors,4-floors,1422.7,mapped,,14.4,published-levels,4,3.6,https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf#page=77,https://www.openstreetmap.org/way/420044930
+S4-8-floors,S4,อาคารวิศววัฒนะ 8 ชั้น,Wissawa Wattana – 8 floors,8-floors,1416.9,mapped,,28.8,published-levels,8,3.6,https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf#page=77,https://www.openstreetmap.org/way/420044929
+S4-11-floors,S4,อาคารวิศววัฒนะ 11 ชั้น,Wissawa Wattana – 11 floors,11-floors,2149.6,mapped,,39.6,published-levels,11,3.6,https://www.kmutt.ac.th/wp-content/uploads/pdf/publications/information-2568-Web.pdf#page=77,https://www.openstreetmap.org/way/420044928
+S5,S5,บ้านธรรมรักษา 2,Dhammaraksa Residence Hall 2,,984.1,mapped,,32.0,mapped-levels,10,3.2,https://www.openstreetmap.org/way/420045662,https://www.openstreetmap.org/way/420045662
+S6,S6,บ้านธรรมรักษา 1,Dhammaraksa Residence Hall 1,,1881.7,mapped,,35.2,mapped-levels,11,3.2,https://www.openstreetmap.org/way/420051710,https://www.openstreetmap.org/way/420051710
+S7,S7,อาคารพัฒนาเด็กเล็ก มจธ.,KMUTT Child Development Building,,700.6,mapped,,5,assumed,,,,https://www.openstreetmap.org/way/436983066
+S8,S8,อาคารวิจัยและพัฒนาเทคโนโลยีวัสดุ,Materials Technology Research and Development,,537.0,plan-approximation,,19,assumed,,,,https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html
+S9,S9,อาคารเรียนและปฏิบัติการคณะพลังงาน สิ่งแวดล้อมและวัสดุ,"Energy, Environment and Materials",,2995.7,mapped,Base geometry adjusted to remove the overlap with S8.,18,at-least-levels,5,3.6,https://p-prof.kmutt.ac.th/Meeting%20Conclusion/Meeting%20report%20P-PROF_2010_4%20%28July%29.pdf#page=1,https://www.openstreetmap.org/way/651713745
+S10,S10,อาคารสังคมสีเขียว มจธ.,Green Society Building,,583.5,mapped,,4,assumed,,,,https://www.openstreetmap.org/way/1333533934
+S11,S11,อาคารเรียนรวม 5,Classroom Building 5 (CB5),,3019.0,mapped,,36.0,at-least-levels,10,3.6,https://steco.kmutt.ac.th/contact-us/,https://www.openstreetmap.org/way/420533543
+S12,S12,อาคารเรียนรวม 4,Classroom Building 4,,2473.5,mapped,,36.0,at-least-levels,10,3.6,https://www.kmutt.ac.th/procurement/kmutt_procurement/%E0%B8%AA%E0%B8%B3%E0%B8%99%E0%B8%B1%E0%B8%81%E0%B8%87%E0%B8%B2%E0%B8%99%E0%B8%88%E0%B8%B1%E0%B8%94%E0%B8%AB%E0%B8%B2%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B8%88%E0%B8%B1%E0%B8%94%E0%B8%81%E0%B8%B2-1400/?cate=cost-estimate,https://www.openstreetmap.org/way/420534334
+S13,S13,อาคารเรียนรวม 3,Classroom Building 3,,3151.2,mapped,,28.8,at-least-levels,8,3.6,https://c3.kmutt.ac.th/lab/22,https://www.openstreetmap.org/way/420534582 | https://www.openstreetmap.org/way/420534581
+S14,S14,อาคารพระจอมเกล้าราชานุสรณ์ 190 ปี,King Mongkut 190th Anniversary Memorial,,4392.5,mapped,,13.0,at-least-levels,3,4.333333333333333,https://megajob.kmutt.ac.th/,https://www.openstreetmap.org/way/346449664
+S15,S15,อาคารภาควิชาวิศวกรรมเคมี,Chemical Engineering,,3594.6,mapped,,13,assumed,,,,https://www.openstreetmap.org/way/436983067
