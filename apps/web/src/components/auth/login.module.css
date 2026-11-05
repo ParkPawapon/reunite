@@ -1,7 +1,7 @@
 .page {
   min-height: 100svh;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(27rem, 0.92fr);
+  grid-template-columns: minmax(0, 1.02fr) minmax(27rem, 1fr);
   padding: 1.25rem;
   background: var(--color-surface);
   color: var(--color-text);
@@ -45,7 +45,7 @@
 .storyCopy {
   position: relative;
   z-index: 1;
-  margin-top: clamp(3rem, 7vh, 5.25rem);
+  margin-top: clamp(3rem, 6vh, 4.5rem);
 }
 .eyebrow {
   color: var(--color-orange-800);
@@ -54,7 +54,7 @@
 }
 .storyCopy h2 {
   margin: 0;
-  font-size: clamp(2.5rem, 3.8vw, 3.75rem);
+  font-size: clamp(2.5rem, 3.9vw, 3.6rem);
   font-weight: 600;
   line-height: 1.3;
   color: var(--color-orange-900);
@@ -78,7 +78,7 @@
 .goose {
   position: relative;
   z-index: 1;
-  width: min(100%, 20.5rem);
+  width: min(100%, 21.5rem);
   height: auto;
   display: block;
   overflow: visible;
@@ -86,13 +86,13 @@
 }
 .orbit {
   position: absolute;
-  width: 17.5rem;
+  width: 21rem;
   aspect-ratio: 1;
-  border-radius: 50%;
+  border-radius: 46% 48% 36% 38%;
   background: var(--color-orange-100);
-  top: 44%;
-  left: 51%;
-  transform: translate(-50%, -50%);
+  top: 48%;
+  left: 53%;
+  transform: translate(-50%, -50%) rotate(-7deg);
 }
 .trail {
   position: absolute;
@@ -107,8 +107,32 @@
   width: 4.5rem;
   height: auto;
   left: 3%;
-  top: 53%;
+  top: 40%;
   transform: rotate(-14deg);
+  animation: clueFloat 5.6s ease-in-out infinite;
+}
+.viewfinder {
+  position: absolute;
+  width: min(100%, 26rem);
+  height: auto;
+  left: 52%;
+  top: 48%;
+  transform: translate(-50%, -50%) rotate(-7deg);
+  color: var(--color-orange-300);
+}
+.notePaper {
+  position: absolute;
+  width: 6rem;
+  height: auto;
+  left: 5%;
+  top: 72%;
+  transform: rotate(9deg);
+  filter: drop-shadow(
+    0 5px 5px color-mix(in srgb, var(--color-orange-900) 5%, transparent)
+  );
+}
+.trail path {
+  animation: trailTravel 15s linear infinite;
 }
 .storyFooter {
   position: absolute;
@@ -144,7 +168,7 @@
 .formContent {
   width: 100%;
   max-width: 25rem;
-  animation: arrive 0.3s ease-out both;
+  animation: reveal 0.18s ease-out both;
 }
 .welcomeMark {
   display: grid;
@@ -157,6 +181,8 @@
   border-radius: 1.125rem;
   margin-bottom: 1.75rem;
   transform: rotate(-5deg);
+  box-shadow: 0 5px 12px
+    color-mix(in srgb, var(--color-orange-900) 4%, transparent);
 }
 .formEyebrow {
   font-size: 0.8125rem;
@@ -169,6 +195,11 @@
   font-weight: 600;
   line-height: 1.4;
   outline: none;
+  text-decoration: underline;
+  text-decoration-color: var(--color-orange-100);
+  text-decoration-thickness: 0.17em;
+  text-underline-offset: 0.13em;
+  text-decoration-skip-ink: none;
 }
 .formIntro {
   margin: 0.5rem 0 0;
@@ -204,6 +235,9 @@
 .inputWrap:focus-within {
   border-color: var(--color-focus);
   box-shadow: 0 0 0 3px var(--color-orange-100);
+}
+.inputWrap:hover:not(:focus-within) {
+  border-color: var(--color-text-muted);
 }
 .inputWrap:has(input[aria-invalid='true']) {
   border-color: var(--color-danger);
@@ -254,9 +288,11 @@
   color: var(--color-action-primary);
 }
 .submit {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 0.75rem;
   width: 100%;
   min-height: 3.5rem;
   margin-top: 0.375rem;
@@ -272,6 +308,17 @@
   transition:
     background 0.15s,
     transform 0.15s;
+}
+.submit > svg,
+.submit > .spinner {
+  position: absolute;
+  right: 1.25rem;
+}
+.submit > svg {
+  transition: transform 0.18s ease;
+}
+.submit:hover:enabled > svg {
+  transform: translateX(3px);
 }
 .submit:hover:enabled {
   background: var(--color-action-hover);
@@ -351,14 +398,88 @@
   border: 0;
 }
 
-@keyframes arrive {
+.skeletonPiece {
+  max-width: 100%;
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--color-border) 65%, var(--color-surface));
+}
+.skeletonContent {
+  animation: none;
+}
+.skeletonContent .formEyebrow {
+  height: 1.340625rem;
+  display: flex;
+  align-items: center;
+}
+.skeletonContent .formIntro {
+  height: 1.44375rem;
+  display: flex;
+  align-items: center;
+}
+.skeletonHeading {
+  height: 2.975rem;
+  display: flex;
+  align-items: center;
+}
+.skeletonLabel {
+  height: 1.44375rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+}
+.skeletonSubmit {
+  margin-top: 0.375rem;
+}
+.skeletonSubmit .skeletonPiece {
+  background: var(--color-orange-100);
+}
+.skeletonMapLine {
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+}
+.page[data-animation='still'] .skeletonPiece::after,
+.page[data-animation='still'] .clue,
+.page[data-animation='still'] .trail path {
+  animation-play-state: paused;
+}
+[data-login-form] .field {
+  animation: reveal 0.18s ease-out both;
+}
+[data-login-form] .field:nth-of-type(2) {
+  animation-delay: 0.035s;
+}
+[data-login-form] .submit {
+  animation: reveal 0.18s 0.04s ease-out both;
+}
+[data-login-load-error] .submit {
+  margin-top: 1.75rem;
+}
+.formContent[data-login-load-error] h1 {
+  font-size: 1.5rem;
+}
+
+@keyframes clueFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-14deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(-11deg);
+  }
+}
+@keyframes trailTravel {
+  to {
+    stroke-dashoffset: -88;
+  }
+}
+
+@keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 @keyframes spin {
@@ -431,7 +552,9 @@
   .storyNote,
   .orbit,
   .trail,
-  .clue {
+  .clue,
+  .viewfinder,
+  .notePaper {
     display: none;
   }
   .storyFooter {
@@ -472,6 +595,9 @@
   .formContent h1 {
     font-size: 1.875rem;
   }
+  .skeletonHeading {
+    height: 2.625rem;
+  }
   .form {
     margin-top: 1.75rem;
   }
@@ -509,11 +635,17 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .formContent,
-  .spinner {
+  .spinner,
+  .clue,
+  .trail path,
+  [data-login-form] .field,
+  [data-login-form] .submit,
+  .skeletonPiece::after {
     animation: none;
   }
   .inputWrap,
-  .submit {
+  .submit,
+  .submit > svg {
     transition: none;
   }
 }

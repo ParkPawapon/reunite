@@ -1,6 +1,18 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync, readdirSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { browserAccount } from './test-account';
+
+function formChunkPattern() {
+  const folder = 'apps/web/.next/static/chunks';
+  const chunks = readdirSync(folder).filter(
+    (name) =>
+      name.endsWith('.js') &&
+      readFileSync(`${folder}/${name}`, 'utf8').includes('data-login-form'),
+  );
+  expect(chunks).toHaveLength(1);
+  return `**/_next/static/chunks/${chunks[0]}`;
+}
 
 async function openLogin(page: import('@playwright/test').Page) {
   await page.goto('/login');
@@ -9,29 +21,29 @@ async function openLogin(page: import('@playwright/test').Page) {
   ).toBeVisible();
 }
 
-test('opens the root with a two-second intro before revealing the login form', async ({
+test('opens the root with a 1.3-second intro when the form chunk is cached', async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  // Isolate the welcome deadline from cold code/network loading, covered below.
+  await openLogin(page);
+  await page.evaluate(() => document.fonts.ready);
+  await page.clock.install();
   await page.addInitScript(() => {
-    const observe = () => {
+    const timing = { start: null as number | null, end: null as number | null };
+    (
+      window as Window & { loginWelcomeTiming?: typeof timing }
+    ).loginWelcomeTiming = timing;
+    new MutationObserver(() => {
       if (
-        document.querySelector('[data-login-intro] [data-animation=running]') &&
-        !performance.getEntriesByName('intro-interactive').length
+        timing.start === null &&
+        document.querySelector('[data-login-intro] [data-animation=running]')
       )
-        performance.mark('intro-interactive');
-      if (
-        document.querySelector('[data-login-screen]') &&
-        !performance.getEntriesByName('login-visible').length
-      )
-        performance.mark('login-visible');
-    };
-    new MutationObserver(observe).observe(document, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-    });
+        timing.start = performance.now();
+      if (timing.end === null && document.querySelector('[data-login-screen]'))
+        timing.end = performance.now();
+    }).observe(document, { childList: true, subtree: true, attributes: true });
   });
   await page.goto('/');
   await expect(page).toHaveURL(/\/login$/);
@@ -39,25 +51,180 @@ test('opens the root with a two-second intro before revealing the login form', a
   await expect(
     page.locator('[data-login-intro] [data-animation=running]:visible'),
   ).toBeVisible();
-  await page.waitForTimeout(500);
+  await page.clock.runFor(600);
   await expect(page.locator('[data-login-screen]')).toHaveCount(0);
+  await expect(page.locator('[data-login-skeleton]')).toBeVisible();
+  await page.clock.runFor(700);
   await expect(page.locator('[data-login-screen]')).toBeVisible();
-  const elapsed = await page.evaluate(
-    () =>
-      performance.measure(
-        'intro-duration',
-        'intro-interactive',
-        'login-visible',
-      ).duration,
-  );
-  expect(elapsed).toBeGreaterThanOrEqual(1900);
-  expect(elapsed).toBeLessThan(5000);
+  const elapsed = await page.evaluate(() => {
+    const timing = (
+      window as Window & {
+        loginWelcomeTiming?: { start: number | null; end: number | null };
+      }
+    ).loginWelcomeTiming;
+    if (!timing || timing.start === null || timing.end === null)
+      throw new Error('Missing welcome timing');
+    return timing.end - timing.start;
+  });
+  expect(elapsed).toBeGreaterThanOrEqual(1200);
+  expect(elapsed).toBeLessThan(1800);
   await expect(
     page.getByRole('heading', { name: 'เข้าสู่ระบบ', exact: true }),
   ).toBeFocused();
   for (const text of ['Email', 'Password', 'ใช้บัญชีที่ได้รับจากผู้ดูแลระบบ'])
     await expect(page.getByText(text, { exact: true })).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('keeps a real chunk-loading skeleton aligned with the form and respects motion controls', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  for (const [width, height] of [
+    [1440, 1000],
+    [390, 844],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({
+      reducedMotion: width === 390 ? 'reduce' : 'no-preference',
+    });
+    let release = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const pattern = formChunkPattern();
+    await page.route(pattern, async (route) => {
+      await gate;
+      await route.continue();
+    });
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-login-skeleton]')).toBeVisible();
+    await page.waitForTimeout(850);
+    await expect(page.locator('[data-login-screen]')).toHaveCount(0);
+    await expect(page.locator('input')).toHaveCount(0);
+    const shell = page.locator('[data-login-shell]');
+    await expect(
+      page.getByRole('region', {
+        name: 'กำลังเตรียมหน้าเข้าสู่ระบบ',
+        exact: true,
+      }),
+    ).toHaveAttribute('aria-busy', 'true');
+    const result = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+      .analyze();
+    expect(result.violations).toEqual([]);
+    if (width === 1440) {
+      await page
+        .getByRole('button', { name: 'หยุดภาพเคลื่อนไหว', exact: true })
+        .click();
+    } else {
+      await expect(
+        page.getByRole('button', { name: 'หยุดภาพเคลื่อนไหว', exact: true }),
+      ).toHaveCount(0);
+    }
+    await expect(shell).toHaveAttribute('data-animation', 'still');
+    await expect
+      .poll(() =>
+        shell.evaluate(
+          (element) =>
+            element
+              .getAnimations({ subtree: true })
+              .filter((animation) => animation.playState === 'running').length,
+        ),
+      )
+      .toBe(0);
+    const before = await Promise.all(
+      ['email', 'password', 'submit'].map((control) =>
+        page.locator(`[data-skeleton-for=${control}]`).boundingBox(),
+      ),
+    );
+    release();
+    await expect(page.locator('[data-login-screen]')).toBeVisible();
+    await expect(page.locator('[data-login-skeleton]')).toHaveCount(0);
+    const after = await Promise.all([
+      page.locator('#login-email').boundingBox(),
+      page.locator('#login-password').boundingBox(),
+      page
+        .getByRole('button', { name: 'เข้าสู่ระบบ', exact: true })
+        .boundingBox(),
+    ]);
+    for (let index = 0; index < before.length; index++) {
+      const skeleton = before[index];
+      const control = after[index];
+      if (!skeleton || !control)
+        throw new Error('Missing skeleton or real control');
+      for (const key of ['x', 'y', 'width', 'height'] as const)
+        expect(Math.abs(skeleton[key] - control[key])).toBeLessThanOrEqual(2.1);
+    }
+    if (width === 1440)
+      await expect(
+        page.getByRole('button', { name: 'เล่นภาพเคลื่อนไหว', exact: true }),
+      ).toBeFocused();
+    await page.unroute(pattern);
+  }
+  expect(errors).toEqual([]);
+});
+
+test('recovers from a failed login-form chunk with a working reload action', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const pattern = formChunkPattern();
+  await page.route(pattern, (route) => route.abort());
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-login-load-error]')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'เปิดหน้าเข้าสู่ระบบไม่สำเร็จ' }),
+  ).toBeVisible();
+  await expect(page.locator('input')).toHaveCount(0);
+  await page.unroute(pattern);
+  await page.getByRole('button', { name: 'ลองโหลดใหม่', exact: true }).click();
+  await expect(page.locator('[data-login-screen]')).toBeVisible();
+  await expect(page.getByLabel('อีเมล', { exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('offers a working reload when the login-form download stalls', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const pattern = formChunkPattern();
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let pending: Promise<void> | undefined;
+  await page.route(pattern, async (route) => {
+    pending = gate.then(() => route.abort());
+    await pending;
+  });
+  try {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-login-skeleton]')).toBeVisible();
+    // Use real time here: the pending request must outlive the welcome screen.
+    await page.waitForTimeout(2000);
+    await expect(page.locator('[data-login-skeleton]')).toBeVisible();
+    await expect(page.locator('[data-login-screen]')).toHaveCount(0);
+    await expect(page.locator('[data-login-load-error]')).toBeVisible({
+      timeout: 18_000,
+    });
+    await expect(page.locator('input')).toHaveCount(0);
+    release();
+    await pending;
+    await page.unroute(pattern);
+    await page
+      .getByRole('button', { name: 'ลองโหลดใหม่', exact: true })
+      .click();
+    await expect(page.locator('[data-login-screen]')).toBeVisible();
+    await expect(page.getByLabel('อีเมล', { exact: true })).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    release();
+    await pending;
+  }
 });
 
 test('validates locally, supports password visibility and closes the goose eye', async ({
