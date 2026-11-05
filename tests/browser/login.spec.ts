@@ -21,29 +21,29 @@ async function openLogin(page: import('@playwright/test').Page) {
   ).toBeVisible();
 }
 
-test('opens the root with a 1.3-second intro and skeleton before the login form', async ({
+test('opens the root with a 1.3-second intro when the form chunk is cached', async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  // Isolate the welcome deadline from cold code/network loading, covered below.
+  await openLogin(page);
+  await page.evaluate(() => document.fonts.ready);
+  await page.clock.install();
   await page.addInitScript(() => {
-    const observe = () => {
+    const timing = { start: null as number | null, end: null as number | null };
+    (
+      window as Window & { loginWelcomeTiming?: typeof timing }
+    ).loginWelcomeTiming = timing;
+    new MutationObserver(() => {
       if (
-        document.querySelector('[data-login-intro] [data-animation=running]') &&
-        !performance.getEntriesByName('intro-interactive').length
+        timing.start === null &&
+        document.querySelector('[data-login-intro] [data-animation=running]')
       )
-        performance.mark('intro-interactive');
-      if (
-        document.querySelector('[data-login-screen]') &&
-        !performance.getEntriesByName('login-visible').length
-      )
-        performance.mark('login-visible');
-    };
-    new MutationObserver(observe).observe(document, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-    });
+        timing.start = performance.now();
+      if (timing.end === null && document.querySelector('[data-login-screen]'))
+        timing.end = performance.now();
+    }).observe(document, { childList: true, subtree: true, attributes: true });
   });
   await page.goto('/');
   await expect(page).toHaveURL(/\/login$/);
@@ -51,18 +51,21 @@ test('opens the root with a 1.3-second intro and skeleton before the login form'
   await expect(
     page.locator('[data-login-intro] [data-animation=running]:visible'),
   ).toBeVisible();
-  await page.waitForTimeout(500);
+  await page.clock.runFor(600);
   await expect(page.locator('[data-login-screen]')).toHaveCount(0);
   await expect(page.locator('[data-login-skeleton]')).toBeVisible();
+  await page.clock.runFor(700);
   await expect(page.locator('[data-login-screen]')).toBeVisible();
-  const elapsed = await page.evaluate(
-    () =>
-      performance.measure(
-        'intro-duration',
-        'intro-interactive',
-        'login-visible',
-      ).duration,
-  );
+  const elapsed = await page.evaluate(() => {
+    const timing = (
+      window as Window & {
+        loginWelcomeTiming?: { start: number | null; end: number | null };
+      }
+    ).loginWelcomeTiming;
+    if (!timing || timing.start === null || timing.end === null)
+      throw new Error('Missing welcome timing');
+    return timing.end - timing.start;
+  });
   expect(elapsed).toBeGreaterThanOrEqual(1200);
   expect(elapsed).toBeLessThan(1800);
   await expect(
