@@ -22,6 +22,8 @@ import {
 } from '@/modules/item-reports/presentation/schemas';
 import { reportDto } from '@/modules/item-reports/presentation/dto';
 import { claimCreateSchema } from '@/modules/claims/presentation/schemas';
+import { listCategories } from '@/modules/categories/presentation/list-categories';
+import { listLocations } from '@/modules/locations/presentation/list-locations';
 
 export type RouteContext = { params: Promise<{ id: string }> };
 type Services = ReturnType<typeof createServices>;
@@ -96,23 +98,9 @@ export function createHandlers(deps: Dependencies = defaults) {
     me: (request: Request) =>
       api(request, async () => success(await requireUser(request))),
     categories: (request: Request) =>
-      api(request, async () => {
-        const pagination = page(request);
-        return success(
-          await deps.services().categories.list(pagination),
-          200,
-          pagination,
-        );
-      }),
+      listCategories(request, () => deps.services().categories),
     locations: (request: Request) =>
-      api(request, async () => {
-        const pagination = page(request);
-        return success(
-          await deps.services().locations.list(pagination),
-          200,
-          pagination,
-        );
-      }),
+      listLocations(request, () => deps.services().locations),
     listReports: (request: Request) =>
       api(request, async () => {
         const filter = parse(reportFilterSchema, queryInput(request));

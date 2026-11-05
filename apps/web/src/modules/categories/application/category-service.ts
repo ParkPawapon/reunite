@@ -1,8 +1,7 @@
 import type { Page } from '@campus/shared';
-import type { CategoryRepository } from '../domain/category';
-export class CategoryService {
-  constructor(private readonly repository: CategoryRepository) {}
-  list(page: Page) {
-    return this.repository.list(page);
-  }
+import type { Category } from '../domain/category';
+
+// BE002: retain the contract; the assignee implements the application service.
+export interface CategoryService {
+  list(page: Page): Promise<Category[]>;
 }
