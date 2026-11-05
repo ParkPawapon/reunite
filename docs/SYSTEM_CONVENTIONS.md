@@ -14,7 +14,7 @@ Generated output, local environment files and reference documents stay local. LF
 
 ## Typography
 
-CSS properties in `apps/web/src/theme/tokens.css` are the source of truth. MUI variants and Tailwind `text-*` utilities reference the same properties. Root language is Thai; the technical English placeholder has `lang="en"`. Outfit supplies Latin glyphs, Noto Sans Thai supplies Thai, followed by Arial/sans-serif. Both use `next/font/google`, swap display and weights 400/500/600/700; font files are fetched at build and served locally to browsers.
+CSS properties in `apps/web/src/theme/tokens.css` are the source of truth. MUI variants and Tailwind `text-*` utilities reference the same properties. Root language is Thai; English branding has `lang="en"`. Outfit supplies Latin glyphs, Noto Sans Thai supplies Thai, followed by Arial/sans-serif. Both use `next/font/google`, swap display and weights 400/500/600/700; font files are fetched at build and served locally to browsers.
 
 | Token / MUI mapping               | Size (rem) | Line height | Weight |
 | --------------------------------- | ---------- | ----------- | ------ |
@@ -30,4 +30,4 @@ CSS properties in `apps/web/src/theme/tokens.css` are the source of truth. MUI v
 | caption, overline                 | 0.75       | 1.5         | 400    |
 | button                            | 0.875      | 1.4         | 600    |
 
-Letter spacing stays normal for Thai; button text is not uppercased. The CSS layer order is `theme, base, mui, components, utilities` with `AppRouterCacheProvider`'s `enableCssLayer: true`. ThemeProvider stays at a client boundary. Spacing/breakpoints and MUI's uncustomized built-in colors are framework defaults, not approved brand choices. No color palette, illustration or UI layout was selected.
+Letter spacing stays normal for Thai; button text is not uppercased. The CSS layer order is `theme, base, mui, components, utilities` with `AppRouterCacheProvider`'s `enableCssLayer: true`. ThemeProvider stays at a client boundary. The later user-supplied palette is centralized in `colors.json` and used by generated CSS, MUI and semantic Tailwind aliases. The user subsequently requested the Agent Honk loading illustration and login layout; see `docs/design/`. Local Superdesign working context stays ignored by Git and Docker.
