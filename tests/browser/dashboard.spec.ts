@@ -100,7 +100,18 @@ test('uses real session data, responsive navigation, truthful image loading and 
       'data-shell-motion',
       'still',
     );
-    // The click's short hover/focus feedback may finish before motion is idle.
+    // Let the click's finite hover/focus transitions report completion before checking idle.
+    // Continuous animation is excluded from this wait and must still be stopped below.
+    await page.evaluate(async () => {
+      await Promise.all(
+        document
+          .getAnimations()
+          .filter((animation) =>
+            Number.isFinite(animation.effect?.getTiming().iterations),
+          )
+          .map((animation) => animation.finished.catch(() => undefined)),
+      );
+    });
     await expect
       .poll(
         () =>

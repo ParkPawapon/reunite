@@ -17,7 +17,7 @@ The pause button has a 44 × 44 CSS-pixel target and an accessible name. Browser
 - `apps/web/public/illustrations/agent-honk.svg`: editable vector artwork, with transparent surroundings.
 - `scripts/generate-mascot.mjs`: generates the inline React artwork and binds all its colours to palette variables. It rejects external images, scripts and event attributes in the vector source.
 - `apps/web/src/components/loading/`: shared view, scoped styles and Motion lifecycle.
-- `apps/web/src/app/loading.tsx`: route Suspense fallback.
+- `apps/web/src/app/login/loading.tsx`: login route Suspense fallback. The shared loader is scoped to login so the public Coming Soon page remains readable without JavaScript; other resource routes retain their own boundaries.
 - `apps/web/src/app/research/kmutt-bangmod/campus-loading.tsx`: adapter for the existing map-loading boundary.
 
 ## Palette

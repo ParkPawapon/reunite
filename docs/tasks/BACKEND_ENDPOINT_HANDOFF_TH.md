@@ -1,127 +1,107 @@
-# มอบหมายงาน Backend คนละหนึ่ง Endpoint
+# Backend Handoff — BE002 / BE003
 
-> สถานะล่าสุด: BE003 ของเพื่อนคนที่ 2 ส่งแล้วและอ่าน locations จาก PostgreSQL จริง ตอบ 200 พร้อม pagination; ผู้รวมงานเพิ่มการตรวจรับให้ตรงกับ API แล้ว งาน BE002 ของเพื่อนคนที่ 1 ยังสงวนไว้และ categories ยังตอบ 501 ส่วนรายละเอียดด้านล่างเป็นสัญญางานเดิมสำหรับใช้อ้างอิง
+## เป้าหมายและสถานะปัจจุบัน
 
-ชุดเริ่มงานนี้ถอด implementation เดิมของสอง endpoint ออกแล้ว ทั้ง HTTP orchestration, application service implementation และ SQL adapter เหลือสัญญาชนิดข้อมูล จุดต่อ และสถานะ `501 NOT_IMPLEMENTED` ให้เห็นชัดว่างานยังไม่เสร็จ ไม่มีการลบตารางหรือข้อมูลใน PostgreSQL
+พัฒนา API อ่านข้อมูลจาก PostgreSQL จำนวนสองเส้น แยกผู้รับผิดชอบคนละหนึ่งงาน เพื่อให้ Frontend เรียกใช้รายการหมวดหมู่สิ่งของและสถานที่สำหรับรายงานได้
 
-เอกสารนี้เป็นงานรอบใหม่ต่อจากการส่งมอบ 8 commit ก่อนหน้า หลัง PR ชุด starter นี้ merge แล้ว ให้ทั้งคู่ดึง main ล่าสุดและแตก branch จากจุดเดียวกัน โดยตรวจว่าสอง endpoint ตอบ 501 ตามชุดเริ่มงานก่อนลงมือ
+สถานะล่าสุด: **BE003 ส่งและรวมแล้ว** — `GET /api/v1/locations` อ่าน PostgreSQL จริงและตอบ 200 พร้อม pagination ส่วน **BE002 ยังสงวนให้ผู้รับงานเดิม** และ `GET /api/v1/categories` ยังตอบ `501 NOT_IMPLEMENTED` ตารางและข้อมูลเดิมยังอยู่ครบ
+
+งานที่ยังต้องส่งคือ BE002 โดยเปลี่ยน categories จาก 501 ให้เป็น API ที่อ่านข้อมูลจริง ตรวจ input และตอบตามสัญญาด้านล่าง สัญญา BE003 เก็บไว้เป็นตัวอย่างงานที่รวมแล้ว ผู้รับงานไม่ต้องทำ Frontend หรือเขียน/แก้ test files
+
+ระบบ Profile และแจ้งเตือนบัญชีเพิ่มแยกไว้แล้วใน `modules/users/`, `modules/notifications/` และ `lib/http/account-handlers.ts` พร้อม migration `0005`–`0006` งาน BE002/BE003 ยังทำเฉพาะ categories/locations ตามสัญญาเดิม ไม่ต้องแก้ authentication, profile, รูปโปรไฟล์ หรือแจ้งเตือน และไม่ต้องสร้างตารางเพิ่ม ฐานข้อมูลปัจจุบันมี 9 ตารางรวมตารางเทคนิค
 
 ## การแบ่งงาน
 
-| ผู้รับผิดชอบ  | TASK                                      | Branch ที่ให้สร้างเมื่อได้รับ starter แล้ว | Endpoint                 |
-| ------------- | ----------------------------------------- | ------------------------------------------ | ------------------------ |
-| เพื่อนคนที่ 1 | **BE002 — อ่านรายการหมวดหมู่สิ่งของ**     | `BE002/list-item-categories`               | `GET /api/v1/categories` |
-| เพื่อนคนที่ 2 | **BE003 — อ่านรายการสถานที่สำหรับรายงาน** | `BE003/list-report-locations`              | `GET /api/v1/locations`  |
+| TASK                                      | งานที่ต้องส่ง            | Branch                        | Commit ที่แนะนำ                                         |
+| ----------------------------------------- | ------------------------ | ----------------------------- | ------------------------------------------------------- |
+| **BE002 — อ่านรายการหมวดหมู่สิ่งของ**     | `GET /api/v1/categories` | `BE002/list-item-categories`  | `feat(categories): implement category listing endpoint` |
+| **BE003 — อ่านรายการสถานที่สำหรับรายงาน** | `GET /api/v1/locations`  | `BE003/list-report-locations` | `feat(locations): implement location listing endpoint`  |
 
-แต่ละคนรับผิดชอบหนึ่ง HTTP method + หนึ่ง URL มีหลายไฟล์เพราะแยกหน้าที่ตามโครงสร้างเดิม ทั้งสองงานเป็น API อ่านข้อมูลสาธารณะ ไม่ต้องล็อกอิน และมีขนาดงานใกล้เคียงกัน รอบนี้ไม่มอบหมายงาน FE, migration, login, endpoint เพิ่ม หรือการเขียน/แก้ test
+BE002 ให้เริ่มจาก `main` ล่าสุด ทำงานภายใน module ของตน และส่ง PR แยก ส่วน BE003 รวมแล้วใน PR #12 และเก็บสัญญาไว้ใช้อ้างอิง API ทั้งคู่เป็นการอ่านข้อมูลสาธารณะ ไม่ต้องล็อกอิน
 
-Commit ที่แนะนำ:
+## Frontend และ Backend อยู่ตรงไหน
 
-- BE002: `feat(categories): implement category listing endpoint`
-- BE003: `feat(locations): implement location listing endpoint`
+Repository นี้ใช้ Next.js แอปเดียวใน `apps/web` ทำทั้งสองฝั่ง โฟลเดอร์ `app` จึงมีทั้งหน้าเว็บและ API
 
-## BE และ FE อยู่ตรงไหน
+| ส่วน                      | ตำแหน่ง                                                                        | หน้าที่                                                 |
+| ------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| FE: หน้า Login            | `apps/web/src/app/login/page.tsx`                                              | ประกอบหน้าและ metadata                                  |
+| FE: Dashboard และโครงหน้า | `apps/web/src/app/dashboard/`, `components/dashboard/` และ `components/shell/` | หน้าแรกหลัง Login, Topbar, Sidebar, Footer และ Skeleton |
+| FE: การแสดงผลและการโต้ตอบ | `apps/web/src/components/auth/` และ `components/loading/`                      | ฟอร์ม Login, Skeleton, ตัวละคร และ animation            |
+| FE: รูปแบบและค่ากลาง      | CSS Modules ข้าง component และ `apps/web/src/theme/`                           | Layout, สี และตัวอักษร                                  |
+| BE: Route                 | `apps/web/src/app/api/v1/**/route.ts`                                          | ผูก HTTP method กับ URL                                 |
+| BE: Presentation          | `apps/web/src/modules/*/presentation/`                                         | รับ request ตรวจ input และจัด response                  |
+| BE: Application           | `apps/web/src/modules/*/application/`                                          | จัดลำดับงานและเรียก repository                          |
+| BE: Domain                | `apps/web/src/modules/*/domain/`                                               | กำหนดชนิดข้อมูลและสัญญา repository                      |
+| BE: Infrastructure        | `apps/web/src/modules/*/infrastructure/`                                       | ติดต่อ PostgreSQL ด้วย SQL ที่เขียนเอง                  |
+| BE: Composition           | `apps/web/src/modules/*/composition.ts`                                        | ประกอบ service กับ repository ของแต่ละ module           |
+| BE: เครื่องมือร่วม        | `apps/web/src/lib/http/api.ts` และ `packages/database/src/`                    | Response/error helpers, database pool และ query helper  |
 
-เราใช้ Next.js แอปเดียวใน `apps/web` ทำทั้งสองฝั่ง ชื่อโฟลเดอร์ `app` จึงไม่ได้หมายถึง FE ทั้งหมด
+เส้นทางข้อมูลของงานนี้คือ **Request → Route → Presentation → Application → Repository → PostgreSQL → Response** การแบ่งไฟล์ทำให้ส่วนรับ HTTP ไม่ต้องเขียน SQL เอง และส่วนอ่านฐานข้อมูลไม่ต้องรู้จัก React
 
-| ส่วน                     | ตำแหน่งจริง                                                                   | หน้าที่                                           |
-| ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------- |
-| FE: หน้าเว็บ             | `apps/web/src/app/login/page.tsx`                                             | ประกอบหน้า Login และกำหนด metadata                |
-| FE: component            | `apps/web/src/components/auth/login-experience.tsx` และ `components/loading/` | แสดงหน้าจอ รับการกด/กรอก และจัดการภาพเคลื่อนไหว   |
-| FE: รูปแบบ               | CSS Modules ข้าง component และ `apps/web/src/theme/`                          | จัดหน้าตาและค่ากลาง เช่น สี/ตัวอักษร              |
-| BE: ประตู API            | `apps/web/src/app/api/v1/**/route.ts`                                         | รับ HTTP method ตาม URL แล้วส่งงานต่อ             |
-| BE: ตัวประสาน HTTP       | `apps/web/src/lib/http/handlers.ts` และ `modules/*/presentation/`             | ตรวจ request เรียก service และจัด response        |
-| BE: กฎและลำดับงาน        | `apps/web/src/modules/*/application/`                                         | ทำงานของ endpoint โดยไม่ผูกกับ React/Next/pg      |
-| BE: สัญญา/ชนิดข้อมูล     | `apps/web/src/modules/*/domain/`                                              | ระบุรูปข้อมูลและสิ่งที่ repository ต้องทำได้      |
-| BE: SQL                  | `apps/web/src/modules/*/infrastructure/`                                      | อ่าน/เขียน PostgreSQL ด้วย pg และ SQL ที่เขียนเอง |
-| BE: การประกอบ dependency | `apps/web/src/lib/composition.ts` และ `modules/*/composition.ts`              | ต่อ service เข้ากับ repository และ database       |
-| BE: เครื่องมือฐานข้อมูล  | `packages/database/src/` กับ `packages/database/migrations/`                  | pool, query helper, transaction และ versioned SQL |
-
-ไฟล์ `.ts` ไม่ได้แปลว่าเป็น BE เสมอ เช่น `modules/auth/presentation/login-client.ts` ถูกเรียกจากหน้า Login เพื่อ fetch API และการมี `page.tsx` ก็ไม่ได้แปลว่าโค้ดทุกบรรทัดรันใน browser เพราะ Next.js มี Server Components การแยกต้องดูหน้าที่และ dependency ด้วย
-
-FE เรียก `/api/v1/...` ผ่าน HTTP ส่วนการอ่าน PostgreSQL และค่าลับอย่าง DATABASE_URL อยู่บน server เท่านั้น
+ไฟล์ `.ts` ไม่ได้เป็น BE เสมอไป เช่น `modules/auth/presentation/login-client.ts` เป็นตัวเรียก API จากหน้า Login ส่วน `page.tsx` อาจเป็น Server Component ได้ ให้ดูหน้าที่และสิ่งที่ไฟล์เรียกใช้ด้วย ค่าลับและการเชื่อม PostgreSQL ต้องอยู่ฝั่ง server
 
 ## BE002 — อ่านรายการหมวดหมู่สิ่งของ
 
-### บทที่ใช้สั่งงาน
+### ผลลัพธ์ที่ต้องการ
 
-“งานของนายคือทำ GET /api/v1/categories หนึ่งเส้น ใช้สำหรับอ่านหมวดหมู่สิ่งของจากฐานข้อมูลแล้วส่งกลับให้หน้าเว็บเอาไปใช้ต่อ
+เมื่อเรียก `GET /api/v1/categories` ระบบอ่านตาราง `categories` แล้วส่งรายการหมวดหมู่กลับเป็น JSON เรียง `category_id` จากน้อยไปมาก และแบ่งหน้าด้วย `limit` / `offset`
 
-เริ่มจากดู route ว่าคำขอเข้าทางไหน จากนั้นทำตัวรับ request ใน module categories ตรวจ limit กับ offset เรียก service แล้วให้ repository อ่านตาราง categories ด้วย SQL
-
-ผลลัพธ์แต่ละรายการต้องมี categoryId และ categoryName เรียงตามรหัสจากน้อยไปมาก ถ้าตารางว่างก็ส่งรายการว่างได้ แต่ต้องเป็นผลจากการอ่านฐานข้อมูลจริง
-
-รอบนี้ทำเฉพาะเส้นอ่านรายการ ไม่ต้องทำหน้าเว็บ ไม่ต้องเพิ่มเส้นสร้างหรือแก้หมวดหมู่ และไม่ต้องเขียน test เพิ่ม ตอนส่งงานขอ URL ที่ลองผ่าน Postman พร้อม status และ response ให้ดูด้วย”
-
-### ไฟล์ของงานนี้
-
-- ดูจุดรับคำขอ: `apps/web/src/app/api/v1/categories/route.ts` ซึ่งต่อไว้แล้ว
-- ทำ HTTP handler: `apps/web/src/modules/categories/presentation/list-categories.ts`
-- ทำ application service: `apps/web/src/modules/categories/application/category-service.ts` ปัจจุบันเหลือ interface ให้เปลี่ยนเป็น implementation ตาม contract
-- สร้าง SQL adapter ใหม่: `apps/web/src/modules/categories/infrastructure/pg-category-repository.ts`
-- ต่อของจริงแทน placeholder ใน `apps/web/src/modules/categories/composition.ts`
-- ใช้ชนิดข้อมูลและ repository contract ที่มีใน `apps/web/src/modules/categories/domain/category.ts`
-
-ไม่จำเป็นต้องแก้ `lib/http/handlers.ts` หรือ `lib/composition.ts` เพราะผู้ดูแลต่อการส่งงานเข้า module นี้ไว้แล้ว
-
-### สัญญาผลลัพธ์
-
-| คอลัมน์ PostgreSQL | ชื่อใน JSON    | ชนิด   |
+| คอลัมน์ PostgreSQL | Field ใน JSON  | ชนิด   |
 | ------------------ | -------------- | ------ |
 | `category_id`      | `categoryId`   | number |
 | `category_name`    | `categoryName` | string |
 
-อ่านจากตาราง `categories` เรียง `category_id` จากน้อยไปมาก และแบ่งหน้าตาม limit/offset
+### ไฟล์และสิ่งที่ต้องทำ
 
-## BE003 — อ่านรายการสถานที่สำหรับรายงาน
+| ไฟล์ภายใต้ `apps/web/src/`                                    | งาน                                                                                                  |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `app/api/v1/categories/route.ts`                              | Route ต่อไว้แล้ว ใช้เป็นจุดเริ่มไล่คำขอ                                                              |
+| `modules/categories/presentation/list-categories.ts`          | แทน 501 ด้วยการตรวจ query เรียก service และส่ง response                                              |
+| `modules/categories/application/category-service.ts`          | ปัจจุบันเป็น interface; เพิ่มส่วนทำงานให้ `list(page)` เรียก repository และคืน `Promise<Category[]>` |
+| `modules/categories/domain/category.ts`                       | ใช้ `Category` และ `CategoryRepository` ที่มีอยู่                                                    |
+| `modules/categories/infrastructure/pg-category-repository.ts` | สร้างไฟล์นี้เพื่ออ่านคอลัมน์ที่กำหนด เรียงรหัส แบ่งหน้า และแปลงชื่อ field                            |
+| `modules/categories/composition.ts`                           | ต่อ service กับ SQL repository แทน placeholder                                                       |
 
-### บทที่ใช้สั่งงาน
+งานเสร็จเมื่อ API คืนข้อมูลตรงกับตารางจริง รวมถึงกรณีไม่มีข้อมูลและ offset เลยรายการสุดท้าย โดยผ่านกติกาและรายการตรวจร่วมด้านล่าง
 
-“งานของนายคือทำ GET /api/v1/locations หนึ่งเส้น ใช้สำหรับอ่านสถานที่ที่ระบบรายงานอ้างอิงได้
+## BE003 — อ่านรายการสถานที่สำหรับรายงาน (รวมแล้ว)
 
-ทำอยู่ใน module locations ตรวจ limit กับ offset จาก request แล้วเรียก service และ repository เพื่ออ่านตาราง locations จริง
+ส่งและรวมแล้วใน [PR #12](https://github.com/ParkPawapon/reunite/pull/12) ไม่ต้องเริ่มงานนี้ซ้ำ ส่วนนี้เป็นตัวอย่างการแบ่ง module และสัญญาที่ใช้งานจริง
 
-ผลลัพธ์มี locationId, locationName และ detail เรียงรหัสจากน้อยไปมาก detail อาจเป็น null ได้ ต้องส่ง null กลับตามข้อมูล ไม่เปลี่ยนเป็นข้อความอื่นเอง
+`GET /api/v1/locations` อ่าน PostgreSQL จริง เรียง `location_id` จากน้อยไปมาก แบ่งหน้าด้วย `limit` / `offset` และส่ง `locationId`, `locationName`, `detail` โดยรักษา `detail: null` เมื่อฐานข้อมูลเป็น NULL
 
-งานนี้เป็นรายการสถานที่ในฐานข้อมูล ยังไม่ใช่งานค้นหาอาคารสามมิติ ชั้น ห้อง หรือคำนวณเส้นทาง รอบนี้ไม่ต้องทำหน้าเว็บ ไม่ต้องแก้โมเดล และไม่ต้องเขียน test เพิ่ม ตอนส่งงานขอ URL, status และ response ที่ลองผ่าน Postman เช่นเดียวกัน”
+| ไฟล์ภายใต้ `apps/web/src/`                                   | ส่วนที่ทำงานแล้ว                                                                       |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `app/api/v1/locations/route.ts`                              | รับ HTTP request และส่งต่อไปยัง handler                                                |
+| `modules/locations/presentation/list-locations.ts`           | ตรวจ query แบบ strict/ชื่อซ้ำ เรียก service และสร้าง response ผ่าน error envelope กลาง |
+| `modules/locations/application/location-service.ts`          | `LocationService.list(page)` ส่งงานให้ repository                                      |
+| `modules/locations/domain/location.ts`                       | ชนิดข้อมูลและสัญญา repository                                                          |
+| `modules/locations/infrastructure/pg-location-repository.ts` | อ่านคอลัมน์ตามสัญญาด้วย parameterized SQL เรียงรหัสและแบ่งหน้า                         |
+| `modules/locations/composition.ts`                           | ประกอบ service กับ PostgreSQL repository                                               |
 
-### ไฟล์ของงานนี้
+Integration checks ตรวจข้อมูลที่ seed ใน schema ทดสอบจริง ทั้งลำดับ/การแบ่งหน้า, offset ที่ไม่มีข้อมูล, NULL และ query ที่ไม่ถูกต้อง สถานที่ในตารางยังไม่ได้เชื่อมกับ GeoJSON หรือโมเดล 3D งาน BE003 ไม่รวมชั้น ห้อง เส้นทาง หรือการแก้ข้อมูลแผนที่
 
-- ดูจุดรับคำขอ: `apps/web/src/app/api/v1/locations/route.ts` ซึ่งต่อไว้แล้ว
-- ทำ HTTP handler: `apps/web/src/modules/locations/presentation/list-locations.ts`
-- ทำ application service: `apps/web/src/modules/locations/application/location-service.ts` ปัจจุบันเหลือ interface ให้เปลี่ยนเป็น implementation ตาม contract
-- สร้าง SQL adapter ใหม่: `apps/web/src/modules/locations/infrastructure/pg-location-repository.ts`
-- ต่อของจริงแทน placeholder ใน `apps/web/src/modules/locations/composition.ts`
-- ใช้ชนิดข้อมูลและ repository contract ที่มีใน `apps/web/src/modules/locations/domain/location.ts`
+## สัญญา API ที่ทั้งสองงานต้องใช้
 
-ไม่จำเป็นต้องแก้ไฟล์กลางร่วมกับ BE002
+### Request และ pagination
 
-### สัญญาผลลัพธ์
+ใช้ `GET` ไม่มี request body และรับเฉพาะ query parameters ต่อไปนี้:
 
-| คอลัมน์ PostgreSQL | ชื่อใน JSON    | ชนิด             |
-| ------------------ | -------------- | ---------------- |
-| `location_id`      | `locationId`   | number           |
-| `location_name`    | `locationName` | string           |
-| `detail`           | `detail`       | string หรือ null |
+| Parameter | ค่าที่รองรับ       | ค่าเริ่มต้น |
+| --------- | ------------------ | ----------- |
+| `limit`   | จำนวนเต็ม 1–100    | 20          |
+| `offset`  | จำนวนเต็ม 0–100000 | 0           |
 
-อ่านจากตาราง `locations` เรียง `location_id` จากน้อยไปมาก และแบ่งหน้าตาม limit/offset ข้อมูลนี้ยังไม่ได้เชื่อมอัตโนมัติกับ GeoJSON/โมเดล 3D
+ค่าไม่ถูกต้อง ชื่อ parameter ที่ไม่รองรับ หรือชื่อ parameter ซ้ำ ต้องตอบ **422** รหัส `VALIDATION_ERROR` เช่น `?limit=0`, `?limit=abc`, `?offset=-1`, `?unknown=1` และ `?limit=1&limit=2`
 
-## กติกาที่ทั้งคู่ต้องทำเหมือนกัน
+ใช้ `queryInput(request)` เพื่อตรวจชื่อซ้ำ และ `parse` กับ `paginationSchema` เพื่อตรวจค่า ต้องกำหนด schema ให้ปฏิเสธ field ที่ไม่รู้จักด้วย เช่น `paginationSchema.strict()` เพราะ `paginationSchema` เดิมไม่ได้เปิด strict ไว้เอง
 
-1. ใช้ GET และรับเฉพาะ query parameters `limit` กับ `offset` ไม่มี request body
-2. `limit` เป็นจำนวนเต็ม 1–100 ค่าเริ่มต้น 20
-3. `offset` เป็นจำนวนเต็ม 0–100000 ค่าเริ่มต้น 0
-4. ค่าไม่ถูกต้อง ชื่อ parameter ที่ไม่รองรับ หรือชื่อ parameter ซ้ำ ต้องตอบ 422 ตาม helper เดิม
-5. สำเร็จตอบ 200 พร้อม `{ data: [...], meta: { limit, offset } }` ไม่ต้องเพิ่ม total count
-6. ตารางว่างตอบ 200 พร้อม `data: []` ซึ่งต้องมาจากการ query จริง
-7. ใช้ PostgreSQL ผ่านเครื่องมือเดิมใน `@campus/database` เขียน SQL เองและส่งค่าผ่าน parameters เช่น `$1`, `$2` ห้ามต่อค่าผู้ใช้เข้า SQL และห้ามเพิ่ม ORM
-8. เลือกเฉพาะคอลัมน์ที่ต้องใช้ แล้วแปลงชื่อเป็น JSON ตาม contract
-9. ใช้ `api`, `parse`, `paginationSchema`, `queryInput`, `success` ใน `apps/web/src/lib/http/api.ts` ตามหน้าที่ เพื่อให้ error envelope, request ID และ no-store headers ยังเป็นมาตรฐานเดียวกัน
-10. การ validation อยู่ใน presentation; application รับค่าที่ตรวจแล้ว; SQL อยู่ใน infrastructure; การต่อชิ้นส่วนอยู่ใน composition ของ module ตัว handler รับฟังก์ชัน `getService` มาให้เรียก `getService()` ภายใน callback ของ `api` หลังตรวจ input เพื่อให้ข้อผิดพลาดตอนสร้าง dependency ยังผ่านตัวจัดการ error เดิม
-11. รักษา `server-only` ในส่วนที่ใช้ SQL หรือ server infrastructure ห้ามส่ง ENV, SQL error, stack หรือ connection string กลับให้ผู้เรียก
-12. ทำเฉพาะ module ของตน ไม่มีการเพิ่มข้อมูลจริง แก้ schema หรือเพิ่ม API อื่น
+### Response
 
-ตัวอย่าง response ที่ถูกต้องเมื่อไม่มีข้อมูล:
+สำเร็จตอบ **200** พร้อม `{ data: [...], meta: { limit, offset } }` โดย `meta` ต้องตรงกับค่าที่ใช้ query จริง ไม่เพิ่ม total count หรือ field อื่นนอกสัญญา
+
+หากตารางว่างหรือ offset เลยข้อมูล ให้ตอบ 200 พร้อมรายการว่าง เช่น:
 
 ```json
 {
@@ -133,62 +113,58 @@ FE เรียก `/api/v1/...` ผ่าน HTTP ส่วนการอ่�
 }
 ```
 
-นี่เป็นตัวอย่างรูปแบบ response ไม่ใช่ implementation ให้คืน array ว่างตลอด
+ตัวอย่างนี้อธิบายรูปแบบ response เท่านั้น ผลลัพธ์ต้องมาจากการอ่าน PostgreSQL จริง ห้าม hardcode รายการหรือคืน array ว่างตลอด
 
-## ของที่เตรียมให้แล้วและของที่ต้องลงมือทำ
+ใช้ `success` จัดผลสำเร็จ และครอบงานด้วย `api` จาก `lib/http/api.ts` เพื่อรักษา error envelope, `X-Request-Id`, `Cache-Control: no-store` และการซ่อนข้อผิดพลาดภายใน
 
-มีให้แล้ว: route wiring, service/domain contracts, module-owned composition จุดต่อ, database pool/query helper, pagination/error helpers และ migration ของตารางจริง
+### การแบ่งหน้าที่และการเข้าถึงข้อมูล
 
-ต้องทำเอง: ตรวจ request, เรียก service, application implementation, SQL repository, แปลงแถวข้อมูล และต่อ dependency ของ module ให้ครบ ปัจจุบันทั้ง handler และ service factory ตอบ 501 และไม่มี SELECT ของสองรายการนี้เหลือใน production implementation
+- Presentation ตรวจ input ก่อนเรียก service; application รับค่าที่ตรวจแล้ว; repository รับผิดชอบ SQL; composition ประกอบ dependency
+- Handler ได้ฟังก์ชัน `getService` จากส่วนกลาง ให้เรียก `getService()` ภายใน callback ของ `api` หลังตรวจ input เพื่อให้ข้อผิดพลาดระหว่างสร้าง service ผ่าน error handler เดิมด้วย
+- ใช้ database/query helper ใน `@campus/database` และส่งค่าผ่าน SQL parameters เช่น `$1`, `$2` ห้ามต่อค่าผู้ใช้เข้า SQL และห้ามเพิ่ม ORM
+- เลือกเฉพาะคอลัมน์ในสัญญา แปลงชื่อจากคอลัมน์ DB เป็น JSON และใช้ชนิดข้อมูลจาก domain เดิม
+- รักษา `server-only` ในส่วนที่ใช้ SQL หรือ server infrastructure ห้ามส่ง ENV, connection string, SQL error หรือ stack trace กลับให้ผู้เรียก
+- ส่วนกลางใน `lib/http/handlers.ts` และ `lib/composition.ts` ต่อเข้าทั้งสอง module แล้ว งานนี้ไม่จำเป็นต้องแก้ไฟล์กลางร่วมกัน
 
-ให้ทั้งคู่ทำคนละ module เพื่อให้รวมงานง่าย ผู้ดูแลเป็นคนปรับสถานะใน README/API_CONTRACT เมื่อทั้งสองงานเสร็จ จึงไม่ต้องแก้เอกสารกลางแข่งกัน
+## เกณฑ์รับงานและหลักฐานที่ต้องแนบ
 
-## วิธีส่งงานโดยไม่มอบหมายการเขียน test
+PR ของงานที่ยังไม่เสร็จต้องระบุ endpoint, ไฟล์ที่เปลี่ยน และผลเรียกผ่าน Postman หรือ curl โดยมี URL, HTTP status และ response ของกรณีต่อไปนี้:
 
-ให้เปิด PR แยกคนละงาน พร้อมอธิบาย endpoint และไฟล์ที่เปลี่ยน แนบผลลองเรียกด้วย Postman หรือ curl อย่างน้อย:
+| กรณี                                                 | ผลที่ต้องได้                                                   |
+| ---------------------------------------------------- | -------------------------------------------------------------- |
+| เรียก URL โดยไม่ส่ง query                            | 200, `meta.limit = 20`, `meta.offset = 0`                      |
+| `?limit=2&offset=0` และ `?limit=2&offset=2`          | 200, meta ตรง request, ข้อมูลเรียงรหัสขึ้นและแบ่งช่วงตรงกับ DB |
+| `?limit=0`, `?limit=101`, `?limit=1.5`, `?limit=abc` | 422, `VALIDATION_ERROR`                                        |
+| `?offset=-1`, `?offset=100001`                       | 422, `VALIDATION_ERROR`                                        |
+| `?unknown=1` และ `?limit=1&limit=2`                  | 422, `VALIDATION_ERROR`                                        |
+| ไม่มีรายการในช่วงที่ขอ                               | 200 และ `data: []` จากผล query จริง                            |
+| ตรวจข้อมูลที่คืน                                     | ชื่อ field และชนิดตรงสัญญา ไม่มี field ภายใน DB หลุดออกมา      |
+| สำหรับ BE003 เมื่อ `detail` ใน DB เป็น NULL          | JSON มี `detail: null`                                         |
+| ตรวจ response headers ทั้งสำเร็จและผิดพลาด           | มี request ID และ `Cache-Control: no-store`                    |
 
-- URL ปกติ: ได้ 200 และ meta ค่าเริ่มต้น
-- `?limit=2&offset=0`: ได้ 200 และ meta ตรงกับ request
-- `?limit=0`, `?limit=101`, `?offset=-1`: ได้ 422
-- `?unknown=1` และ `?limit=1&limit=2`: ได้ 422
-- ตรวจชื่อ/ชนิด fields และลำดับรหัสจาก response; สำหรับ locations ตรวจว่า detail ที่เป็น null ยังคงเป็น null
+ตรวจเทียบกับข้อมูลในฐานข้อมูล local หรือฐานข้อมูลทดสอบที่แยกไว้ ไม่เพิ่มหรือลบข้อมูลจริงเพื่อทำหลักฐาน ก่อนส่ง PR ให้รัน `bun run lint` และ `bun run typecheck` แล้วแนบผล
 
-ให้ตรวจ `bun run lint` และ `bun run typecheck` ก่อนส่งงาน ไม่ต้องเพิ่มหรือแก้ test files ไม่ปิด CI และไม่ใส่ skip ให้ test เดิม
+ผู้รับงานไม่ต้องเพิ่มหรือแก้ test files และต้องไม่ปิด CI หรือใส่ skip ขณะนี้ integration test ตรวจ categories เป็น 501 และตรวจ locations ที่เสร็จแล้วเป็น 200 พร้อม pagination/ข้อมูลจริง ผู้ดูแลการรวมงานจะปรับ assertion ของ categories ให้ตรวจ 200 ก่อน merge BE002
 
-ผู้ดูแลปรับเฉพาะ assertion ใน test integration เดิมให้ตรวจสถานะ 501, error ของแต่ละ TASK, request ID, no-store headers และ service placeholder ตามพฤติกรรม starter ปัจจุบัน ส่วนการตรวจสิทธิ์เขียนข้อมูลยังอยู่ครบ ไม่มีการ skip test หรือเปลี่ยนกฎ CI
+## ขอบเขตการเปลี่ยนแปลง
 
-เมื่อ endpoint ของเพื่อนแต่ละคนเสร็จ ผู้ดูแลเป็นคนปรับ assertion ของส่วนนั้นกลับมาตรวจข้อมูลที่ seed ในฐานข้อมูลทดสอบจริง พร้อมผล 200, pagination และลำดับข้อมูล ก่อนรวม PR งานของเพื่อนจึงยังไม่รวมการเขียน test ส่วนผู้ดูแลรับผิดชอบให้ CI ตรงกับพฤติกรรมที่ตั้งใจในแต่ละช่วง การผ่าน CI ของ starter หมายถึง placeholder และระบบส่วนที่เหลือทำงานตามที่ตรวจ ไม่ได้หมายความว่าสอง endpoint ทำเสร็จแล้ว
+งานนี้ครอบคลุมหนึ่ง endpoint ต่อคน ได้แก่ validation, handler, application service, SQL repository และ composition ของ module ตัวเอง ใช้ Bun Workspaces, Next.js และ PostgreSQL ตามโครงสร้างเดิม
 
-## บทเปิดประชุมกับเพื่อนทั้งสองคน
+ไม่รวมหน้าเว็บ, Login, CRUD หมวดหมู่/สถานที่, migration, การแก้ schema, API อื่น หรือระบบ 3D หากพบว่าจำเป็นต้องเปลี่ยนสัญญาหรือไฟล์กลาง ให้ระบุเหตุผลใน PR เพื่อให้ทีมตกลงร่วมกันก่อนขยายขอบเขต
 
-“รอบนี้ให้ทำ Backend คนละหนึ่ง endpoint งานมีขนาดใกล้กัน คนแรกอ่านหมวดหมู่ คนที่สองอ่านสถานที่ ยังไม่ต้องทำหน้าเว็บหรือเขียน test เพิ่ม
+ผู้ดูแลการรวมงานรับผิดชอบปรับสถานะใน README และ API_CONTRACT เมื่อแต่ละ endpoint เสร็จ ข้อกำหนดร่วมดูได้ที่ [API_CONTRACT](../API_CONTRACT.md) และวิธีเตรียมเครื่องดู [README](../../README.md)
 
-Endpoint หมายถึงคู่ของ method กับ URL เช่น GET /api/v1/categories คำว่า GET คือขออ่านข้อมูล ส่วน URL บอกว่าจะอ่านเรื่องอะไร
+## คำศัพท์ที่ใช้
 
-FE คือส่วนที่ผู้ใช้เห็นและกด อยู่ในหน้า page กับ components ส่วน BE คือส่วนรับคำขอ ตรวจข้อมูล ทำงานกับฐานข้อมูล และตอบกลับ ใน repo นี้ใช้ Next.js ตัวเดียว แต่แยกหน้าที่ไว้ตามโฟลเดอร์
-
-ให้เริ่มไล่จาก route ไป presentation, application และ infrastructure ชื่อพวกนี้อาจดูเยอะ แต่จำง่าย ๆ ว่า รับคำขอ → จัดลำดับงาน → คุยฐานข้อมูล
-
-ผมถอด logic เดิมของสองเส้นออกแล้ว ตอนนี้ได้ 501 ซึ่งแปลว่างานยังไม่ได้ implement พวกนายต้องต่อให้ข้อมูลเดินทางจากฐานข้อมูลกลับออกมาได้จริง
-
-ทำใน module ของตัวเอง ถ้าเจอว่าต้องแก้ไฟล์กลางหรือ schema ให้คุยก่อน เพราะสองงานนี้วางให้ทำแยกกันได้ ตอนส่งขอให้เล่าด้วยว่ารับอะไร อ่านตารางไหน และตอบอะไรกลับมา”
-
-## คำเทคนิคที่ใช้ในบท
-
-| คำ                   | ความหมายง่าย ๆ                                                   |
-| -------------------- | ---------------------------------------------------------------- |
-| FE / Frontend        | ส่วนหน้าเว็บและการโต้ตอบที่ผู้ใช้เห็น                            |
-| BE / Backend         | ส่วนฝั่ง server ที่รับคำขอ ทำงาน และติดต่อฐานข้อมูล              |
-| Endpoint             | คู่ method และ URL ที่เรียกทำงานได้หนึ่งแบบ                      |
-| Request / Response   | สิ่งที่ผู้เรียกส่งเข้ามา / สิ่งที่ระบบส่งกลับ                    |
-| Query parameter      | ค่าท้าย URL เช่น `?limit=20&offset=0`                            |
-| Pagination           | แบ่งข้อมูลออกมาเป็นช่วง แทนการดึงทั้งหมด                         |
-| Validation           | ตรวจว่าค่าที่รับมาอยู่ในรูปแบบและขอบเขตที่รองรับ                 |
-| Service              | ส่วนจัดลำดับงานของ endpoint                                      |
-| Repository           | ส่วนติดต่อข้อมูลตามสัญญาที่กำหนด                                 |
-| Composition          | จุดประกอบ service, repository และ database เข้าด้วยกัน           |
-| Contract / interface | ข้อตกลงว่ารับค่าอะไรและต้องส่งผลแบบไหน ยังไม่ใช่โค้ดที่ทำงานจริง |
-| Parameterized SQL    | แยกค่าที่รับมาจากข้อความ SQL เพื่อให้ค่าไม่กลายเป็นคำสั่ง        |
-| 200 / 422 / 501      | สำเร็จ / คำขอมีค่าที่ไม่ผ่านกติกา / ยังไม่ได้ implement          |
-
-ข้อคิดให้ฝากท้ายงาน: “หนึ่ง endpoint อาจใช้หลายไฟล์ แต่ทุกไฟล์ต้องบอกได้ว่ารับผิดชอบอะไร ถ้ายังอธิบายไม่ได้ว่าข้อมูลวิ่งผ่านแต่ละส่วนอย่างไร ให้ไล่เส้นทางนั้นก่อนเพิ่มโค้ด”
+| คำ                       | ความหมาย                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| Endpoint                 | คู่ HTTP method และ URL เช่น `GET /api/v1/categories`                          |
+| Query parameter          | ค่าท้าย URL เช่น `?limit=20&offset=0`                                          |
+| Pagination               | การแบ่งข้อมูลเป็นช่วงด้วยจำนวนรายการและจุดเริ่มต้น                             |
+| Validation               | การตรวจ input ว่าอยู่ในรูปแบบและขอบเขตที่รองรับ                                |
+| Service                  | ส่วนจัดลำดับงานของ endpoint                                                    |
+| Repository               | ส่วนอ่านข้อมูลตามสัญญาที่ domain กำหนด                                         |
+| Composition / dependency | จุดประกอบส่วนต่าง ๆ และส่วนที่ต้องเรียกใช้เพื่อทำงาน                           |
+| Contract / interface     | ข้อตกลงเรื่อง input/output; การมี interface อย่างเดียวยังไม่ได้ทำให้ API ทำงาน |
+| Parameterized SQL        | แยกค่าข้อมูลออกจากข้อความ SQL เพื่อไม่ให้ค่ากลายเป็นคำสั่ง                     |
+| 200 / 422 / 501          | สำเร็จ / input ไม่ผ่านกติกา / ยังไม่ได้พัฒนาให้ทำงาน                           |

@@ -12,6 +12,18 @@ Next standalone output traces from the repository root, retaining workspace and 
 
 Each API response is no-store. A generated request ID links sanitized status/duration logs to errors without logging request bodies, query strings, passwords, cookies, evidence or SQL exceptions.
 
+## Profile and account notifications
+
+`modules/users` owns student-profile types/ports, the profile application service, PostgreSQL adapter and browser-safe validation/transport. `modules/notifications` owns typed private account events, owner-scoped listing and mark-read. `lib/http/account-handlers.ts` composes authenticated HTTP boundaries for the thin `/api/v1/profile`, `/profile/avatar` and `/notifications` routes. Image decoding stays in server-only infrastructure; clients never import sharp or SQL.
+
+Profile/photo updates and their typed notification inserts use a single parameterized SQL data-modifying CTE, so both commit or roll back together. Profile queries explicitly omit image bytes and password hashes; the separate authenticated photo route reads only its current owner's bounded normalized WebP. The private student fields do not enlarge the existing auth/me DTO. The UI shell accepts the active page and safe name/email/avatar-version view data; the profile component owns editable state and the bell owns notification resource state. Both reuse the established theme and motion policy. Bun standalone tracing explicitly includes sharp's installed native companion libraries.
+
+## Public launch page
+
+`app/coming-soon/page.tsx` composes the approved public announcement from `components/coming-soon/`. A cached external-store clock updates only the countdown; its fixed Thai-midnight launch instant is shared with meaningful boundary tests. The shell and local poster are server-rendered, while the Three.js scene is imported after hydration. It has no API/database dependency.
+
+The scene controller owns its request, WebGL context, input controls, observers, cached shadows and GPU resources. React cleanup aborts pending work and disposes the scene; model/context failures retry a new canvas, while a failed JavaScript chunk offers a full-document reload. Shared motion preferences govern the scene and original `AnimatedGoose`. The former generic root loader is scoped to `/login` to keep public launch HTML usable without JavaScript; existing resource-route skeletons remain.
+
 ## Backend assignment starter
 
-BE002 and BE003 deliberately leave the category/location list endpoints at 501 while teammates implement them. Their application files currently contain interfaces, their SQL adapters were removed, and their module-owned composition/presentation files contain explicit placeholders. Central routing delegates to those module entry points so the assignees can work in separate directories without editing shared handlers/composition. See `docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md` for the target contracts and current verification limits.
+BE003 is integrated: its location endpoint uses the location module service and parameterized PostgreSQL adapter. BE002 remains reserved for its assignee; the category endpoint retains its explicit 501 starter. Central routing delegates to these module entry points so teammates can work without changing shared composition. See `docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md`.

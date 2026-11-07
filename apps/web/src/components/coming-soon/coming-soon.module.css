@@ -1,0 +1,805 @@
+.page {
+  --cream: var(--color-orange-50);
+  --pale: var(--color-orange-100);
+  --line: var(--color-orange-200);
+  --orange: var(--color-brand-orange);
+  --action: var(--color-action-primary);
+  --brown: var(--color-orange-900);
+  --deep: var(--color-orange-950);
+  --yellow: var(--color-brand-yellow);
+  --ink: var(--color-text);
+  color: var(--brown);
+  background: var(--cream);
+}
+.page,
+.page * {
+  box-sizing: border-box;
+}
+.page button,
+.page a {
+  -webkit-tap-highlight-color: transparent;
+}
+.page button {
+  font: inherit;
+  cursor: pointer;
+}
+.page button:focus-visible,
+.page a:focus-visible,
+.page canvas:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 5px;
+}
+.theatre button:focus-visible,
+.theatre a:focus-visible,
+.sceneCanvas:focus-visible {
+  outline-color: var(--yellow);
+}
+.page {
+  min-height: 100svh;
+  padding: 0 16px;
+  overflow: clip;
+}
+.masthead {
+  max-width: 1600px;
+  margin: auto;
+  height: 88px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.wordmark {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -1.7px;
+  line-height: 1;
+}
+.wordmark span {
+  color: var(--orange);
+}
+.mastheadNote {
+  margin-left: 24px;
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--brown);
+}
+.brand {
+  display: flex;
+  align-items: center;
+}
+.mastheadTools {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.launchDate {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.6px;
+}
+.iconButton {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--brown);
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+.iconButton:hover {
+  background: var(--color-surface);
+  transform: translateY(-2px);
+}
+.iconButton svg {
+  width: 18px;
+  height: 18px;
+}
+.theatre {
+  position: relative;
+  min-height: 760px;
+  height: calc(100svh - 150px);
+  max-height: 1080px;
+  border-radius: 28px;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--deep);
+  color: var(--cream);
+}
+.stageArc {
+  position: absolute;
+  width: 860px;
+  height: 860px;
+  top: -15%;
+  right: -8%;
+  border: 1px solid var(--brown);
+  border-radius: 50%;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.stageArc.second {
+  width: 1200px;
+  height: 1200px;
+  top: -35%;
+  right: -20%;
+  border-style: dashed;
+  opacity: 0.28;
+}
+.ghostDate {
+  position: absolute;
+  top: -32px;
+  left: 20%;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--brown);
+  font-size: clamp(290px, 38vw, 660px);
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.08em;
+  opacity: 0.65;
+  pointer-events: none;
+}
+.story {
+  position: absolute;
+  z-index: 5;
+  top: 9%;
+  left: clamp(32px, 5vw, 96px);
+  width: 47%;
+  pointer-events: none;
+}
+.eyebrow {
+  margin: 0 0 22px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.eyebrow::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--orange);
+}
+.page h1 {
+  margin: 0;
+  font-size: clamp(46px, 5.5vw, 84px);
+  line-height: 1.29;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+}
+.page h1 .accent {
+  display: block;
+  color: var(--orange);
+  white-space: nowrap;
+}
+.storyNote {
+  margin: 24px 0 0;
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--line);
+  font-weight: 400;
+}
+.storyNote span {
+  display: block;
+}
+.sceneShell {
+  position: absolute;
+  inset: 1% -3% 10% 28%;
+  z-index: 2;
+}
+.campusPoster {
+  position: absolute;
+  width: 112%;
+  max-width: none;
+  height: 112%;
+  object-fit: contain;
+  left: -6%;
+  top: -3%;
+  filter: drop-shadow(
+    0 38px 20px color-mix(in srgb, var(--color-orange-950) 53%, transparent)
+  );
+  transition: opacity 0.6s;
+  animation: world-drift 11s ease-in-out infinite;
+}
+.sceneCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.6s;
+  touch-action: pan-y;
+}
+.sceneShell[data-state='ready'] .sceneCanvas {
+  opacity: 1;
+}
+.sceneShell[data-state='ready'] .campusPoster {
+  opacity: 0;
+  pointer-events: none;
+}
+.sceneShell[data-render-complete='true'] .campusPoster {
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  filter: none;
+}
+.worldCaption {
+  position: absolute;
+  left: 5%;
+  bottom: 18%;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--line);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  pointer-events: none;
+  opacity: 0.75;
+}
+.mascot {
+  position: absolute;
+  z-index: 6;
+  right: 7.5%;
+  bottom: 22%;
+  width: clamp(100px, 10vw, 158px);
+  pointer-events: none;
+  filter: drop-shadow(
+    0 14px 12px color-mix(in srgb, var(--color-orange-950) 53%, transparent)
+  );
+  animation: mascot-breath 4.8s ease-in-out infinite;
+}
+.mascot img {
+  width: 100%;
+  display: block;
+}
+.mascot svg {
+  width: 100%;
+  display: block;
+}
+.sceneTools {
+  position: absolute;
+  z-index: 10;
+  right: 26px;
+  bottom: 25%;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+.sceneTools .iconButton {
+  color: var(--cream);
+  background: var(--deep);
+  border-color: var(--brown);
+}
+.sceneTools .iconButton:hover {
+  border-color: var(--orange);
+  background: var(--brown);
+}
+.theatre:has(.sceneShell[data-state='ready']) .sceneTools {
+  display: flex;
+}
+.sceneHint {
+  position: absolute;
+  right: 13%;
+  bottom: 21%;
+  z-index: 6;
+  display: none;
+  align-items: center;
+  gap: 9px;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--line);
+  pointer-events: none;
+}
+.sceneHint svg {
+  width: 17px;
+  height: 17px;
+}
+.theatre:has(.sceneShell[data-state='ready']) .sceneHint {
+  display: flex;
+}
+.sceneStatus {
+  position: absolute;
+  right: 6%;
+  bottom: 28%;
+  z-index: 10;
+  font-size: 11px;
+  color: var(--line);
+  margin: 0;
+}
+.sceneStatus:empty {
+  display: none;
+}
+.retryScene {
+  position: absolute;
+  right: 6%;
+  bottom: 22%;
+  z-index: 13;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  color: var(--cream);
+  border-radius: 999px;
+  background: var(--deep);
+  font-size: 11px;
+  display: none;
+}
+.theatre:has(.sceneShell[data-state='error']) .retryScene {
+  display: block;
+}
+.page[data-enhanced='false'] .motionButton {
+  visibility: hidden;
+}
+.launchConsole {
+  position: absolute;
+  z-index: 12;
+  inset: auto 28px 28px;
+  min-height: 132px;
+  padding: 24px 32px;
+  border-radius: 18px;
+  background: var(--cream);
+  color: var(--brown);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 36px;
+}
+.countdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(100%, 660px);
+  gap: 24px;
+}
+.countdownCell {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.countdownCell + .countdownCell::before {
+  content: '';
+  height: 48px;
+  width: 1px;
+  background: var(--line);
+  position: absolute;
+  top: 8px;
+  left: -12px;
+}
+.digits {
+  display: inline-block;
+  font-size: 64px;
+  font-weight: 500;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.045em;
+  min-width: 1.1em;
+}
+.unit {
+  color: var(--brown);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.countdownCell:last-child .digits {
+  color: var(--action);
+}
+.release {
+  border-left: 1px solid var(--line);
+  padding-left: 32px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.releaseDay {
+  width: 56px;
+  height: 64px;
+  display: grid;
+  align-content: center;
+  text-align: center;
+  background: var(--action);
+  color: var(--color-neutral-white);
+  border-radius: 10px;
+}
+.releaseDay strong {
+  font-size: 27px;
+  font-weight: 500;
+  line-height: 1;
+}
+.releaseDay small {
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  margin-top: 3px;
+}
+.releaseCopy p {
+  margin: 0 0 5px;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+}
+.releaseCopy time {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+}
+.releaseCopy small {
+  display: block;
+  font-size: 10px;
+  margin-top: 3px;
+}
+.afterLaunch {
+  position: absolute;
+  z-index: 8;
+  left: 5%;
+  bottom: 24%;
+  font-size: 14px;
+  color: var(--cream);
+}
+.afterLaunch a {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 18px;
+  margin-left: 16px;
+  color: var(--deep);
+  background: var(--yellow);
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 13px;
+}
+.signature {
+  height: 62px;
+  padding-inline: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2px;
+}
+.signatureStory {
+  display: flex;
+  gap: 20px;
+}
+.modelCredit {
+  display: flex;
+  gap: 8px;
+  color: var(--brown);
+  font-size: 9px;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.modelCredit a {
+  color: inherit;
+  text-decoration: none;
+}
+.modelCredit a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.entry {
+  animation: entry-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.entry:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.entry:nth-child(3) {
+  animation-delay: 0.22s;
+}
+.consoleEntry {
+  animation: console-in 0.9s 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.page [hidden] {
+  display: none !important;
+}
+.page[data-motion='still'] *,
+.page[data-motion='still'] *::before {
+  animation-play-state: paused !important;
+}
+.page[data-enhanced='false'] .entry,
+.page[data-enhanced='false'] .consoleEntry {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+@keyframes entry-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes console-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes world-drift {
+  50% {
+    transform: translateY(-9px) rotate(-0.6deg);
+  }
+}
+@keyframes mascot-breath {
+  50% {
+    transform: translateY(-3px) rotate(0.7deg);
+  }
+}
+@media (min-width: 1600px) {
+  .story {
+    width: 42%;
+  }
+  .sceneShell {
+    left: 25%;
+    right: 0;
+  }
+}
+@media (max-width: 1100px) {
+  .story {
+    top: 8%;
+    left: 40px;
+    width: 52%;
+  }
+  .page h1 {
+    font-size: 58px;
+  }
+  .sceneShell {
+    inset: 10% -12% 14% 24%;
+  }
+  .digits {
+    font-size: 50px;
+  }
+  .countdownCell {
+    gap: 5px;
+  }
+  .countdown {
+    gap: 16px;
+  }
+  .countdownCell + .countdownCell::before {
+    left: -8px;
+    height: 38px;
+  }
+  .launchConsole {
+    padding: 22px;
+    gap: 22px;
+  }
+  .release {
+    padding-left: 22px;
+    gap: 12px;
+  }
+  .releaseCopy time {
+    font-size: 15px;
+  }
+  .mascot {
+    right: 7%;
+    bottom: 24%;
+  }
+}
+@media (max-width: 760px) {
+  .page {
+    padding: 0 10px;
+  }
+  .masthead {
+    height: 74px;
+    padding-inline: 14px;
+  }
+  .mastheadNote {
+    display: none;
+  }
+  .mastheadTools {
+    gap: 14px;
+  }
+  .wordmark {
+    font-size: 28px;
+  }
+  .launchDate {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  .theatre {
+    height: auto;
+    min-height: 940px;
+    max-height: none;
+    border-radius: 22px;
+  }
+  .story {
+    top: 34px;
+    left: 26px;
+    right: 26px;
+    width: auto;
+  }
+  .eyebrow {
+    font-size: 10px;
+    margin-bottom: 18px;
+  }
+  .page h1 {
+    font-size: clamp(36px, 9.4vw, 64px);
+    line-height: 1.3;
+  }
+  .storyNote {
+    margin-top: 18px;
+    font-size: 13px;
+  }
+  .ghostDate {
+    font-size: 370px;
+    top: 230px;
+    left: -24px;
+  }
+  .sceneShell {
+    inset: 220px -23% auto -22%;
+    height: 440px;
+  }
+  .worldCaption {
+    left: 14px;
+    bottom: 40%;
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .mascot {
+    width: 100px;
+    right: 11%;
+    bottom: auto;
+    top: 530px;
+  }
+  .sceneTools {
+    right: 14px;
+    bottom: auto;
+    top: 420px;
+  }
+  .sceneTools .iconButton {
+    width: 44px;
+    height: 44px;
+  }
+  .sceneHint {
+    bottom: auto;
+    top: 660px;
+    right: 26px;
+  }
+  .sceneStatus {
+    bottom: auto;
+    top: 662px;
+    left: 26px;
+    right: auto;
+  }
+  .retryScene {
+    bottom: auto;
+    top: 684px;
+    right: 26px;
+    min-height: 40px;
+  }
+  .launchConsole {
+    position: relative;
+    inset: auto;
+    margin: 730px 16px 16px;
+    padding: 22px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+    border-radius: 16px;
+  }
+  .countdown {
+    gap: 18px;
+    width: 100%;
+  }
+  .countdownCell {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .digits {
+    font-size: clamp(34px, 9vw, 56px);
+    letter-spacing: -0.04em;
+  }
+  .unit {
+    font-size: 10px;
+  }
+  .countdownCell + .countdownCell::before {
+    height: 34px;
+    top: 6px;
+    left: -9px;
+  }
+  .release {
+    padding: 20px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    gap: 16px;
+    justify-content: center;
+  }
+  .releaseDay {
+    height: 54px;
+    width: 48px;
+  }
+  .releaseCopy time {
+    font-size: 15px;
+  }
+  .afterLaunch {
+    top: 685px;
+    bottom: auto;
+    left: 26px;
+    right: 26px;
+    font-size: 12px;
+  }
+  .afterLaunch a {
+    padding: 8px 13px;
+    margin-left: 8px;
+    font-size: 12px;
+  }
+  .signature {
+    padding: 22px 14px;
+    height: auto;
+    font-size: 8px;
+    gap: 12px;
+    letter-spacing: 1.1px;
+    flex-wrap: wrap;
+  }
+  .signatureStory {
+    gap: 10px;
+  }
+  .modelCredit {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    font-size: 9px;
+    gap: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .entry,
+  .consoleEntry {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.campusPoster {
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  filter: none;
+}
+.gooseArt {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.page[data-enhanced='false'] .sceneStatus {
+  display: none;
+}
+.digitReveal {
+  display: inline-block;
+  animation: digitIn 0.22s ease-out both;
+}
+.page[data-motion='still'] .digitReveal {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+@keyframes digitIn {
+  from {
+    opacity: 0.35;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
