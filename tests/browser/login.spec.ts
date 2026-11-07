@@ -193,14 +193,24 @@ test('offers a working reload when the login-form download stalls', async ({
   page.on('pageerror', (error) => errors.push(error.message));
   const pattern = formChunkPattern();
   let release = () => {};
-  let allowReload = false;
+  let network: 'stalled' | 'failed' | 'recovered' = 'stalled';
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
   let pending: Promise<void> | undefined;
+  const documentPattern = '**/login';
+  await page.route(documentPattern, async (route) => {
+    if (route.request().isNavigationRequest() && network === 'failed')
+      network = 'recovered';
+    await route.continue();
+  });
   await page.route(pattern, async (route) => {
-    if (allowReload) {
+    if (network === 'recovered') {
       await route.continue();
+      return;
+    }
+    if (network === 'failed') {
+      await route.abort();
       return;
     }
     pending = gate.then(() => route.abort());
@@ -216,20 +226,15 @@ test('offers a working reload when the login-form download stalls', async ({
       timeout: 18_000,
     });
     await expect(page.locator('input')).toHaveCount(0);
-    // Keep interception enabled: removing the route resumes its original pending request.
-    // Release that request only after the user's click has committed a document reload.
-    allowReload = true;
-    const reloaded = page.waitForEvent(
-      'framenavigated',
-      (frame) => frame === page.mainFrame(),
-    );
-    await Promise.all([
-      reloaded.then(async () => {
-        release();
-        await pending;
-      }),
-      page.getByRole('button', { name: 'ลองโหลดใหม่', exact: true }).click(),
-    ]);
+    // Settle the old request before reload so Chromium cannot coalesce the new chunk with it.
+    // Keep failures enabled until a real document request; the button cannot disappear early.
+    network = 'failed';
+    release();
+    await pending;
+    await expect(page.locator('[data-login-load-error]')).toBeVisible();
+    await page
+      .getByRole('button', { name: 'ลองโหลดใหม่', exact: true })
+      .click();
     await expect(page.locator('[data-login-screen]')).toBeVisible();
     await expect(page.getByLabel('อีเมล', { exact: true })).toBeVisible();
     expect(errors).toEqual([]);
@@ -237,6 +242,7 @@ test('offers a working reload when the login-form download stalls', async ({
     release();
     await pending;
     await page.unroute(pattern);
+    await page.unroute(documentPattern);
   }
 });
 
@@ -460,7 +466,11 @@ test('logs in through the real API and receives an HttpOnly session in the isola
   );
   await page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }).click();
   expect((await response).status()).toBe(200);
-  await expect(page).toHaveURL(/\/research\/kmutt-bangmod$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.locator('[data-dashboard]')).toBeVisible();
+  await expect(
+    page.getByText(`สวัสดี, ${browserAccount.name}`, { exact: true }),
+  ).toBeVisible();
   const profile = await page.evaluate(async () => {
     const response = await fetch('/api/v1/auth/me');
     return { status: response.status, body: await response.json() };

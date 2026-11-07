@@ -1,0 +1,368 @@
+.root {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.intro p {
+  margin: 0 0 0.375rem;
+  font-size: 0.75rem;
+  color: var(--color-orange-700);
+}
+.intro h1 {
+  margin: 0 0 0.375rem;
+  font-size: clamp(1.5rem, 2.3vw, 1.875rem);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.intro span {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  font-size: 0.75rem;
+  text-decoration: none;
+  color: var(--color-text-muted);
+  flex: none;
+}
+.backLink svg {
+  transform: rotate(180deg);
+}
+.backLink:hover {
+  color: var(--color-orange-700);
+}
+.identity {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-orange-200);
+  background: var(--color-orange-50);
+  margin-bottom: 1.25rem;
+}
+.identityPerson {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+.portrait {
+  position: relative;
+  flex: none;
+  width: 84px;
+  height: 84px;
+  padding: 4px;
+  border-radius: 50%;
+  background: var(--color-surface);
+}
+.photoProgress {
+  position: absolute;
+  inset: 4px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--color-orange-100);
+}
+.identityCopy {
+  min-width: 0;
+}
+.identityCopy h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.identityCopy p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-orange-800);
+  overflow-wrap: anywhere;
+}
+.studentId {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  font-size: 0.6875rem;
+  font-family: var(--font-outfit), sans-serif;
+  color: var(--color-orange-800);
+}
+.photoControls {
+  flex: none;
+  max-width: 46%;
+}
+.photoButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+.photoControls :global(.MuiButton-root) {
+  min-height: 44px;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--color-orange-800);
+  border-color: var(--color-orange-700);
+}
+.photoHelp {
+  margin: 0.5rem 0 0;
+  font-size: 0.625rem;
+  color: var(--color-orange-800);
+  text-align: right;
+  line-height: 1.7;
+}
+.removePhoto {
+  padding: 0.5rem 0.75rem;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  border-radius: 0.75rem;
+  color: var(--color-orange-800);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.removePhoto:hover {
+  background: var(--color-orange-100);
+}
+.fileInput {
+  display: none;
+}
+.form {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  min-width: 0;
+}
+.section {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 1.75rem 1.5rem;
+}
+.section + .section {
+  border-top: 1px solid var(--color-border);
+}
+.sectionHeading h2 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 1.25rem;
+}
+.fields :global(.MuiOutlinedInput-root) {
+  font-size: 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  transition: background 0.18s ease-out;
+}
+.fields :global(.MuiInputLabel-root) {
+  font-size: 0.8125rem;
+}
+.fields :global(.MuiFormHelperText-root) {
+  font-size: 0.6875rem;
+}
+.fields :global(input) {
+  scroll-margin-block: 8rem;
+}
+.password {
+  grid-column: 1/-1;
+  overflow: hidden;
+}
+.actions {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 1.25rem 1.25rem;
+  background: var(--color-surface);
+  box-shadow: 0 -8px 20px color-mix(in srgb, var(--color-text) 3%, transparent);
+}
+.feedback {
+  min-height: 44px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.feedback p {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.7;
+}
+.feedback svg {
+  flex: none;
+}
+.failure {
+  color: var(--color-danger);
+}
+.success {
+  color: var(--color-success);
+}
+.saveHint {
+  color: var(--color-text-muted);
+}
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+.actionButtons :global(.MuiButton-root) {
+  min-height: 44px;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+}
+.root a:focus-visible,
+.root button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+.skeletonTitle {
+  margin-bottom: 1.5rem;
+}
+.skeletonTitle :global(.MuiSkeleton-root) {
+  max-width: 100%;
+}
+.skeletonPerson {
+  flex: 1;
+  min-width: 0;
+}
+.skeletonButton {
+  width: 160px;
+}
+.skeletonFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.skeletonField {
+  min-width: 0;
+}
+.skeletonField :global(.MuiSkeleton-root) {
+  max-width: 100%;
+}
+.skeletonLabel {
+  margin-bottom: 0.5rem;
+}
+.root[data-motion='still'] :global(.MuiSkeleton-root)::after {
+  animation-play-state: paused;
+}
+@media (max-width: 1150px) {
+  .section {
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+}
+@media (max-width: 760px) {
+  .intro {
+    align-items: flex-start;
+  }
+  .backLink {
+    font-size: 0;
+    gap: 0;
+    width: 44px;
+    justify-content: center;
+  }
+  .backLink svg {
+    width: 18px;
+    height: 18px;
+  }
+  .identity {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .photoControls {
+    max-width: none;
+    width: 100%;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-orange-200);
+  }
+  .photoButtons {
+    justify-content: flex-start;
+  }
+  .photoHelp {
+    text-align: left;
+  }
+  .section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    padding: 1.5rem;
+  }
+  .actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    bottom: 0.5rem;
+  }
+  .feedback {
+    min-height: 28px;
+  }
+}
+@media (max-width: 500px) {
+  .fields,
+  .skeletonFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .identity,
+  .section {
+    padding: 1.25rem;
+  }
+  .portrait {
+    width: 72px;
+    height: 72px;
+    padding: 0;
+    background: transparent;
+  }
+  .portrait > span {
+    max-width: 72px;
+    max-height: 72px;
+  }
+  .photoProgress {
+    inset: 0;
+  }
+  .identityPerson {
+    gap: 0.875rem;
+  }
+  .actions {
+    padding: 0.75rem 1rem;
+  }
+  .actionButtons {
+    width: 100%;
+  }
+  .actionButtons :global(.MuiButton-contained) {
+    flex: 1;
+  }
+  .skeletonButton {
+    width: 150px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fields :global(.MuiOutlinedInput-root) {
+    transition: none;
+  }
+  .root :global(.MuiSkeleton-root)::after {
+    animation: none;
+  }
+}
