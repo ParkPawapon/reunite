@@ -11,6 +11,7 @@ export default defineConfig([
     '**/.next/**',
     '**/node_modules/**',
     'tmp/**',
+    '.superdesign/**',
     '**/next-env.d.ts',
   ]),
   {
