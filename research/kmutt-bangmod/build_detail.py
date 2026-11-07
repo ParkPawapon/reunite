@@ -59,6 +59,7 @@ def build_detail(*, compact_positions=False):
             "N10": "N16",
             "N11": "N16",
             "N12": "N15",
+            "N13": "N16",
             "N14": "N15",
             "N15": "N16",
             "N16": "emerald-pond",
@@ -111,8 +112,10 @@ def build_detail(*, compact_positions=False):
         code = props["code"]
         name = f"{code} | {props['nameEn']}"
         west, south, east, north = footprint.bounds
+        margin = 7 if id_ == "S14" else 4
         transform = glb.mesh_coordinates(
-            (west - 4, -1, -north - 4), (east + 4, props["heightM"] + 4, -south + 4)
+            (west - margin, -1, -north - margin),
+            (east + margin, props["heightM"] + 4, -south + margin)
         )
         massing = height_break(id_, footprint)
         plaques, signage = building_signs(
@@ -157,7 +160,31 @@ def build_detail(*, compact_positions=False):
             else "photo-informed",
             "facadeSource": f"{atlas}{code}.html",
             "facadeScope": "Observed elevations only; remaining sides and roofs are estimates.",
+            "joineryBasis": "Profiled window rims and projecting mullions on existing openings; section sizes are visualization estimates.",
         }
+        if id_ == "N9":
+            extras["exteriorDetails"] = {
+                "observed": ["stacked ventilation panels", "projecting curved curtain-wall grid", "continuous floor-edge fascias"],
+                "source": "https://fibo.kmutt.ac.th/about/new-building/",
+                "dimensionBasis": "Photo-interpreted; not field-measured.",
+            }
+        elif id_ == "N11":
+            extras["exteriorDetails"] = {
+                "observed": ["upper entry-elevation louvres", "bracing behind the upper screen"],
+                "source": "https://bgm.kmutt.ac.th/MapNavi/N11.html",
+                "dimensionBasis": "Photo-interpreted visible entry elevation only; not field-measured.",
+            }
+        if id_ in {"N10", "N13", "N20", "S14"}:
+            extras["exteriorDetails"] = {
+                "observed": {
+                    "N10": ["three-level glazed entry", "inset side stair", "white stair portal frames"],
+                    "N13": ["curved white roof-edge trellis", "continuous upper louvres", "service shutter bays", "hanging climbers"],
+                    "N20": ["deep sun fins with sloping lower returns"],
+                    "S14": ["two-chord triangulated entrance space frame", "tall round entrance columns"],
+                }[id_],
+                "source": f"{atlas}{code}.html",
+                "dimensionBasis": "Photo-interpreted dimensions and placement; vegetation is illustrative, not surveyed.",
+            }
         if signage:
             extras["signage"] = signage
         if massing:

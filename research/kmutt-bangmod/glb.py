@@ -154,17 +154,24 @@ class Glb:
         definition.update(alphaMode="MASK", alphaCutoff=0.4)
         return material
 
-    def primitive(self, surface, material, *, uvs=None):
+    def primitive(self, surface, material, *, uvs=None, derive_flat_normals=False):
         count = len(surface.indices)
         if len(surface.positions) > 65535:
             indices, component = pack(f"<{count}I", *surface.indices), 5125
         else:
             indices, component = pack(f"<{count}H", *surface.indices), 5123
+        attributes = {"POSITION": self.positions(surface.positions)}
+        # glTF permits deriving flat face normals from triangle winding.
+        # The caller selects eligible surfaces; the writer rejects smooth shading.
+        if derive_flat_normals:
+            for start in range(0, len(surface.indices), 3):
+                normals = [surface.normals[index] for index in surface.indices[start:start + 3]]
+                if not normals[0] == normals[1] == normals[2]:
+                    raise ValueError("A smoothed surface requires authored normals")
+        else:
+            attributes["NORMAL"] = self.normals(surface.normals)
         result = {
-            "attributes": {
-                "POSITION": self.positions(surface.positions),
-                "NORMAL": self.normals(surface.normals),
-            },
+            "attributes": attributes,
             "indices": self.accessor(indices, component, "SCALAR", 34963, count),
             "material": material,
         }

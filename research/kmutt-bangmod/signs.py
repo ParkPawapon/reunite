@@ -83,7 +83,10 @@ SIGNS = {
     ),
     "N8": (Sign(("N8",), None, 1.30, 0.62, 2.68, 0.82, backing=YELLOW),),
     "N9": (Sign(("FIBO",), None, 4.6, 1.30, 28.20, 0.70, 0.94, ink="ac4827"),),
-    "N10": (Sign(("หอสมุด",), None, 5.8, 1.32, 5.15),),
+    "N10": (
+        Sign(("สำนัก", "หอสมุด"), None, 5.8, 1.32, 5.15),
+        Sign(("LIBRARY",), None, 2.8, 0.48, 3.70),
+    ),
     "N11": (
         Sign(("คณะเทคโนโลยีสารสนเทศ", "School of Information Technology"), None, 6.2, 0.97, 5.05, 0.76,
              ink="656b62", source="https://www.kmutt.ac.th/virtual/bangmod/#media-index=16"),

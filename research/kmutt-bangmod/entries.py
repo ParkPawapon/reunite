@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from exterior_features import canopy_space_frame
 from shapely.geometry import LineString, Point
 from wall import Opening, Wall
 
@@ -18,6 +19,10 @@ class Entry:
     position: float = 0.5
     round_posts: bool = False
     canopy_levels: int = 1
+    space_frame: bool = False
+    post_finish: str = "metal"
+    post_radius: float = 0.24
+    canopy_drop: float = 0.0
 
 
 # Width, canopy projection, setback and rise are photo-informed estimates in metres.
@@ -29,7 +34,7 @@ ENTRIES = {
     "N5": Entry("N6", 4.7, 1.30, 0.70, 0.28, True),
     "N6": Entry("N7", 4.4, 1.75, 0.95, 0.15, True),
     "N7": Entry(None, 6.2, 1.45, 0.90, 0.32, True),
-    "N10": Entry("N16", 8.8, 0.35, 0.65, 0.48),
+    "N10": Entry("N16", 8.8, 0.35, 0.65, 0.48, canopy_drop=0.70),
     "N11": Entry("N16", 11.2, 3.60, 0.75, 0.30, True, "metal", round_posts=True, canopy_levels=2),
     "N15": Entry("N16", 10.6, 1.75, 1.40, 0.18, True, "metal", round_posts=True),
     "N17": Entry("N19", 5.3, 1.35, 0.75, 0.24),
@@ -45,7 +50,9 @@ ENTRIES = {
     "S7": Entry("S5", 6.8, 2.00, 0.60, 0.45, True, "accent"),
     "S9": Entry("S5", 7.1, 0.9, 1.05, 0.30),
     "S10": Entry("learning-garden", 6.7, 0.35, 0.45, finish="frame"),
-    "S14": Entry("sports-field", 16.0, 2.30, 1.30, 0.92, True),
+    "S14": Entry("sports-field", 16.0, 5.40, 1.30, 0.92, True,
+                 round_posts=True, canopy_levels=3, space_frame=True,
+                 post_finish="portal", post_radius=0.42),
     "S15": Entry("learning-garden", 21.0, 1.50, 1.10, 0.62, True, "frame"),
 }
 
@@ -85,7 +92,7 @@ def draw_entry(edge, entry, storey, interior, clear, ground, surfaces, solid):
     right = left + width
     porch_left, porch_right = left - 0.12, right + 0.12
     head = min(storey - 0.28, 3.6)
-    canopy_head = storey * entry.canopy_levels - 0.28
+    canopy_head = storey * entry.canopy_levels - 0.28 - entry.canopy_drop
     rise = min(entry.rise, head - 1.95)
     depth = edge.recess_depth(interior, left, right, entry.depth)
     reach = next(
@@ -112,6 +119,9 @@ def draw_entry(edge, entry, storey, interior, clear, ground, surfaces, solid):
                 canopy_head + 0.23,
                 reach + 0.002,
             )
+        if entry.space_frame:
+            canopy_space_frame(edge, surfaces["trellis"], porch_left, porch_right,
+                               reach, canopy_head)
     tread = min(0.39, max(0.25, width * 0.043))
     steps = round(rise / 0.17)
     if steps and ground.covers(edge.band(left, right, 0.005, steps * tread + 0.02)):
@@ -129,9 +139,10 @@ def draw_entry(edge, entry, storey, interior, clear, ground, surfaces, solid):
         for along in (porch_left + 0.25, porch_right - 0.25):
             if entry.round_posts:
                 east, _, south = edge.point(along, 0, reach - 0.31)
-                post = Point(east, -south).buffer(0.24, quad_segs=12)
+                post = Point(east, -south).buffer(entry.post_radius, quad_segs=16)
             else:
                 post = edge.band(along - 0.13, along + 0.13, reach - 0.34, reach - 0.08)
             if ground.covers(post):
-                solid(surfaces["metal" if entry.round_posts else "portal"], post, 0.025, canopy_head + 0.08)
+                solid(surfaces[entry.post_finish if entry.round_posts else "portal"],
+                      post, 0.025, canopy_head + 0.08)
     return Opening(left, right, max(0.06, rise), head, depth, "door")

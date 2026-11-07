@@ -24,6 +24,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createDaylightEnvironment } from './daylight-environment';
 import type { LiveFix } from './live-position';
 import {
   layoutMapLabels,
@@ -151,6 +152,7 @@ export async function mountCampusScene({
   let observer: ResizeObserver | undefined;
   let pointerStart: { x: number; y: number; id: number } | undefined;
   let disposed = false;
+  let daylight: ReturnType<typeof createDaylightEnvironment> | undefined;
   let pin: Vector3 | null = null;
   let livePin: Vector3 | null = null;
   let routeStart: Vector3 | null = null;
@@ -269,6 +271,8 @@ export async function mountCampusScene({
     accuracyDisc.geometry.dispose();
     accuracyDisc.material.dispose();
     key.shadow.dispose();
+    scene.environment = null;
+    daylight?.dispose();
     renderer.dispose();
   };
 
@@ -302,6 +306,9 @@ export async function mountCampusScene({
     signal.throwIfAborted();
     if (parts.size !== knownIds.size)
       throw new Error('Campus catalog and model disagree');
+    daylight = createDaylightEnvironment(renderer);
+    scene.environment = daylight.texture;
+    scene.environmentIntensity = 0.1;
     scene.add(model, new HemisphereLight('#e6efff', '#b0a899', 1.82));
     key.position.set(-320, 540, 220);
     key.castShadow = true;
