@@ -15,6 +15,8 @@ def main():
     parser.add_argument("--model", type=Path, required=True)
     args = parser.parse_args(sys.argv[sys.argv.index("--") + 1 :])
     raw = args.model.read_bytes()
+    if bpy.context.scene.get("sourceGlbSha256") != hashlib.sha256(raw).hexdigest():
+        raise ValueError("Saved Blender scene was not generated from the current GLB")
     size = struct.unpack_from("<I", raw, 12)[0]
     gltf = json.loads(raw[20 : 20 + size])
     expected = {node["extras"]["featureId"]: node["extras"] for node in gltf["nodes"] if "featureId" in node.get("extras", {})}
@@ -24,8 +26,10 @@ def main():
     for id_, props in expected.items():
         if modeled[id_]["heightM"] != props["heightM"]:
             raise ValueError(f"Saved Blender height metadata is stale: {id_}")
-    if len(bpy.data.cameras) != 11:
-        raise ValueError("Expected eleven campus and building cameras")
+        if any(obj.hide_render for obj in (modeled[id_], *modeled[id_].children_recursive)):
+            raise ValueError(f"An isolated review view hid a building in the saved campus scene: {id_}")
+    if len(bpy.data.cameras) != 15:
+        raise ValueError("Expected fifteen campus and building cameras")
     if bpy.data.libraries:
         raise ValueError("Delivery scene depends on an external Blender library")
     textures = [image for image in bpy.data.images if image.source == "FILE"]
@@ -38,7 +42,7 @@ def main():
         raise ValueError("Saved Blender lettering atlas differs from the current GLB")
     if bpy.context.scene.render.engine != "CYCLES" or bpy.context.scene.cycles.samples != 96:
         raise ValueError("Final scene must retain Cycles 96-sample render settings")
-    print("PASS editable Blender scene: 39 buildings, 11 cameras, current packed sign atlas, no external libraries, Cycles 96 samples")
+    print("PASS editable Blender scene: current GLB SHA-256, 39 buildings, 15 cameras, current packed sign atlas, no external libraries, Cycles 96 samples")
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ PUBLIC = ROOT / "apps/web/public/research/kmutt-bangmod"
 STUDY = Path(__file__).resolve().parent
 RENDERS = (
     "campus", "lx", "lx-plaza", "lx-roof", "s3", "fibo", "s4", "s15",
-    "n7", "n11", "s14", "loading",
+    "n7", "n11", "s14", "n13", "n10", "n20", "s14-entry", "loading",
 )
 ELEVATIONS = ("north", "east", "south", "west", "roof-oblique")
 
@@ -43,7 +43,7 @@ def encode_renders(folder):
             image.save(path.with_suffix(".webp"), quality=92, method=6)
             image.thumbnail((1110, 1050))
             image.save(path.with_name(f"{name}-review.jpg"), quality=89)
-    print("Encoded 11 full-size renders and loading poster; checked all 195 elevation cells")
+    print("Encoded 15 full-size renders and loading poster; checked all 195 elevation cells")
 
 
 def package(folder):
@@ -58,7 +58,7 @@ def package(folder):
         if path.suffix in {".geojson", ".json"}:
             files[f"source/{path.relative_to(ROOT).as_posix()}"] = path
     for path in STUDY.rglob("*"):
-        if path.is_file() and path.suffix in {".py", ".md", ".json", ".ttf", ".txt"}:
+        if path.is_file() and path.suffix in {".py", ".mjs", ".md", ".json", ".ttf", ".txt"}:
             files[f"source/{path.relative_to(ROOT).as_posix()}"] = path
     for name in ("catalog.generated.json", "anchors.generated.json"):
         path = ROOT / "apps/web/src/app/research/kmutt-bangmod" / name

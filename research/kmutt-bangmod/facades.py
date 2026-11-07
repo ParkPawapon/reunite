@@ -6,12 +6,13 @@ from dataclasses import dataclass
 from math import cos, hypot, pi, sin
 
 from entries import ENTRIES, draw_entry, select_entry_wall
+from exterior_features import greenhouse, library_stairs, tapered_fins
 from geometry import Surface, extrude
 from lx_exterior import PODIUM_FLOORS, draw_solar_arrays, tower_footprint
 from roof_studies import S14_EAVE, roof_finish, s14_roof
 from service_roofs import SLOPED_ROOFS, service_roof
 from shapely import orient_polygons, union_all
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, Point, Polygon
 from wall import Opening, Wall
 
 
@@ -170,12 +171,45 @@ def draw_guard(edge, surface, base, offset):
         solid(surface, post, base + 0.015, base + 1.06)
 
 
-def draw_louvres(edge, surface, left, right, bottom, top, spacing, projection):
+def draw_louvres(
+    edge, surface, left, right, bottom, top, spacing, projection, *, offset=0.025
+):
     rows = max(1, round((top - bottom) / spacing))
     for row in range(rows):
         y = bottom + (top - bottom) * row / rows
-        slat = edge.band(left, right, 0.025, projection)
+        slat = edge.band(left, right, offset, projection)
         solid(surface, slat, y, y + min(0.09, spacing * 0.37))
+
+
+def draw_sit_screen(edge, surfaces, opening, *, braced):
+    """N11's visible upper entry elevation; unobserved elevations stay unchanged."""
+    left, right, bottom, top = opening.left, opening.right, opening.bottom, opening.top
+    back = -opening.depth + 0.055
+    if braced:
+        # The photographed X sits behind the horizontal screen, not on the glass.
+        for start, end in (
+            ((left, bottom), (right, top)), ((left, top), (right, bottom))
+        ):
+            dx, dy = end[0] - start[0], end[1] - start[1]
+            length = hypot(dx, dy)
+            nx, ny = -dy / length * 0.045, dx / length * 0.045
+            points = [
+                (start[0] + nx, start[1] + ny), (start[0] - nx, start[1] - ny),
+                (end[0] - nx, end[1] - ny), (end[0] + nx, end[1] + ny),
+            ]
+            front = [edge.point(x, y, back + 0.065) for x, y in points]
+            rear = [edge.point(x, y, back) for x, y in points]
+            edge.profiled_quad(surfaces["metal"], *front)
+            edge.profiled_quad(surfaces["metal"], *rear[::-1])
+            for index in range(4):
+                next_ = (index + 1) % 4
+                edge.profiled_quad(
+                    surfaces["metal"], rear[index], rear[next_], front[next_], front[index]
+                )
+    draw_louvres(
+        edge, surfaces["metal"], left, right, bottom + 0.035, top - 0.025,
+        0.16, back + 0.145, offset=back + 0.095,
+    )
 
 
 def draw_glazed_shaft(edge, surfaces, left, right, height, storey):
@@ -297,6 +331,14 @@ def draw_fibo_front(edge, surfaces, floors, storey):
         surface.triangle((a, b, c), normal)
         surface.triangle((a, c, d), normal)
 
+    def rib(t0, t1, low, high, *, front=0.075):
+        corners = [point(t, 0, depth) for t, depth in (
+            (t0, 0.008), (t1, 0.008), (t1, front), (t0, front)
+        )]
+        solid(
+            surfaces["mullion"], Polygon([(x, -z) for x, _, z in corners]), low, high
+        )
+
     for index in range(divisions):
         t0, t1 = index / divisions, (index + 1) / divisions
         for y, vertical in ((storey, -1), (floors * storey, 1)):
@@ -334,14 +376,31 @@ def draw_fibo_front(edge, surfaces, floors, storey):
     )
     for floor in range(1, floors):
         base = storey * floor
+        # The reference shows a vent stack beside the bowed curtain wall.
+        if floor < floors - 1:
+            vent_left, vent_right = edge.length * 0.315, edge.length * 0.405
+            low, high = base + storey * 0.21, base + storey * 0.83
+            edge.panel(surfaces["shadow"], vent_left, vent_right, low, high, 0.086)
+            draw_louvres(edge, surfaces["metal"], vent_left, vent_right, low, high,
+                         0.18, 0.16, offset=0.095)
+            for x in (vent_left, (vent_left + vent_right) / 2, vent_right):
+                edge.bar(surfaces["mullion"], x - 0.018, x + 0.018, low, high, 0.086, 0.17)
+        # Floor-edge metal continues across the opaque part and the glazed bow.
+        fascia_y = base + storey * 0.96
+        solid(surfaces["metal"], edge.band(edge.length * 0.14, left, 0.082, 0.18),
+              fascia_y, base + storey)
         for index in range(divisions):
             a, b = index / divisions, (index + 1) / divisions
             glazing(surfaces["spandrel"], a, b, base, base + storey * 0.36, 0)
             glazing(
                 surfaces["glass"], a, b, base + storey * 0.36, base + storey * 0.96, 0
             )
-            glazing(surfaces["metal"], a, b, base + storey * 0.96, base + storey, 0)
-            glazing(surfaces["mullion"], a, a + 0.0028, base, base + storey, 0.014)
+            rib(a, b, base + storey * 0.96, base + storey, front=0.095)
+            rib(a, a + 0.0028, base, base + storey)
+        rib(1 - 0.0028, 1, base, base + storey)
+        slot_left, slot_right = edge.length * 0.17, edge.length * 0.22
+        edge.bar(surfaces["mullion"], slot_left, slot_right,
+                 base - 0.025, base + 0.025, 0.068, 0.10)
     for fraction in (0.61, 0.86):
         draw_leaning_support(
             edge, surfaces["accent"], edge.length * fraction, storey * 1.27
@@ -487,6 +546,10 @@ def facade_mesh(
         fibo_front = None
         if mode == "fibo":
             fibo_front = fibo_front_edge(polygon, frontage)
+        greenhouse_front = (
+            select_entry_wall(polygon, frontage, mapped_approach=False)
+            if id_ == "N13" else None
+        )
         if mode == "lx":
             fascia = polygon.buffer(0.96, join_style="mitre").difference(
                 polygon.buffer(-0.09, join_style="mitre")
@@ -527,7 +590,11 @@ def facade_mesh(
                 primary_entry = (
                     first_floor == 0 and ring_index == 0 and (start, end) == entry_wall
                 )
+                if (start, end) == greenhouse_front:
+                    greenhouse(edge, surfaces, height, interior, solid)
+                    continue
                 door = None
+                library_bay = None
                 if primary_entry:
                     door = draw_entry(
                         edge,
@@ -541,6 +608,10 @@ def facade_mesh(
                     )
                     if mode == "hub":
                         wall_mode = mode
+                    if id_ == "N10":
+                        library_bay = library_stairs(
+                            edge, surfaces, door, storey, interior, solid
+                        )
                 if mode == "fibo":
                     if (start, end) == fibo_front:
                         edge.panel(surfaces["wall"], 0, edge.length, 0, base_height)
@@ -648,6 +719,9 @@ def facade_mesh(
                         inset = bay * margin
                         low, high = base + storey * sill, base + storey * head
                         left, right = x + inset, x + bay - inset
+                        if library_bay is not None and floor < 3:
+                            if right > door.left and left < library_bay[1]:
+                                continue
                         if (
                             id_ == "N11" and primary_entry and floor == 1
                             and right > edge.length * 0.66 and left < edge.length * 0.86
@@ -669,8 +743,21 @@ def facade_mesh(
                             else 0.21
                         )
                         depth = edge.recess_depth(interior, left, right, setback)
-                        finish = "frame" if wall_mode == "garage" else "glass"
-                        openings.append(Opening(left, right, low, high, depth, finish))
+                        sit_screen = (
+                            id_ == "N11" and primary_entry and floor >= floor_count - 2
+                        )
+                        finish = (
+                            "shadow" if sit_screen else "frame"
+                            if wall_mode == "garage" else "glass"
+                        )
+                        opening = Opening(left, right, low, high, depth, finish)
+                        openings.append(opening)
+                        if sit_screen:
+                            draw_sit_screen(
+                                edge, surfaces, opening,
+                                braced=floor == floor_count - 1
+                                and col < max(1, bays // 3),
+                            )
                         if wall_mode == "garage":
                             draw_louvres(
                                 edge,
@@ -682,7 +769,22 @@ def facade_mesh(
                                 0.16,
                                 0.07,
                             )
-                    if floor == 0 and door is not None:
+                    if library_bay is not None and floor < 3:
+                        low = max(door.bottom, base + 0.035)
+                        high = base + storey - 0.035
+                        openings.append(Opening(door.left, door.right, low, high, 0.18,
+                                                "door" if floor == 0 else "glass"))
+                        stair_left, stair_right, stair_depth = library_bay
+                        openings.append(Opening(stair_left, stair_right, base + 0.035,
+                                                high, stair_depth, "shadow"))
+                        # Pale glazed spandrels in the photographed entrance box.
+                        if floor in (1, 2):
+                            band_low = base + (storey * 0.27 if floor == 1 else storey * 0.70)
+                            band_top = base + (storey * 0.62 if floor == 1 else storey - 0.04)
+                            edge.panel(surfaces["library-panel"], door.left, door.right,
+                                       band_low, band_top, 0.030)
+                        openings.sort(key=lambda item: item.left)
+                    elif floor == 0 and door is not None:
                         openings.append(door)
                         openings.sort(key=lambda item: item.left)
                     edge.story(surfaces, role, base, base + storey, openings)
@@ -691,7 +793,7 @@ def facade_mesh(
                     for i in range(count):
                         mid = (i + 0.5) * edge.length / count
                         east, _, south = edge.point(mid, 0, 0.69)
-                        column = Point(east, -south).buffer(0.54, quad_segs=5)
+                        column = Point(east, -south).buffer(0.54, quad_segs=16)
                         solid(surfaces["accent"], column, 0.04, storey * 1.92)
                 if wall_mode == "shaft" and bays >= 3 and id_ != "N12":
                     left, right = edge.length - bay * 0.94, edge.length - bay * 0.12
@@ -722,7 +824,10 @@ def facade_mesh(
                         edge, surfaces, (bays - 1) * bay + 0.03,
                         edge.length - 0.03, height, storey,
                     )
-                if wall_mode == "fins" and edge.length >= 7:
+                if id_ == "N20" and primary_entry:
+                    tapered_fins(edge, surfaces["trim"], volume_top - storey * 2,
+                                 volume_top - 0.25)
+                elif wall_mode == "fins" and edge.length >= 7:
                     count = max(1, round(edge.length / 1.75))
                     for i in range(count):
                         mid = (i + 0.5) * edge.length / count
@@ -769,7 +874,7 @@ def facade_mesh(
                     for row in range(int((top - bottom) / 0.28)):
                         y = bottom + row * 0.28
                         solid(surfaces["screen"], louvre, y, y + 0.10)
-        if polygon.area < 120 or profile.eave or service_front is not None or id_ == "S14":
+        if polygon.area < 120 or profile.eave or service_front is not None or id_ in {"S14", "N13"}:
             continue
         inset = polygon.buffer(-0.42, join_style="mitre")
         if not inset.is_empty:
@@ -804,6 +909,10 @@ def facade_mesh(
         "shadow": ("Recess interior", "2b3739"),
         "timber": ("Timber-coloured cladding", "a98c72"),
         "hub-column": ("Ochre entrance pier", "d9a137"),
+        "trellis": ("Painted exterior steel", "e1e4dc"),
+        "vine": ("Climbing planting", "4f7044"),
+        "vine-light": ("Climbing planting highlights", "6b8950"),
+        "library-panel": ("Library glazed spandrel", "9cbcb0"),
     }
     primitives = []
     finishes = {
@@ -815,6 +924,9 @@ def facade_mesh(
         "railing": (0.16, 0.43),
         "solar": (0.20, 0.31),
         "door-frame": (0.35, 0.43),
+        "trellis": (0.10, 0.53),
+        "vine": (0.0, 0.87),
+        "library-panel": (0.0, 0.38),
     }
     for role, surface in surfaces.items():
         label, color = palette[role]
@@ -826,5 +938,8 @@ def facade_mesh(
             metallic=metallic,
             roughness=roughness,
         )
-        primitives.append(glb.primitive(surface, material))
+        primitives.append(glb.primitive(
+            surface, material,
+            derive_flat_normals=role == "reveal" and glb.compact_positions,
+        ))
     return primitives

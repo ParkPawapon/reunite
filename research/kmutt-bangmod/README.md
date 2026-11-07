@@ -2,6 +2,19 @@
 
 Open `/research/kmutt-bangmod` on the local Next.js app. The study is independent of Lost & Found, authentication, and PostgreSQL. The browser renders the checked-in GLB locally; no tile service, remote model requests, or API keys are needed. A searchable catalog and downloads remain available when WebGL is unavailable.
 
+The [2026-11-06 exterior detail review](EXTERIOR-DETAIL-REVIEW.md) records the profiled
+joinery, FIBO ventilation/grid refinement, SIT upper screens, local PBR daylight,
+source evidence and accuracy limits. See [PERFORMANCE.md](PERFORMANCE.md) for the
+measurements associated with each asset version.
+
+Use the [accuracy register](ACCURACY-REGISTER.md) for each building's height,
+footprint evidence and route-endpoint limitations. Regenerate it with
+`python research/kmutt-bangmod/audit_accuracy.py`, or add `--check` to reject a stale
+register. The [10 Mbps loading baseline](PERFORMANCE.md#landmark-detail-assets--2026-11-06)
+records first/repeat visits and can be rerun with
+`node research/kmutt-bangmod/measure-loading.mjs --mbps 10` against the local
+production server.
+
 The model covers the main campus at 126 Pracha Uthit Road, including its university dormitories and FIBO parcel. It represents all **35 named campus plan codes (N1–N20, S1–S15)** as **39 building records**, with separate records for S2 parking/seminar and the four S4 engineering blocks. The university's FY 2568 inventory lists 43 facilities. The four additional inventory entries (engineering club and three unnumbered facilities) are not separately modeled. The boundary, two ponds, sports field/track, and two green areas provide campus context. No surrounding buildings or other campuses are modeled.
 
 ## Files and accuracy
@@ -34,7 +47,7 @@ The generator projects the reviewed source into metres, checks scope and overlap
 
 The viewer links to the [Google Maps satellite view](https://www.google.com/maps/@?api=1&map_action=map&center=13.65145%2C100.49385&zoom=17&basemap=satellite) for side-by-side comparison in another tab. Geographic geometry and assets come from the sources listed in the notice. Rotate around the campus by dragging or using the 45-degree controls. Camera panning stays parallel to the campus plane, and the orbit stops above the horizon.
 
-Build and check the detailed asset from the same Python environment as the base model. Render it with Blender 4.5 LTS. The script adds daylight and procedural material effects, then writes a campus view, LX, FIBO, S3, S4 and S15 close-ups, LX views of the plaza and rooftop, and an editable Blender scene. Use `--preview` for draft images or `--device CPU` on a machine without a compatible NVIDIA device.
+Build and check the detailed asset from the same Python environment as the base model. Render it with Blender 4.5 LTS. The script adds daylight and procedural material effects, then writes fifteen campus/building views and an editable Blender scene. New detail views include the N13 trellis, N10 glazed entry/stair, N20 isolated facade and S14 entrance truss. Use `--preview` for draft images or `--device CPU` on a machine without a compatible NVIDIA device.
 
 ```powershell
 & tmp/campus-model-venv/Scripts/python.exe research/kmutt-bangmod/build_detail.py
@@ -114,4 +127,4 @@ Run the local capture audit separately from CI, because it needs the private ref
 
 The audit verifies every registered JPEG, dimensions, paths, camera identities and SHA-256 hashes. Its HTML gallery opens locally, and its ZIP passes CRC verification. It excludes the interrupted P066 sweep. Exterior coverage still does not include every facade of every building, and no coordinate or dimension has been field surveyed.
 
-`verify_render_scene.py` runs in Blender against the saved `.blend` and current detailed GLB. It checks all 39 identities and height metadata, eleven cameras, the exact packed sign atlas, Cycles settings and absence of external libraries. `package_delivery.py <render-folder> --encode-only` encodes the eleven 4K images and loading poster for the web, and verifies all 195 elevation cells. After recording the current performance and verification results, `--archive-only` packages the editable scene, models, renders, attributed source data and Python sources with per-file SHA-256 checks and a ZIP CRC check.
+`verify_render_scene.py` runs in Blender against the saved `.blend` and current detailed GLB. It checks all 39 identities and height metadata, fifteen cameras, restored building visibility, the exact packed sign atlas, Cycles settings and absence of external libraries. `package_delivery.py <render-folder> --encode-only` encodes the fifteen 4K images and loading poster for the web, and verifies all 195 elevation cells. After recording the current performance and verification results, `--archive-only` packages the editable scene, models, renders, attributed source data and authoring/measurement sources with per-file SHA-256 checks and a ZIP CRC check.

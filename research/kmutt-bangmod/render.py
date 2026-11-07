@@ -1,6 +1,7 @@
 """Render the detailed GLB in Blender Cycles from a reproducible local scene."""
 
 import argparse
+import hashlib
 import sys
 from pathlib import Path
 
@@ -226,6 +227,7 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(args.model.resolve()))
     scene = bpy.context.scene
+    scene["sourceGlbSha256"] = hashlib.sha256(args.model.read_bytes()).hexdigest()
     configure_cycles(scene, args.device, args.preview)
     bpy.context.view_layer.update()
     mesh_objects = [obj for obj in scene.objects if obj.type == "MESH"]
@@ -337,6 +339,14 @@ def main():
                 (0, -31, -2.7), 25),
         camera_for(scene, "S14 memorial barrel roof", s14_center,
                    (1.4, -0.35, 1.25), scale=135),
+        closeup(scene, "N13 greenhouse trellis", Vector((-112.2, 52.3, 4.3)),
+                (27, -23, -1.5), 43),
+        closeup(scene, "N10 glazed entry and stair bay", Vector((10.4, 102.5, 5.2)),
+                (0, -15, -3.4), 20),
+        closeup(scene, "N20 isolated tapered-fin study", Vector((-55.1, -9.7, 10)),
+                (2, -24, -7.7), 25),
+        closeup(scene, "S14 entrance space frame", Vector((-202.3, -91.5, 5.4)),
+                (25, -2, -3.6), 27),
     ]
     named_cameras = dict(
         zip(
@@ -352,6 +362,10 @@ def main():
                 "bangmod-n7",
                 "bangmod-n11",
                 "bangmod-s14",
+                "bangmod-n13",
+                "bangmod-n10",
+                "bangmod-n20",
+                "bangmod-s14-entry",
             ),
             cameras,
             strict=True,
@@ -367,10 +381,28 @@ def main():
             "bangmod-fibo": 1.90,
             "bangmod-s15": 0.82,
             "bangmod-n11": 0.65,
+            "bangmod-n10": 0.65,
+            "bangmod-n13": 1.90,
+            "bangmod-n20": 0.65,
+            "bangmod-s14-entry": 1.90,
         }.get(name, 2.35)
         scene.camera = camera
         scene.render.filepath = str((args.output / f"{name}.png").resolve())
-        bpy.ops.render.render(write_still=True)
+        # An explicitly isolated detail study avoids placing a camera in N19.
+        # The campus model and all other views retain their complete surroundings.
+        hidden = []
+        if name == "bangmod-n20":
+            root = next(obj for obj in scene.objects if obj.get("featureId") == "N20")
+            keep = {root, *root.children_recursive}
+            for obj in mesh_objects:
+                if obj not in keep and not obj.hide_render:
+                    hidden.append(obj)
+                    obj.hide_render = True
+        try:
+            bpy.ops.render.render(write_still=True)
+        finally:
+            for obj in hidden:
+                obj.hide_render = False
     if not args.preview:
         sky.sun_rotation = 2.35
         scene.camera = cameras[0]

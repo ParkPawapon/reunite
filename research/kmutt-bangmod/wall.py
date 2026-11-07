@@ -44,6 +44,59 @@ class Wall:
         )
 
     @staticmethod
+    def profiled_quad(surface, a, b, c, d):
+        """A planar joinery face with a geometric normal, including bevels."""
+        ab = tuple(y - x for x, y in zip(a, b, strict=True))
+        ac = tuple(y - x for x, y in zip(a, c, strict=True))
+        cross = (
+            ab[1] * ac[2] - ab[2] * ac[1],
+            ab[2] * ac[0] - ab[0] * ac[2],
+            ab[0] * ac[1] - ab[1] * ac[0],
+        )
+        length = hypot(*cross)
+        if length < 1e-10:
+            raise ValueError("Degenerate joinery face")
+        normal = tuple(axis / length for axis in cross)
+        Wall.quad(surface, a, b, c, d, normal)
+
+    def profiled_frame(self, surface, left, right, bottom, top, rim, offset):
+        # A shallow folded profile replaces the flat rim, retaining its triangle count.
+        # These are visualization dimensions, not surveyed aluminium section sizes.
+        outer = [
+            self.point(x, y, offset + 0.012)
+            for x, y in ((left, bottom), (right, bottom), (right, top), (left, top))
+        ]
+        inner = [
+            self.point(x, y, offset + 0.024)
+            for x, y in (
+                (left + rim, bottom + rim), (right - rim, bottom + rim),
+                (right - rim, top - rim), (left + rim, top - rim),
+            )
+        ]
+        for index in range(4):
+            next_ = (index + 1) % 4
+            self.profiled_quad(
+                surface, outer[index], outer[next_], inner[next_], inner[index]
+            )
+
+    def bar(self, surface, left, right, bottom, top, back, front):
+        """Close the four exposed returns of a rectangular glazing bar."""
+        self.panel(surface, left, right, bottom, top, front)
+        for a, b, c, d in (
+            ((left, bottom, back), (right, bottom, back),
+             (right, bottom, front), (left, bottom, front)),
+            ((left, top, back), (left, top, front),
+             (right, top, front), (right, top, back)),
+            ((left, bottom, back), (left, bottom, front),
+             (left, top, front), (left, top, back)),
+            ((right, bottom, back), (right, top, back),
+             (right, top, front), (right, bottom, front)),
+        ):
+            self.profiled_quad(
+                surface, *(self.point(*point) for point in (a, b, c, d))
+            )
+
+    @staticmethod
     def quad(surface, a, b, c, d, normal):
         surface.triangle((a, b, c), normal)
         surface.triangle((a, c, d), normal)
@@ -112,10 +165,7 @@ class Wall:
         rim = min(0.046, (right - left) / 8, (top - bottom) / 8)
         frame = surfaces["door-frame" if opening.finish == "door" else "frame"]
         frame_face = offset + 0.024
-        self.panel(frame, left, right, bottom, bottom + rim, frame_face)
-        self.panel(frame, left, right, top - rim, top, frame_face)
-        self.panel(frame, left, left + rim, bottom + rim, top - rim, frame_face)
-        self.panel(frame, right - rim, right, bottom + rim, top - rim, frame_face)
+        self.profiled_frame(frame, left, right, bottom, top, rim, offset)
         self.reveals(
             frame,
             Opening(left + rim, right - rim, bottom + rim, top - rim, 0.024),
@@ -131,13 +181,14 @@ class Wall:
                 surfaces["glass"], a, b - gasket, bottom + rim, top - rim, offset
             )
             if gasket:
-                self.panel(
+                self.bar(
                     surfaces["mullion"],
                     b - gasket,
                     b,
                     bottom + rim,
                     top - rim,
                     offset,
+                    frame_face - 0.004,
                 )
         if opening.finish == "door":
             transom = min(top - 0.20, bottom + 2.15)
@@ -149,11 +200,12 @@ class Wall:
                 frame, center - 0.045, center + 0.045, bottom + rim, transom, frame_face
             )
             for handle in (center - 0.16, center + 0.16):
-                self.panel(
+                self.bar(
                     surfaces["metal"],
                     handle - 0.022,
                     handle + 0.022,
                     bottom + 0.88,
                     bottom + 1.19,
-                    frame_face + 0.028,
+                    frame_face,
+                    frame_face + 0.045,
                 )

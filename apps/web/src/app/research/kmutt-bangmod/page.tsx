@@ -66,7 +66,10 @@ export default function BangmodResearchPage() {
           <a href={`${assets}/bangmod-s14.webp`}>
             หลังคาอาคารพระจอมเกล้าราชานุสรณ์
           </a>{' '}
-          ·{' '}
+          · <a href={`${assets}/bangmod-n13.webp`}>โครงโค้งเรือนกระจก N13</a> ·{' '}
+          <a href={`${assets}/bangmod-n10.webp`}>โถงกระจกและบันไดหอสมุด</a> ·{' '}
+          <a href={`${assets}/bangmod-n20.webp`}>รูปด้าน N20 แยกอาคาร</a> ·{' '}
+          <a href={`${assets}/bangmod-s14-entry.webp`}>โครงถักทางเข้า S14</a> ·{' '}
           <a href={campusTourUrl} target="_blank" rel="noreferrer">
             Virtual Tour ของ มจธ.
           </a>{' '}
