@@ -104,8 +104,8 @@ export function LoginForm() {
       const result = await submitLogin(parsed.data, controller.signal);
       if (controller.signal.aborted) throw new Error('Request timed out');
       if (result.ok) {
-        // A new document applies the campus page's geolocation permission policy.
-        window.location.replace('/research/kmutt-bangmod');
+        // Start a new document with the new session on the protected landing page.
+        window.location.replace('/dashboard');
         return;
       }
       setFailure(result.message);

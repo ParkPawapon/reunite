@@ -133,14 +133,6 @@ export function LoginShell({
             fill="none"
             aria-hidden="true"
           >
-            <rect
-              x="5"
-              y="5"
-              width="74"
-              height="74"
-              rx="22"
-              fill="var(--color-surface)"
-            />
             <path
               d="m37 43 20 20 7-7-5-5 4-4-7-7-5 5-7-7"
               stroke="var(--color-orange-800)"

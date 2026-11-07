@@ -55,3 +55,5 @@ For a container deployment, run `docker compose up -d postgres`, `docker compose
 This is a foundation, not a public-launch approval. Business policy for onboarding, report lifecycle, claim approval, privacy/retention, uploads and matching remains open. See the decision and security records.
 
 Private profile and account-notification APIs are available with migrations 0005–0006, within nine tables. `bun run db:seed --development-only` provisions one safeguarded local account; see `docs/DEVELOPMENT.md`. The dashboard/profile frontend is delivered separately.
+
+Login now opens the session-protected `/dashboard`. The shared navigation links to `/profile` for private student details and photo editing; the notification bell displays actual account events. See `docs/design/dashboard.md` and `docs/design/profile-notifications.md`.

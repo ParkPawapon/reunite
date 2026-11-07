@@ -1,0 +1,440 @@
+.root {
+  animation: reveal 0.35s ease-out both;
+}
+.greeting {
+  margin: 0 0 0.375rem;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+.greeting span {
+  color: var(--color-orange-800);
+}
+.heading {
+  margin: 0 0 1.75rem;
+  font-size: clamp(1.5rem, 2.25vw, 1.9375rem);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.035rem;
+}
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 45%;
+  min-height: 300px;
+  border-radius: 1.5rem;
+  background: var(--color-orange-50);
+  overflow: hidden;
+  position: relative;
+}
+.heroCopy {
+  padding: 2rem 2.25rem;
+  position: relative;
+  z-index: 1;
+}
+.eyebrow {
+  font-size: 0.6875rem;
+  color: var(--color-orange-700);
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+.hero h2 {
+  font-size: clamp(1.75rem, 2.5vw, 2.375rem);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.045rem;
+  color: var(--color-orange-900);
+  margin: 0.875rem 0;
+}
+.hero h2 span {
+  color: var(--color-action-primary);
+}
+.heroDescription {
+  font-size: 0.8125rem;
+  color: var(--color-orange-800);
+  margin: 0.875rem 0 0;
+}
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.75rem;
+  background: var(--color-action-primary);
+  color: var(--color-on-action);
+  padding: 0.875rem 1.25rem;
+  border-radius: 0.75rem;
+  margin-top: 1.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 48px;
+  max-width: 100%;
+}
+.primary:hover {
+  background: var(--color-action-hover);
+}
+.primary svg {
+  flex: none;
+  transition: transform 0.18s ease-out;
+}
+.primary:hover svg {
+  transform: translateX(3px);
+}
+.heroArt {
+  position: relative;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  align-self: end;
+  padding: 0.75rem 1rem 0;
+  min-width: 0;
+}
+.heroArt > div:last-child {
+  position: relative;
+  max-width: 245px;
+  z-index: 1;
+}
+.goose {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: 245px;
+  max-height: 304px;
+  width: 100%;
+}
+.orbit {
+  position: absolute;
+  width: 15rem;
+  height: 15rem;
+  background: var(--color-orange-100);
+  border-radius: 46% 48% 36% 38%;
+  transform: rotate(-7deg);
+  bottom: 1rem;
+}
+.below {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 1.375rem;
+  margin-top: 1.625rem;
+}
+.mapCard {
+  display: block;
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: var(--color-surface);
+  text-decoration: none;
+  color: var(--color-text);
+  min-width: 0;
+}
+.preview {
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+  background: var(--color-orange-50);
+}
+.previewImage {
+  object-fit: cover;
+  object-position: center 53%;
+  opacity: 0;
+  transition: opacity 0.32s ease-out;
+}
+.preview[data-campus-preview='ready'] .previewImage {
+  opacity: 1;
+}
+.previewSkeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.28s ease-out;
+}
+.preview:not([data-campus-preview='loading']) .previewSkeleton {
+  opacity: 0;
+}
+.preview:not([data-campus-preview='loading']) .previewSkeleton::after {
+  animation: none;
+}
+.previewTag {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 1rem;
+  z-index: 2;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+}
+.previewError {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  margin: 0;
+  color: var(--color-text-muted);
+  background: var(--color-orange-50);
+  font-size: 0.8125rem;
+}
+.mapInfo {
+  min-height: 94px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.mapInfo h2 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 0;
+}
+.mapInfo p {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 0.25rem 0 0;
+}
+.circleArrow {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-orange-200);
+  color: var(--color-orange-700);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  transition: transform 0.18s ease-out;
+}
+.mapCard:hover .circleArrow {
+  transform: translateX(3px);
+  background: var(--color-orange-50);
+}
+.guide {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  padding: clamp(24px, 1.5rem, 32px) clamp(24px, 1.625rem, 32px);
+  min-width: 0;
+}
+.guideEyebrow {
+  margin: 0 0 0.375rem;
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+}
+.guide h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+.headingSkeleton {
+  margin-bottom: 1.75rem;
+}
+.buttonSkeleton {
+  margin-top: 1.375rem;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.shortcutList {
+  display: grid;
+  margin-top: 1rem;
+}
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: 92px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-decoration: none;
+  padding: 1rem 0;
+}
+.shortcut > div {
+  flex: 1;
+  min-width: 0;
+}
+.shortcut > svg {
+  flex: none;
+  color: var(--color-orange-700);
+  transition: transform 0.18s ease-out;
+}
+.shortcut:hover > svg {
+  transform: translateX(3px);
+}
+.shortcut h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.shortcut p {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+.shortcutIcon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 12px;
+  background: var(--color-orange-50);
+  color: var(--color-orange-700);
+}
+.guideFoot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+}
+.guideFoot > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-brand-orange);
+}
+@media (prefers-reduced-motion: reduce) {
+  .shortcut > svg {
+    transition: none;
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.hero {
+  animation: sectionReveal 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.below {
+  animation: sectionReveal 0.38s 0.06s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes sectionReveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 1150px) {
+  .heroCopy {
+    padding: 2rem 1.75rem;
+  }
+  .below {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .guide {
+    display: block;
+  }
+}
+@media (max-width: 999px) {
+  .heading {
+    font-size: 1.6875rem;
+  }
+  .hero {
+    grid-template-columns: minmax(0, 1fr) 38%;
+    min-height: 310px;
+  }
+  .hero h2 {
+    font-size: 2.125rem;
+  }
+  .below {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  }
+  .steps {
+    grid-template-columns: 1fr;
+  }
+  .heroArt > div:last-child {
+    max-width: 220px;
+  }
+}
+@media (max-width: 760px) {
+  .below {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .heroCopy {
+    padding: 28px 24px;
+  }
+  .heroArt {
+    align-self: center;
+  }
+  .orbit {
+    width: 12rem;
+    height: 12rem;
+  }
+  .hero h2 {
+    font-size: 1.875rem;
+  }
+}
+@media (max-width: 430px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 320px;
+  }
+  .heroCopy {
+    padding: 28px 22px;
+  }
+  .heroArt {
+    position: absolute;
+    right: 0;
+    bottom: 0.5rem;
+    width: clamp(100px, 32vw, 130px);
+    padding: 0;
+    pointer-events: none;
+  }
+  .orbit {
+    width: 9rem;
+    height: 9rem;
+  }
+  .hero h2 {
+    font-size: 1.75rem;
+  }
+  .heroDescription {
+    max-width: 230px;
+    font-size: 0.75rem;
+  }
+  .primary {
+    gap: 12px;
+    padding-inline: 20px;
+  }
+  .heading {
+    font-size: 1.5rem;
+    max-width: 20rem;
+  }
+  .mapInfo {
+    padding: 18px;
+    gap: 16px;
+  }
+  .mapInfo p {
+    max-width: 240px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .hero,
+  .below {
+    animation: none;
+  }
+  .primary svg,
+  .circleArrow,
+  .previewImage,
+  .previewSkeleton {
+    transition: none;
+  }
+}
