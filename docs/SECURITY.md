@@ -20,6 +20,14 @@ Migration 0004 enforces canonical lowercase/trimmed email with the existing uniq
 - Claim eligibility/approval authority, report lifecycle and public-read policy.
 - PDPA/privacy notice, consent/lawful processing, access/erasure and retention policy for identities, reports, evidence, hashed throttling keys and expired sessions. This scaffold makes no legal-compliance claim.
 - Approved scheduled cleanup, backups/restore rehearsal, production TLS/proxy/secret management, least-privilege roles, edge abuse limits and monitoring.
-- Upload validation/storage and AI methodology before implementing those capabilities.
+- Item-report attachment storage/validation policy and AI methodology before implementing those capabilities. Private profile-photo validation/storage is implemented separately as described below.
 
 No admin roles, reset-password flow, OAuth provider, AI scores or approval actions are fabricated.
+
+## Student profile and account notifications
+
+The new profile, photo and notification routes authenticate every read and mutation. Identity is session-derived; callers cannot select another account. Student/contact data and normalized photo bytes never enter public auth DTOs, logs, static output or shared browser storage. Mutations enforce Origin. Changing the login email requires the current password and a separate database-backed confirmation budget; there is no unimplemented verification badge or verification-mail promise.
+
+Avatar bodies are streamed with a 2 MiB limit even without Content-Length. Only still JPEG/PNG/WebP with matching decoded format are accepted; decoder pixels and processing time are bounded. Re-encoding strips EXIF/GPS and embedded originals. Files are not served by uploaded names, URLs or filesystem paths. Authenticated GET serves only WebP with no-store, nosniff and same-origin resource policy. Stored bytes are bounded to 128 KiB per user. PostgreSQL backups now contain those photos, so production retention and erasure policy must include them. The native decoder remains a dependency requiring routine patching and deployment resource limits.
+
+Notifications are private typed account events without user-provided HTML, messages or personal-data copies. Profile/photo updates and event insertion are atomic. Reading is owner-scoped and bounded by the fetched ID; newer arrivals stay unread. There is no notification composer, broadcast endpoint or fake activity feed. Email/push delivery and business-specific triggers require separately defined behavior.

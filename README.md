@@ -53,3 +53,5 @@ For a container deployment, run `docker compose up -d postgres`, `docker compose
 - `docs`: [API](docs/API_CONTRACT.md), [development](docs/DEVELOPMENT.md), [environment](docs/ENVIRONMENT.md), [database](docs/DATABASE.md), [architecture](docs/ARCHITECTURE.md), [conventions](docs/SYSTEM_CONVENTIONS.md), [deployment](docs/DEPLOYMENT.md), [security](docs/SECURITY.md), [decisions](docs/DECISIONS.md), [verification](docs/VERIFICATION.md).
 
 This is a foundation, not a public-launch approval. Business policy for onboarding, report lifecycle, claim approval, privacy/retention, uploads and matching remains open. See the decision and security records.
+
+Private profile and account-notification APIs are available with migrations 0005–0006, within nine tables. `bun run db:seed --development-only` provisions one safeguarded local account; see `docs/DEVELOPMENT.md`. The dashboard/profile frontend is delivered separately.

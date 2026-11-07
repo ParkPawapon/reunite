@@ -193,18 +193,22 @@ test('offers a working reload when the login-form download stalls', async ({
   page.on('pageerror', (error) => errors.push(error.message));
   const pattern = formChunkPattern();
   let release = () => {};
+  let allowReload = false;
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
   let pending: Promise<void> | undefined;
   await page.route(pattern, async (route) => {
+    if (allowReload) {
+      await route.continue();
+      return;
+    }
     pending = gate.then(() => route.abort());
     await pending;
   });
   try {
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-login-skeleton]')).toBeVisible();
-    // Use real time here: the pending request must outlive the welcome screen.
     await page.waitForTimeout(2000);
     await expect(page.locator('[data-login-skeleton]')).toBeVisible();
     await expect(page.locator('[data-login-screen]')).toHaveCount(0);
@@ -212,18 +216,27 @@ test('offers a working reload when the login-form download stalls', async ({
       timeout: 18_000,
     });
     await expect(page.locator('input')).toHaveCount(0);
-    release();
-    await pending;
-    await page.unroute(pattern);
-    await page
-      .getByRole('button', { name: 'ลองโหลดใหม่', exact: true })
-      .click();
+    // Keep interception enabled: removing the route resumes its original pending request.
+    // Release that request only after the user's click has committed a document reload.
+    allowReload = true;
+    const reloaded = page.waitForEvent(
+      'framenavigated',
+      (frame) => frame === page.mainFrame(),
+    );
+    await Promise.all([
+      reloaded.then(async () => {
+        release();
+        await pending;
+      }),
+      page.getByRole('button', { name: 'ลองโหลดใหม่', exact: true }).click(),
+    ]);
     await expect(page.locator('[data-login-screen]')).toBeVisible();
     await expect(page.getByLabel('อีเมล', { exact: true })).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
     release();
     await pending;
+    await page.unroute(pattern);
   }
 });
 

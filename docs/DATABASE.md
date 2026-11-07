@@ -4,7 +4,17 @@ PostgreSQL 18.4 is pinned for Compose and CI. The two source PDFs have matching 
 
 `0002` adds technical `auth_sessions`: only SHA-256 digests of 256-bit random tokens, user FK, expiry and creation time. Logout deletes the row; reads enforce expiry. `0003` adds technical `auth_login_throttles`: hashed normalized account identifier, fixed-window start and atomic bounded attempt counter. `schema_migrations` tracks runner infrastructure. None of these are extra business entities.
 
-There are still eight physical tables: five business tables plus sessions, login throttles and migration tracking. No history, role or approval entity is added by this revision.
+There are nine physical tables: the five original business tables, sessions, login throttles, migration tracking and in-app account notifications. No role or approval entity is added.
+
+## Student profile and notifications (0005–0006)
+
+Migration `0005` adds nullable `first_name`, `last_name` (100 characters each), `student_id` (8–20 digits), `faculty`, `department`, `major` (180 characters each), `avatar_data` and `avatar_version` to `users`. Existing `phone` and canonical unique `email` are reused. Legacy personal fields remain null; the migration does not split display names, invent student identities or remove sessions. `name` expands to 201 characters to hold two 100-character names and a separator. The profile API maintains the combined display name.
+
+The partial unique `users_student_id_unique` index prevents duplicate populated student identifiers while allowing unknown values. The 8–20-digit validation is a permissive input boundary, not certification against a university student registry. Faculty/department/major are user-entered text; no unverified academic catalog or additional entities are introduced. Optional blank values normalize to null; database checks reject whitespace-only names and academic fields.
+
+Profile images are private, normalized WebP bytes stored in PostgreSQL, bounded to 128 KiB per account with a paired SHA-256 content version. Uploads accept still JPEG/PNG/WebP up to 2 MiB and 16 million decoded pixels, resize/crop to at most 384×384 and strip metadata. Original files and filenames are discarded. This avoids ephemeral container upload files and adds no storage-provider dependency. Database backups now contain private profile photos; include them in the approved retention/restore plan. This storage decision covers avatars only, not item-report attachments.
+
+Migration `0006` adds `notifications`: identity `notification_id`, owner `user_id`, constrained account-event `kind`, `created_at` and nullable `read_at`. It stores no message body or personal-field copies. Profile and avatar changes create events atomically in the same SQL statement; no-op saves create none. Owner-scoped keyset pagination uses `(user_id, notification_id DESC)` and a matching partial index for unread records. Reads return 20 items plus a next cursor; the count covers all unread items. Mark-read updates only the current owner through the fetched notification ID, preserving later arrivals. Notifications cascade with their owning account; existing report/claim deletion behavior remains unchanged.
 
 ## Data integrity upgrade (0004)
 

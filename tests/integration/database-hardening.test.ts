@@ -72,7 +72,9 @@ afterAll(() => fixture.close());
 
 describe('safe upgrade and database-enforced integrity', () => {
   it('upgrades legacy rows without fabricating event times or changing the table count', async () => {
-    expect(await migrate(pool)).toEqual(['0004']);
+    expect(await migrate(pool, (await readMigrations()).slice(0, 4))).toEqual([
+      '0004',
+    ]);
     const [user] = (
       await pool.query<{ email: string; created_at: Date; updated_at: Date }>(
         'SELECT email, created_at, updated_at FROM users WHERE user_id=$1',
@@ -110,7 +112,9 @@ describe('safe upgrade and database-enforced integrity', () => {
         )
       ).rows[0]?.count,
     ).toBe(8);
-    expect(await migrate(pool)).toEqual([]);
+    expect(await migrate(pool, (await readMigrations()).slice(0, 4))).toEqual(
+      [],
+    );
   });
 
   it('normalizes SQL INSERT and UPDATE emails and rejects case/whitespace duplicates', async () => {
@@ -388,7 +392,9 @@ it.each(['canonical-email collision', 'blank required text'])(
         ]);
       else
         await legacy.pool.query('UPDATE users SET name=$1', ['Corrected name']);
-      expect(await migrate(legacy.pool)).toEqual(['0004']);
+      expect(
+        await migrate(legacy.pool, (await readMigrations()).slice(0, 4)),
+      ).toEqual(['0004']);
       expect(
         (await legacy.pool.query('SELECT user_id FROM users')).rowCount,
       ).toBe(before.rows.length);
