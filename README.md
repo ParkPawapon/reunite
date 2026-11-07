@@ -16,7 +16,7 @@ bun run dev
 
 Open <http://localhost:3000>. The root redirects to `/login`, shows a 1.3-second welcome sequence with Agent Honk and a matching form skeleton, then reveals the email/password form connected to the existing session API. The skeleton also covers the real form-chunk download on slower networks. See [Login design and verification](docs/design/login.md). `GET /api/v1/health/live` checks the process; `/api/v1/health/ready` checks PostgreSQL. Catalogs are initially empty: no campus locations or production categories have been invented.
 
-The [BE002/BE003 assignment starter](docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md) intentionally leaves `GET /api/v1/categories` and `GET /api/v1/locations` unimplemented (501) for two teammates. Existing tests and repository checks stay enabled. The catalog assertions verify the explicit 501 responses and service placeholders; the integrator must restore real-data 200 assertions as each assignment is completed.
+The [backend assignment handoff](docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md) now records completed BE003: `GET /api/v1/locations` returns real paginated PostgreSQL data. BE002 remains assigned to its teammate; `GET /api/v1/categories` still returns 501 until that implementation is submitted.
 
 `env:setup` creates ignored root `.env` and `apps/web/.env.local` with one random local DB password. It preserves existing files; reconcile them manually if changing existing configuration. Never commit credentials. For your own passwords, URL-encode reserved characters in `DATABASE_URL` and in the Compose URL components; the generated hex password requires no encoding.
 

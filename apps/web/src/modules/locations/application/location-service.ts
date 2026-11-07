@@ -1,7 +1,10 @@
 import type { Page } from '@campus/shared';
-import type { Location } from '../domain/location';
+import type { Location, LocationRepository } from '../domain/location';
 
-// BE003: retain the contract; the assignee implements the application service.
-export interface LocationService {
-  list(page: Page): Promise<Location[]>;
+export class LocationService {
+  constructor(private readonly repository: LocationRepository) {}
+
+  list(page: Page): Promise<Location[]> {
+    return this.repository.list(page);
+  }
 }
