@@ -29,6 +29,7 @@
     "db:migrate": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/migrate.ts",
     "db:migrate:status": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/migration-status.ts",
     "db:create-user": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/create-user.ts",
+    "db:seed": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/seed.ts",
     "db:cleanup-auth": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/cleanup-auth.ts",
     "env:setup": "node scripts/setup-env.mjs",
     "env:check": "node --env-file-if-exists=.env --conditions=react-server --import tsx scripts/check-env.ts"
@@ -45,6 +46,7 @@
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.5",
     "pg": "8.23.1",
+    "sharp": "0.35.5",
     "prettier": "3.9.10",
     "tsx": "4.23.15",
     "typescript": "6.0.3",

@@ -4,6 +4,12 @@ import path from 'node:path';
 const config: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.resolve(import.meta.dirname, '../..'),
+  // Bun's isolated layout needs sharp's companion native libraries, including Windows DLLs.
+  outputFileTracingIncludes: {
+    '/*': [
+      '../../node_modules/.bun/@img+sharp-*/node_modules/@img/sharp-*/lib/**/*',
+    ],
+  },
   transpilePackages: ['@campus/database', '@campus/shared'],
   serverExternalPackages: ['pg', 'argon2'],
   poweredByHeader: false,

@@ -98,7 +98,14 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       (await migrationStatus(pool)).every((row) => row.status === 'pending'),
     ).toBe(true);
     const results = await Promise.all([migrate(pool), migrate(pool)]);
-    expect(results.flat()).toEqual(['0001', '0002', '0003', '0004']);
+    expect(results.flat()).toEqual([
+      '0001',
+      '0002',
+      '0003',
+      '0004',
+      '0005',
+      '0006',
+    ]);
     expect(await migrate(pool)).toEqual([]);
     expect(
       (await migrationStatus(pool)).every((row) => row.status === 'applied'),
@@ -114,6 +121,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       'claims',
       'item_reports',
       'locations',
+      'notifications',
       'schema_migrations',
       'users',
     ]);
@@ -132,12 +140,12 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       migrate(pool, [
         ...files,
         {
-          version: '0005',
+          version: '0007',
           checksum: createHash('sha256').update(sql).digest('hex'),
           sql,
         },
       ]),
-    ).rejects.toThrow('0005');
+    ).rejects.toThrow('0007');
     expect(
       (
         await pool.query<{ table: string | null }>(
