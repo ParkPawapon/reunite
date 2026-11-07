@@ -1,18 +1,20 @@
 import 'server-only';
-import { AppError } from '@campus/shared';
-import { api } from '@/lib/http/api';
+import {
+  api,
+  parse,
+  paginationSchema,
+  queryInput,
+  success,
+} from '@/lib/http/api';
 import type { LocationService } from '../application/location-service';
 
-// BE003: implement validation, service invocation and the documented response.
 export function listLocations(
   request: Request,
-  _getService: () => LocationService,
+  getService: () => LocationService,
 ) {
   return api(request, async () => {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE003 is awaiting implementation',
-    );
+    const page = parse(paginationSchema.strict(), queryInput(request));
+    const locations = await getService().list(page);
+    return success(locations, 200, page);
   });
 }

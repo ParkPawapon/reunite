@@ -274,19 +274,13 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     expect((await json(me)).data.userId).toBe(userId);
     expect((await apiHandlers.me(request('auth/me'))).status).toBe(401);
   });
-  it('exposes explicit catalog handoffs and rejects unauthenticated/cross-origin writes', async () => {
+  it('preserves the category assignment and rejects unauthenticated/cross-origin writes', async () => {
     for (const [path, handler, task, service] of [
       [
         'categories',
         apiHandlers.categories,
         'BE002',
         createServices(pool).categories,
-      ],
-      [
-        'locations',
-        apiHandlers.locations,
-        'BE003',
-        createServices(pool).locations,
       ],
     ] as const) {
       const response = await handler(request(path));
@@ -321,6 +315,78 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       }),
     );
     expect(response.status).toBe(403);
+  });
+  it('lists actual locations with ordered pagination and nullable details', async () => {
+    const inserted = await pool.query<{
+      location_id: number;
+      location_name: string;
+      detail: string | null;
+    }>(
+      `INSERT INTO locations (location_name, detail) VALUES ($1, $2), ($3, $4)
+       RETURNING location_id, location_name, detail`,
+      [
+        'Integration location A',
+        'North entrance',
+        'Integration location B',
+        null,
+      ],
+    );
+    try {
+      const expected = [
+        { locationId, locationName: 'Test only location', detail: null },
+        ...inserted.rows.map((row) => ({
+          locationId: row.location_id,
+          locationName: row.location_name,
+          detail: row.detail,
+        })),
+      ];
+      for (const [query, limit, offset] of [
+        ['', 20, 0],
+        ['?limit=2&offset=0', 2, 0],
+        ['?limit=2&offset=2', 2, 2],
+        ['?offset=100000', 20, 100000],
+      ] as const) {
+        const response = await apiHandlers.locations(
+          request(`locations${query}`),
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get('X-Request-Id')).toMatch(/^[a-f0-9-]{36}$/);
+        expect(response.headers.get('Cache-Control')).toBe('no-store');
+        expect(await response.json()).toEqual({
+          data: expected.slice(offset, offset + limit),
+          meta: { limit, offset },
+        });
+      }
+      expect(
+        await createServices(pool).locations.list({ limit: 20, offset: 0 }),
+      ).toEqual(expected);
+    } finally {
+      await pool.query(
+        'DELETE FROM locations WHERE location_id=ANY($1::integer[])',
+        [inserted.rows.map((row) => row.location_id)],
+      );
+    }
+  });
+  it('rejects malformed, unknown and duplicate location parameters', async () => {
+    for (const query of [
+      'limit=0',
+      'limit=101',
+      'limit=1.5',
+      'limit=abc',
+      'offset=-1',
+      'offset=100001',
+      'unknown=1',
+      'limit=1&limit=2',
+    ]) {
+      const response = await apiHandlers.locations(
+        request(`locations?${query}`),
+      );
+      expect(response.status).toBe(422);
+      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      const body = await response.json();
+      expect(body.error.code).toBe('VALIDATION_ERROR');
+      expect(body.error.requestId).toBe(response.headers.get('X-Request-Id'));
+    }
   });
   it('creates reports with session identity, OPEN default and UTC dates', async () => {
     const body = {
