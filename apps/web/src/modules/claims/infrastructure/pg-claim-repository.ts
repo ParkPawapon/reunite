@@ -1,6 +1,6 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
-import type { Page } from '@campus/shared';
+import { AppError, type Page } from '@campus/shared';
 import type { Claim, ClaimRepository, ClaimInput } from '../domain/claim';
 
 type Row = {
@@ -14,7 +14,6 @@ type Row = {
 };
 const columns =
   'claim_id, report_id, user_id, evidence, status, claim_date, updated_at';
-export const claimListSql = `SELECT ${columns} FROM claims WHERE user_id = $1 ORDER BY claim_id DESC LIMIT $2 OFFSET $3`;
 const map = (row: Row): Claim => ({
   claimId: row.claim_id,
   reportId: row.report_id,
@@ -26,18 +25,21 @@ const map = (row: Row): Claim => ({
 });
 export class PgClaimRepository implements ClaimRepository {
   constructor(private readonly db: Sql) {}
-  async listOwned(userId: number, page: Page) {
-    return (
-      await query<Row>(this.db, claimListSql, [userId, page.limit, page.offset])
-    ).map(map);
-  }
-  async findOwned(id: number, userId: number) {
-    const [row] = await query<Row>(
-      this.db,
-      `SELECT ${columns} FROM claims WHERE claim_id = $1 AND user_id = $2`,
-      [id, userId],
+  // BE007: implement parameterized SELECT scoped to user_id, ordered by claim_id DESC with LIMIT and OFFSET.
+  async listOwned(_userId: number, _page: Page): Promise<Claim[]> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE007 is awaiting implementation',
     );
-    return row ? map(row) : null;
+  }
+  // BE008: implement parameterized SELECT scoped to claim_id and user_id, returning mapped Claim or null.
+  async findOwned(_id: number, _userId: number): Promise<Claim | null> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE008 is awaiting implementation',
+    );
   }
   async create(userId: number, input: ClaimInput) {
     const [row] = await query<Row>(

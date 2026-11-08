@@ -12,9 +12,11 @@ import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { normalizeEmail } from '@campus/shared';
 import { getPool, closePool } from '../src/pool';
+import { withTransaction } from '../src/transaction';
 import {
   assertLocalSeedTarget,
   seedDevelopmentAccount,
+  seedDevelopmentDataset,
 } from '../src/development-seed';
 
 const accountSchema = z.strictObject({
@@ -75,9 +77,22 @@ try {
   );
   if (!input.success)
     throw new Error('Local seed credential file has an invalid format');
-  const result = await seedDevelopmentAccount(getPool(), input.data);
+  const { result, dataset } = await withTransaction(
+    getPool(),
+    async (client) => {
+      const accountResult = await seedDevelopmentAccount(client, input.data);
+      const datasetSummary = await seedDevelopmentDataset(
+        client,
+        accountResult.userId,
+      );
+      return { result: accountResult, dataset: datasetSummary };
+    },
+  );
   console.info(
     `Local seed ${result.created ? 'created' : 'reused'} one account: ${input.data.email}`,
+  );
+  console.info(
+    `Local seed dataset ready: ${dataset.categoryIds.length} categories, ${dataset.locationIds.length} locations, ${dataset.reportIds.length} item reports (IDs: ${dataset.reportIds.join(', ')}), ${dataset.ownedClaimIds.length + dataset.peerClaimIds.length} claims (owned IDs: ${dataset.ownedClaimIds.join(', ')}; peer IDs: ${dataset.peerClaimIds.join(', ')})`,
   );
   console.info(
     'Credentials: tmp/local-seed/login-account.json (ignored by Git and Docker; password not logged)',

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { assertLocalSeedTarget } from '../../packages/database/src/development-seed';
+import {
+  assertLocalSeedTarget,
+  developmentSeedCategories,
+  developmentSeedLocations,
+} from '../../packages/database/src/development-seed';
 
 const local = {
   NODE_ENV: 'development',
@@ -45,5 +49,14 @@ describe('local seed target safeguards', () => {
         ['--development-only'],
       ),
     ).toThrow('query overrides');
+  });
+  it('defines non-empty catalog fixtures for local endpoint verification', () => {
+    expect(developmentSeedCategories).toHaveLength(5);
+    expect(new Set(developmentSeedCategories).size).toBe(5);
+    expect(developmentSeedLocations).toHaveLength(5);
+    for (const loc of developmentSeedLocations) {
+      expect(loc.locationName.trim().length).toBeGreaterThan(0);
+      expect(loc.detail.trim().length).toBeGreaterThan(0);
+    }
   });
 });

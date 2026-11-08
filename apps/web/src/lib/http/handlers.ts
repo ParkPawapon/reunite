@@ -5,23 +5,18 @@ import { services, type createServices } from '@/lib/composition';
 import { serverConfig } from '@/config/server';
 import { assertSameOrigin } from '@/lib/security/origin';
 import { readSessionToken, sessionCookie } from '@/lib/security/session';
-import {
-  api,
-  jsonBody,
-  parse,
-  queryInput,
-  success,
-  idSchema,
-  paginationSchema,
-} from './api';
+import { api, jsonBody, parse, success, idSchema } from './api';
 import { loginSchema } from '@/modules/auth/presentation/schemas';
 import {
   reportCreateSchema,
-  reportFilterSchema,
   reportPatchSchema,
 } from '@/modules/item-reports/presentation/schemas';
 import { reportDto } from '@/modules/item-reports/presentation/dto';
+import { listReports } from '@/modules/item-reports/presentation/list-reports';
+import { getReport } from '@/modules/item-reports/presentation/get-report';
 import { claimCreateSchema } from '@/modules/claims/presentation/schemas';
+import { listClaims } from '@/modules/claims/presentation/list-claims';
+import { getClaim } from '@/modules/claims/presentation/get-claim';
 import { listCategories } from '@/modules/categories/presentation/list-categories';
 import { listLocations } from '@/modules/locations/presentation/list-locations';
 
@@ -42,8 +37,6 @@ export function createHandlers(deps: Dependencies = defaults) {
     deps.services().auth.requireUser(currentToken(request));
   const mutation = (request: Request) =>
     assertSameOrigin(request, serverConfig().APP_BASE_URL);
-  const page = (request: Request) =>
-    parse(paginationSchema.strict(), queryInput(request));
   return {
     live: (request: Request) =>
       api(request, async () => success({ status: 'live' })),
@@ -102,24 +95,9 @@ export function createHandlers(deps: Dependencies = defaults) {
     locations: (request: Request) =>
       listLocations(request, () => deps.services().locations),
     listReports: (request: Request) =>
-      api(request, async () => {
-        const filter = parse(reportFilterSchema, queryInput(request));
-        return success(
-          (await deps.services().reports.list(filter)).map(reportDto),
-          200,
-          { limit: filter.limit, offset: filter.offset },
-        );
-      }),
+      listReports(request, () => deps.services().reports),
     getReport: (request: Request, context: RouteContext) =>
-      api(request, async () =>
-        success(
-          reportDto(
-            await deps
-              .services()
-              .reports.find(parse(idSchema, (await context.params).id)),
-          ),
-        ),
-      ),
+      getReport(request, context, () => deps.services().reports),
     createReport: (request: Request) =>
       api(request, async () => {
         mutation(request);
@@ -143,27 +121,9 @@ export function createHandlers(deps: Dependencies = defaults) {
         );
       }),
     listClaims: (request: Request) =>
-      api(request, async () => {
-        const user = await requireUser(request);
-        const pagination = page(request);
-        return success(
-          await deps.services().claims.list(user.userId, pagination),
-          200,
-          pagination,
-        );
-      }),
+      listClaims(request, requireUser, () => deps.services().claims),
     getClaim: (request: Request, context: RouteContext) =>
-      api(request, async () => {
-        const user = await requireUser(request);
-        return success(
-          await deps
-            .services()
-            .claims.find(
-              parse(idSchema, (await context.params).id),
-              user.userId,
-            ),
-        );
-      }),
+      getClaim(request, context, requireUser, () => deps.services().claims),
     createClaim: (request: Request) =>
       api(request, async () => {
         mutation(request);

@@ -35,7 +35,7 @@ unset PROVISION_PASSWORD
 
 The CLI refuses production NODE_ENV, requires the explicit development flag and stores an Argon2id hash. Repeated provisioning of the same email fails safely. Catalogs remain empty until an authorized operator inserts approved category/location data with parameterized SQL. Test-only categories/locations exist only inside integration schemas.
 
-## One local login account
+## Local login account and development dataset
 
 After migrations, run from the repository root:
 
@@ -43,11 +43,11 @@ After migrations, run from the repository root:
 bun run db:seed --development-only
 ```
 
-This creates one development account, `demo@reunite.test`, with a randomly generated password. Read the credentials from the local file `tmp/local-seed/login-account.json`, then use the email/password form at `http://localhost:3000/login`. Successful login opens `/dashboard` through the existing real session API.
+This creates one interactive development account, `demo@reunite.test`, with a randomly generated password, plus a non-interactive peer fixture account (`peer@reunite.test`) and an idempotent local dataset across `categories` (5 rows), `locations` (5 rows), `item_reports` (6 rows across `LOST`/`FOUND` and `OPEN`/`RESOLVED`/`CLOSED`), and `claims` (3 rows: 2 owned by `demo@reunite.test` and 1 owned by `peer@reunite.test`). Read the login credentials from the local file `tmp/local-seed/login-account.json`, then use the email/password form at `http://localhost:3000/login` or `POST /api/v1/auth/login`. Successful login opens `/dashboard` through the existing real session API.
 
-The seed requires a non-production environment, the explicit development flag, loopback PostgreSQL and application URLs, and no database URL query overrides. It stores an Argon2id hash in PostgreSQL. The credential file is excluded from Git and Docker and the CLI does not print its password. Keep the file private; do not paste its contents into PRs or CI settings.
+The seed requires a non-production environment, the explicit development flag, loopback PostgreSQL and application URLs, and no database URL query overrides. It runs inside one PostgreSQL transaction and stores Argon2id hashes in PostgreSQL. The credential file is excluded from Git and Docker and the CLI does not print its password. Keep the file private; do not paste its contents into PRs or CI settings.
 
-Rerunning the command reuses the same credential file and account. It preserves existing account fields and password hashes, including under concurrent database inserts. If an existing email has different credentials, it stops without resetting that account. It does not populate category/location catalogs, reports or claims. The one-off `db:create-user` command remains available for separately chosen development accounts.
+Rerunning the command reuses the same credential file, accounts, and dataset rows without duplicating records. It preserves existing account fields and password hashes, including under concurrent database inserts. If an existing email has different credentials, it stops without resetting that account. The one-off `db:create-user` command remains available for separately chosen development accounts.
 
 This command is manual development tooling, not an application startup step or a production seed. Tests exercise it in disposable schemas in the separate test database.
 

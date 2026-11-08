@@ -14,6 +14,7 @@ import { createServices } from '@/lib/composition';
 import { createHandlers } from '@/lib/http/handlers';
 import { hashSessionToken } from '@/lib/security/session';
 import { PgReportRepository } from '@/modules/item-reports/infrastructure/pg-report-repository';
+import { PgClaimRepository } from '@/modules/claims/infrastructure/pg-claim-repository';
 import { PgAuthRepository } from '@/modules/auth/infrastructure/pg-auth-repository';
 
 // This suite only creates/drops its own random schema in an explicitly dedicated test DB.
@@ -437,7 +438,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
           context(reportId),
         )
       ).status,
-    ).toBe(200);
+    ).toBe(501);
     expect(
       (
         await apiHandlers.getReport(
@@ -445,7 +446,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
           context(2147483647),
         )
       ).status,
-    ).toBe(404);
+    ).toBe(501);
   });
   it('enforces SQL FK, CHECK and date constraints without leaking internals', async () => {
     const values = [
@@ -489,31 +490,41 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       /item_reports|23503|constraint|postgresql|password/,
     );
   });
-  it('filters safely with bound values, limits pages, and scopes report updates to the owner', async () => {
+  it('preserves BE005/BE006 report read handoffs and scopes report updates to the owner', async () => {
     const repository = new PgReportRepository(pool);
-    // Bypass the HTTP schema deliberately to prove repository values are still bound safely.
-    expect(
-      await repository.list({
-        type: "FOUND' OR '1'='1" as 'FOUND',
-        limit: 20,
-        offset: 0,
-      }),
-    ).toEqual([]);
-    expect((await pool.query('SELECT user_id FROM users')).rowCount).toBe(2);
-    expect(
-      (await apiHandlers.listReports(request('item-reports?limit=101'))).status,
-    ).toBe(422);
-    expect(
-      (await apiHandlers.listReports(request('item-reports?status=APPROVED')))
-        .status,
-    ).toBe(422);
-    expect(
-      (
-        await apiHandlers.listReports(
-          request('item-reports?limit=1&offset=0&type=FOUND'),
-        )
-      ).status,
-    ).toBe(200);
+    await expect(
+      repository.list({ limit: 20, offset: 0 }),
+    ).rejects.toMatchObject({
+      code: 'NOT_IMPLEMENTED',
+      status: 501,
+      message: 'BE005 is awaiting implementation',
+    });
+    await expect(repository.find(reportId)).rejects.toMatchObject({
+      code: 'NOT_IMPLEMENTED',
+      status: 501,
+      message: 'BE006 is awaiting implementation',
+    });
+    const listResponse = await apiHandlers.listReports(
+      request('item-reports?limit=1&offset=0&type=FOUND'),
+    );
+    expect(listResponse.status).toBe(501);
+    expect(await listResponse.json()).toMatchObject({
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'BE005 is awaiting implementation',
+      },
+    });
+    const detailResponse = await apiHandlers.getReport(
+      request(`item-reports/${reportId}`),
+      context(reportId),
+    );
+    expect(detailResponse.status).toBe(501);
+    expect(await detailResponse.json()).toMatchObject({
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'BE006 is awaiting implementation',
+      },
+    });
     expect(
       (
         await apiHandlers.patchReport(
@@ -556,7 +567,15 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     );
     expect((await json(update)).data.title).toBe('Updated');
   });
-  it('creates PENDING claims and prevents evidence access by other users including report owner', async () => {
+  it('creates PENDING claims and preserves BE007/BE008 claim read handoffs', async () => {
+    const claimRepository = new PgClaimRepository(pool);
+    await expect(
+      claimRepository.listOwned(otherId, { limit: 20, offset: 0 }),
+    ).rejects.toMatchObject({
+      code: 'NOT_IMPLEMENTED',
+      status: 501,
+      message: 'BE007 is awaiting implementation',
+    });
     const response = await apiHandlers.createClaim(
       request(
         'claims',
@@ -572,29 +591,34 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     expect(claim.userId).toBe(otherId);
     expect(claim.claimDate).toMatch(/Z$/);
     expect(claim.updatedAt).toBe(claim.claimDate);
-    expect(
-      (
-        await apiHandlers.getClaim(
-          request(`claims/${claimId}`, 'GET', undefined, cookie),
-          context(claimId),
-        )
-      ).status,
-    ).toBe(404);
-    expect(
-      await (
-        await apiHandlers.listClaims(
-          request('claims', 'GET', undefined, cookie),
-        )
-      ).json(),
-    ).toEqual({ data: [], meta: { limit: 20, offset: 0 } });
-    expect(
-      (
-        await apiHandlers.getClaim(
-          request(`claims/${claimId}`, 'GET', undefined, otherCookie),
-          context(claimId),
-        )
-      ).status,
-    ).toBe(200);
+    await expect(
+      claimRepository.findOwned(claimId, otherId),
+    ).rejects.toMatchObject({
+      code: 'NOT_IMPLEMENTED',
+      status: 501,
+      message: 'BE008 is awaiting implementation',
+    });
+    const listResponse = await apiHandlers.listClaims(
+      request('claims', 'GET', undefined, otherCookie),
+    );
+    expect(listResponse.status).toBe(501);
+    expect(await listResponse.json()).toMatchObject({
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'BE007 is awaiting implementation',
+      },
+    });
+    const detailResponse = await apiHandlers.getClaim(
+      request(`claims/${claimId}`, 'GET', undefined, otherCookie),
+      context(claimId),
+    );
+    expect(detailResponse.status).toBe(501);
+    expect(await detailResponse.json()).toMatchObject({
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'BE008 is awaiting implementation',
+      },
+    });
     await expect(
       pool.query('UPDATE claims SET status = $1 WHERE claim_id = $2', [
         'OPEN',

@@ -1,9 +1,14 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { migrate } from '../../packages/database/src/migrations';
-import { reportListSql } from '@/modules/item-reports/infrastructure/pg-report-repository';
-import { claimListSql } from '@/modules/claims/infrastructure/pg-claim-repository';
 import { isolatedDatabase } from './database-fixture';
+
+const reportListSql = `SELECT report_id, user_id, category_id, location_id, type, title, description, image, event_datetime, status, created_at, updated_at FROM item_reports
+  WHERE ($1::varchar IS NULL OR type = $1) AND ($2::varchar IS NULL OR status = $2)
+    AND ($3::integer IS NULL OR category_id = $3) AND ($4::integer IS NULL OR location_id = $4)
+  ORDER BY report_id DESC LIMIT $5 OFFSET $6`;
+const claimListSql =
+  'SELECT claim_id, report_id, user_id, evidence, status, claim_date, updated_at FROM claims WHERE user_id = $1 ORDER BY claim_id DESC LIMIT $2 OFFSET $3';
 
 type PlanNode = {
   'Node Type': string;
