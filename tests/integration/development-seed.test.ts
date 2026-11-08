@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { seedDevelopmentAccount } from '../../packages/database/src/development-seed';
+import {
+  seedDevelopmentAccount,
+  seedDevelopmentDataset,
+} from '../../packages/database/src/development-seed';
 import {
   hashPassword,
   verifyPassword,
@@ -87,5 +90,21 @@ describe('development account seed in an isolated test schema', () => {
         ])
       ).rows,
     ).toHaveLength(1);
+  });
+  it('seeds categories, locations, item reports, and claims idempotently', async () => {
+    const owner = await seedDevelopmentAccount(database.pool, {
+      name: 'Dataset owner',
+      email: 'dataset-owner@example.test',
+      password: 'Dataset owner fixture password!',
+    });
+    const first = await seedDevelopmentDataset(database.pool, owner.userId);
+    expect(first.categoryIds).toHaveLength(5);
+    expect(first.locationIds).toHaveLength(5);
+    expect(first.reportIds).toHaveLength(6);
+    expect(first.ownedClaimIds).toHaveLength(2);
+    expect(first.peerClaimIds).toHaveLength(1);
+
+    const second = await seedDevelopmentDataset(database.pool, owner.userId);
+    expect(second).toEqual(first);
   });
 });

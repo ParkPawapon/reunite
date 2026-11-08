@@ -1,5 +1,6 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
+import { AppError } from '@campus/shared';
 import type {
   Report,
   ReportRepository,
@@ -24,10 +25,6 @@ type Row = {
 };
 const columns =
   'report_id, user_id, category_id, location_id, type, title, description, image, event_datetime, status, created_at, updated_at';
-export const reportListSql = `SELECT ${columns} FROM item_reports
-  WHERE ($1::varchar IS NULL OR type = $1) AND ($2::varchar IS NULL OR status = $2)
-    AND ($3::integer IS NULL OR category_id = $3) AND ($4::integer IS NULL OR location_id = $4)
-  ORDER BY report_id DESC LIMIT $5 OFFSET $6`;
 const map = (row: Row): Report => ({
   reportId: row.report_id,
   userId: row.user_id,
@@ -44,24 +41,21 @@ const map = (row: Row): Report => ({
 });
 export class PgReportRepository implements ReportRepository {
   constructor(private readonly db: Sql) {}
-  async list(filter: ReportFilter) {
-    const rows = await query<Row>(this.db, reportListSql, [
-      filter.type ?? null,
-      filter.status ?? null,
-      filter.categoryId ?? null,
-      filter.locationId ?? null,
-      filter.limit,
-      filter.offset,
-    ]);
-    return rows.map(map);
-  }
-  async find(id: number) {
-    const [row] = await query<Row>(
-      this.db,
-      `SELECT ${columns} FROM item_reports WHERE report_id = $1`,
-      [id],
+  // BE005: implement parameterized SELECT with optional filters, ORDER BY report_id DESC, LIMIT and OFFSET.
+  async list(_filter: ReportFilter): Promise<Report[]> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE005 is awaiting implementation',
     );
-    return row ? map(row) : null;
+  }
+  // BE006: implement parameterized SELECT by report_id and return the mapped Report or null.
+  async find(_id: number): Promise<Report | null> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE006 is awaiting implementation',
+    );
   }
   async create(userId: number, input: ReportInput) {
     const [row] = await query<Row>(

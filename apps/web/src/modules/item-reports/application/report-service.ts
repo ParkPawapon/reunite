@@ -1,5 +1,6 @@
 import { AppError } from '@campus/shared';
 import type {
+  Report,
   ReportRepository,
   ReportInput,
   ReportPatch,
@@ -8,21 +9,26 @@ import type {
 
 export class ReportService {
   constructor(private readonly repository: ReportRepository) {}
-  list(filter: ReportFilter) {
-    return this.repository.list(filter);
+  // BE005: replace placeholder with repository invocation.
+  async list(_filter: ReportFilter): Promise<Report[]> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE005 is awaiting implementation',
+    );
   }
-  async find(id: number) {
-    const report = await this.repository.find(id);
-    if (!report) throw new AppError('NOT_FOUND', 404, 'Report not found');
-    return report;
+  // BE006: replace placeholder with repository lookup and 404 NOT_FOUND check.
+  async find(_id: number): Promise<Report> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE006 is awaiting implementation',
+    );
   }
   create(userId: number, input: ReportInput) {
     return this.repository.create(userId, input);
   }
   async update(id: number, userId: number, patch: ReportPatch) {
-    const existing = await this.find(id);
-    if (existing.userId !== userId)
-      throw new AppError('NOT_FOUND', 404, 'Report not found');
     const report = await this.repository.updateOwned(id, userId, patch);
     if (!report) throw new AppError('NOT_FOUND', 404, 'Report not found');
     return report;

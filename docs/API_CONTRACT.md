@@ -1,10 +1,10 @@
 # API contract v1
 
-## Catalog assignment status
+## Catalog and read-endpoint assignment status
 
 BE003 is implemented: public `GET /api/v1/locations` reads PostgreSQL and returns ordered, paginated locationId/locationName/nullable detail with the standard response envelope. Invalid, unknown and duplicate query parameters return 422.
 
-BE002 remains reserved for its assignee: `GET /api/v1/categories` still returns 501 NOT_IMPLEMENTED. Its target contract below remains the assignment specification. Integration checks now validate real location data and retain the category starter assertion. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
+BE002 (`GET /api/v1/categories`), BE005 (`GET /api/v1/item-reports`), BE006 (`GET /api/v1/item-reports/:id`), BE007 (`GET /api/v1/claims`) and BE008 (`GET /api/v1/claims/:id`) are reserved for their assignees and currently return 501 NOT_IMPLEMENTED. Their target contracts below remain the assignment specifications. Integration checks validate real location data and write paths while verifying the explicit 501 starter state for the five pending read endpoints. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
 
 ## Private student profile and account notifications
 
@@ -34,13 +34,13 @@ Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED` or `AVATA
 | POST `/auth/logout`       | optional session | Revoke current token and clear cookie; idempotent                                    |
 | GET `/auth/me`            | session          | Own `{userId,name,email}`                                                            |
 | GET `/categories`         | none             | Currently 501; BE002 restores `[{categoryId,categoryName}]`                          |
-| GET `/locations`          | none             | Currently 501; BE003 restores `[{locationId,locationName,detail}]`                   |
-| GET `/item-reports`       | none             | Paginated reports; optional `type`, `status`, `categoryId`, `locationId`             |
-| GET `/item-reports/:id`   | none             | Single report or 404                                                                 |
+| GET `/locations`          | none             | Paginated `[{locationId,locationName,detail}]` (implemented in BE003)                |
+| GET `/item-reports`       | none             | Currently 501; BE005 restores paginated reports with optional filters                |
+| GET `/item-reports/:id`   | none             | Currently 501; BE006 restores single report or 404                                   |
 | POST `/item-reports`      | session          | Create report as current user, `OPEN`; 201                                           |
 | PATCH `/item-reports/:id` | owner session    | Safe field update; other owners/missing reports return 404                           |
-| GET `/claims`             | session          | Own claims only                                                                      |
-| GET `/claims/:id`         | claimant session | Own claim or non-disclosing 404; report ownership grants no access                   |
+| GET `/claims`             | session          | Currently 501; BE007 restores own claims only                                        |
+| GET `/claims/:id`         | claimant session | Currently 501; BE008 restores own claim or non-disclosing 404                        |
 | POST `/claims`            | session          | Current claimant, supplied report/evidence, DB `PENDING` and timestamp; 201          |
 
 ## Requests and output
