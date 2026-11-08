@@ -41,7 +41,7 @@ it('rejects non-owner or missing report update with 404', async () => {
     title: 'Stolen edit',
   });
 });
-it('exposes explicit 501 placeholders for BE005-BE008 report and claim read services', async () => {
+it('checks the contracts of report and claim read services', async () => {
   const reportService = new ReportService({
     list: vi.fn(),
     create: vi.fn(),
@@ -51,7 +51,7 @@ it('exposes explicit 501 placeholders for BE005-BE008 report and claim read serv
   const claimService = new ClaimService({
     listOwned: vi.fn(),
     create: vi.fn(),
-    findOwned: vi.fn(),
+    findOwned: vi.fn(async () => null),
   });
   await expect(
     reportService.list({ limit: 20, offset: 0 }),
@@ -73,9 +73,9 @@ it('exposes explicit 501 placeholders for BE005-BE008 report and claim read serv
     message: 'BE007 is awaiting implementation',
   });
   await expect(claimService.find(1, 2)).rejects.toMatchObject({
-    code: 'NOT_IMPLEMENTED',
-    status: 501,
-    message: 'BE008 is awaiting implementation',
+    code: 'NOT_FOUND',
+    status: 404,
+    message: 'Claim not found',
   });
 });
 it('rejects migration checksum changes, gaps, unknown versions and duplicates', () => {
