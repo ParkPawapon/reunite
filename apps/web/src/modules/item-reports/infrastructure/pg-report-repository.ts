@@ -1,6 +1,5 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
-import { AppError } from '@campus/shared';
 import type {
   Report,
   ReportRepository,
@@ -63,14 +62,15 @@ export class PgReportRepository implements ReportRepository {
     return rows.map(map);
   }
 
-  // BE006: implement parameterized SELECT by report_id and return the mapped Report or null.
-  async find(_id: number): Promise<Report | null> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE006 is awaiting implementation',
+  async find(id: number): Promise<Report | null> {
+    const [row] = await query<Row>(
+      this.db,
+      `SELECT ${columns} FROM item_reports WHERE report_id = $1`,
+      [id],
     );
+    return row ? map(row) : null;
   }
+
   async create(userId: number, input: ReportInput) {
     const [row] = await query<Row>(
       this.db,
