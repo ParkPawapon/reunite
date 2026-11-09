@@ -41,14 +41,28 @@ const map = (row: Row): Report => ({
 });
 export class PgReportRepository implements ReportRepository {
   constructor(private readonly db: Sql) {}
-  // BE005: implement parameterized SELECT with optional filters, ORDER BY report_id DESC, LIMIT and OFFSET.
-  async list(_filter: ReportFilter): Promise<Report[]> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE005 is awaiting implementation',
+
+  async list(filter: ReportFilter): Promise<Report[]> {
+    const rows = await query<Row>(
+      this.db,
+      `SELECT ${columns} FROM item_reports
+      WHERE ($1::varchar IS NULL OR type = $1)
+      AND ($2::varchar IS NULL OR status = $2)
+      AND ($3::integer IS NULL OR category_id = $3)
+      AND ($4::integer IS NULL OR location_id = $4)
+      ORDER BY report_id DESC LIMIT $5 OFFSET $6`,
+      [
+        filter.type ?? null,
+        filter.status ?? null,
+        filter.categoryId ?? null,
+        filter.locationId ?? null,
+        filter.limit,
+        filter.offset,
+      ],
     );
+    return rows.map(map);
   }
+
   // BE006: implement parameterized SELECT by report_id and return the mapped Report or null.
   async find(_id: number): Promise<Report | null> {
     throw new AppError(
