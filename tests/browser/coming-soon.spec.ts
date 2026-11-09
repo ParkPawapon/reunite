@@ -76,7 +76,7 @@ test('public server HTML contains the launch date and local poster before hydrat
   expect(errors).toEqual([]);
 });
 
-test('stops GPU/CSS motion while keeping countdown live, and completes a manual 360 orbit', async ({
+test('stops GPU/CSS motion while keeping countdown live and respects reduced motion', async ({
   page,
 }) => {
   await probe(page);
@@ -109,6 +109,28 @@ test('stops GPU/CSS motion while keeping countdown live, and completes a manual 
     ),
   ).toBe(0);
   await page
+    .getByRole('button', { name: 'เล่นภาพเคลื่อนไหว', exact: true })
+    .click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.waitForTimeout(200);
+  const reduced = await draws(page);
+  await page.waitForTimeout(500);
+  expect(await draws(page)).toBe(reduced);
+});
+
+test('completes a paused manual 360 orbit and supports keyboard reset', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/coming-soon');
+  // Pause before model readiness to avoid competing autoplay frames on software GPUs.
+  await page
+    .getByRole('button', { name: 'หยุดภาพเคลื่อนไหว', exact: true })
+    .click();
+  await expect(world(page)).toHaveAttribute('data-state', 'ready', {
+    timeout: 45000,
+  });
+  await page
     .getByRole('button', { name: 'คืนมุมมองเริ่มต้น', exact: true })
     .click();
   const canvas = page.locator('[data-campus-world] canvas');
@@ -129,14 +151,6 @@ test('stops GPU/CSS motion while keeping countdown live, and completes a manual 
   expect(await changed(front, await canvas.screenshot())).toBeGreaterThan(0.01);
   await page.keyboard.press('Home');
   expect(await changed(front, await canvas.screenshot())).toBeLessThan(0.01);
-  await page
-    .getByRole('button', { name: 'เล่นภาพเคลื่อนไหว', exact: true })
-    .click();
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.waitForTimeout(200);
-  const reduced = await draws(page);
-  await page.waitForTimeout(500);
-  expect(await draws(page)).toBe(reduced);
 });
 
 test('recovers model download failure and WebGL context loss with a fresh canvas', async ({
@@ -341,42 +355,72 @@ test('suspends offscreen/hidden rendering and retains pause during a slow model 
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await expect.poll(() => draws(page)).toBeGreaterThan(hidden);
-  await page.evaluate(() => {
-    document.body.style.minHeight = '2600px';
-    scrollTo(0, 1600);
-  });
-  await page.waitForTimeout(350);
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const container = document.querySelector('[data-campus-world]');
+        if (!container) throw new Error('Campus container missing');
+        const observer = new IntersectionObserver((entries) => {
+          if (entries[0]?.isIntersecting !== false) return;
+          observer.disconnect();
+          // Let the application's observer and its final render settle as well.
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+        observer.observe(container);
+        document.body.style.minHeight = '2600px';
+        scrollTo({ top: 1600, behavior: 'instant' });
+      }),
+  );
+  expect(
+    await world(page).evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.bottom <= 0 || rect.top >= innerHeight;
+    }),
+  ).toBe(true);
   const offscreen = await draws(page);
   await page.waitForTimeout(600);
   expect(await draws(page)).toBe(offscreen);
   await page.evaluate(() => scrollTo(0, 0));
   await expect.poll(() => draws(page)).toBeGreaterThan(offscreen);
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let download: Promise<void> | undefined;
   await page.route(model, async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    await route.continue();
+    download = gate.then(() => route.continue());
+    await download;
   });
-  const pending = page.waitForRequest((request) =>
-    request.url().endsWith('/kmutt-bangmod-web.glb'),
-  );
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await pending;
-  await expect(page.locator('[data-unit="seconds"]')).not.toHaveText('—');
-  const seconds = await page.locator('[data-unit="seconds"]').textContent();
-  await page.waitForTimeout(1200);
-  expect(await page.locator('[data-unit="seconds"]').textContent()).not.toBe(
-    seconds,
-  );
-  await expect(world(page)).toHaveAttribute('data-state', 'loading');
-  await page
-    .getByRole('button', { name: 'หยุดภาพเคลื่อนไหว', exact: true })
-    .click();
-  await expect(world(page)).toHaveAttribute('data-state', 'ready', {
-    timeout: 45000,
-  });
-  await page.waitForTimeout(200);
-  const paused = await draws(page);
-  await page.waitForTimeout(600);
-  expect(await draws(page)).toBe(paused);
+  try {
+    const pending = page.waitForRequest((request) =>
+      request.url().endsWith('/kmutt-bangmod-web.glb'),
+    );
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await pending;
+    await expect(page.locator('[data-unit="seconds"]')).not.toHaveText('—');
+    const seconds = await page.locator('[data-unit="seconds"]').textContent();
+    await page.waitForTimeout(1200);
+    expect(await page.locator('[data-unit="seconds"]').textContent()).not.toBe(
+      seconds,
+    );
+    await expect(world(page)).toHaveAttribute('data-state', 'loading');
+    await page
+      .getByRole('button', { name: 'หยุดภาพเคลื่อนไหว', exact: true })
+      .click();
+    release();
+    await download;
+    await expect(world(page)).toHaveAttribute('data-state', 'ready', {
+      timeout: 45000,
+    });
+    await page.waitForTimeout(200);
+    const paused = await draws(page);
+    await page.waitForTimeout(600);
+    expect(await draws(page)).toBe(paused);
+  } finally {
+    release();
+    await download;
+    await page.unroute(model);
+  }
 });
 
 test('isolates lazy scene chunk failure and offers document reload recovery', async ({

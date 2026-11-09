@@ -8,7 +8,7 @@
 
 | รหัส TASK | ผู้รับผิดชอบ                   | HTTP Method & Endpoint         | โมดูล (`apps/web/src/modules/*`) | Branch มาตรฐาน                 | สถานะปัจจุบัน                                              |
 | --------- | ------------------------------ | ------------------------------ | -------------------------------- | ------------------------------ | ---------------------------------------------------------- |
-| **BE002** | สมาชิกทีม (รอบก่อนหน้า)        | `GET /api/v1/categories`       | `modules/categories/`            | `BE002/list-item-categories`   | รอดำเนินการ (`501 NOT_IMPLEMENTED`)                        |
+| **BE002** | สมาชิกทีม (รอบก่อนหน้า)        | `GET /api/v1/categories`       | `modules/categories/`            | `BE002/list-item-categories`   | รวมงานแล้วใน PR #21 (200 / 404 ตามสัญญา)                   |
 | **BE003** | สมาชิกทีม (รอบก่อนหน้า)        | `GET /api/v1/locations`        | `modules/locations/`             | `BE003/list-report-locations`  | **เสร็จสมบูรณ์และรวมเข้า `main` แล้ว (PR #12)** (`200 OK`) |
 | **BE005** | **เพื่อนคนที่ 1 (TASK ที่ 1)** | `GET /api/v1/item-reports`     | `modules/item-reports/`          | `BE005/list-item-reports`      | **เปิดงานรอบใหม่ (`501 NOT_IMPLEMENTED`)**                 |
 | **BE006** | **เพื่อนคนที่ 1 (TASK ที่ 2)** | `GET /api/v1/item-reports/:id` | `modules/item-reports/`          | `BE006/get-item-report-detail` | **เปิดงานรอบใหม่ (`501 NOT_IMPLEMENTED`)**                 |
@@ -20,7 +20,7 @@
 > - **เพื่อนคนที่ 1 (`BE005`, `BE006`)** ทำงานเฉพาะภายในโฟลเดอร์ `apps/web/src/modules/item-reports/` เท่านั้น
 > - **เพื่อนคนที่ 2 (`BE007`, `BE008`)** ทำงานเฉพาะภายในโฟลเดอร์ `apps/web/src/modules/claims/` เท่านั้น
 > - ส่วนเชื่อมต่อกลางใน `apps/web/src/lib/http/handlers.ts`, `apps/web/src/lib/composition.ts` และไฟล์ Route (`apps/web/src/app/api/v1/**/route.ts`) ถูกผูกเข้ากับฟังก์ชันแยกของแต่ละงานไว้เรียบร้อยแล้ว **ทั้งสองคนจึงไม่ต้องแก้ไขไฟล์กลางร่วมกัน และสามารถทำ TASK ของตนเองได้ทันทีโดยไม่ต้องรอกัน**
-> - Business Logic และคำสั่ง SQL `SELECT` เดิมของทั้ง 4 เส้น (`BE005`–`BE008`) ถูกถอดออกเป็นสถานะเริ่มต้น `501 NOT_IMPLEMENTED` เพื่อให้เพื่อนทั้งสองคนเป็นคนเขียนตรรกะการตรวจรับค่า (Presentation), ลำดับงานทางธุรกิจ (Application Service) และการคิวรีฐานข้อมูล (Infrastructure SQL Repository) ด้วยตนเองตามสัญญามาตรฐานด้านล่าง
+> - งานเริ่มต้นใช้ 501 เพื่อแยก TASK ให้ทีม สถานะส่งมอบล่าสุด: BE002 รวมงานแล้ว; BE005, BE006, BE007, BE008 ยังเป็นงานรอดำเนินการ สัญญาด้านล่างเก็บเป็นเกณฑ์ตรวจรับและเอกสารอ้างอิง
 
 ---
 
@@ -444,5 +444,5 @@ bun run dev
 ## 8. บันทึกอ้างอิงสำหรับงานรอบก่อนหน้า (`BE002` และ `BE003`)
 
 - **`BE003` (`GET /api/v1/locations`):** ส่งมอบและรวมเข้า `main` แล้วใน [PR #12](https://github.com/ParkPawapon/reunite/pull/12) สามารถดูโค้ดใน `apps/web/src/modules/locations/` เป็นตัวอย่างต้นแบบ (Reference Implementation) ของการแบ่งชั้น Presentation (`list-locations.ts`), Application (`location-service.ts`), Domain (`location.ts`) และ Infrastructure (`pg-location-repository.ts`) ได้โดยตรง
-- **`BE002` (`GET /api/v1/categories`):** ยังคงสงวนไว้สำหรับผู้รับผิดชอบเดิมใน `apps/web/src/modules/categories/` (`Branch: BE002/list-item-categories`) โดยอ่านจากตาราง `categories` เรียง `category_id ASC` และคืน `{ data: [{ categoryId, categoryName }], meta: { limit, offset } }`
-- **หมายเหตุสำหรับผู้ดูแลการรวมงาน (Integrator):** เมื่อผู้รับผิดชอบแต่ละ TASK (`BE002`, `BE005`, `BE006`, `BE007`, `BE008`) ส่ง PR เข้ามา ผู้ดูแลจะเป็นผู้ปรับ Assertion ใน `tests/unit/guardrails.test.ts` และ `tests/integration/foundation.test.ts` จากการตรวจสถานะเริ่มต้น `501 NOT_IMPLEMENTED` กลับเป็นการตรวจผลลัพธ์ `200 OK` / `404 NOT_FOUND` กับฐานข้อมูลทดสอบจริงก่อนกด Merge
+- **`BE002` (`GET /api/v1/categories`):** รวมงานแล้วใน PR #21 อ่าน categories จริงเรียง `category_id ASC` และคืน `{ data: [{ categoryId, categoryName }], meta: { limit, offset } }`
+- **สถานะการตรวจรับโดยผู้รวมงาน:** ปรับ assertion และเพิ่ม PostgreSQL integration coverage แล้วสำหรับ BE002; คงการตรวจ 501 สำหรับ BE005, BE006, BE007, BE008 จนกว่าจะส่งมอบ ผู้รับงานยังทำเฉพาะโมดูล ส่วนงาน test และการรวมเป็นหน้าที่ผู้รวมงานตามข้อตกลงเดิม

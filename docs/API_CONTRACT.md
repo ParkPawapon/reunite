@@ -4,7 +4,7 @@
 
 BE003 is implemented: public `GET /api/v1/locations` reads PostgreSQL and returns ordered, paginated locationId/locationName/nullable detail with the standard response envelope. Invalid, unknown and duplicate query parameters return 422.
 
-BE002 (`GET /api/v1/categories`), BE005 (`GET /api/v1/item-reports`), BE006 (`GET /api/v1/item-reports/:id`), BE007 (`GET /api/v1/claims`) and BE008 (`GET /api/v1/claims/:id`) are reserved for their assignees and currently return 501 NOT_IMPLEMENTED. Their target contracts below remain the assignment specifications. Integration checks validate real location data and write paths while verifying the explicit 501 starter state for the five pending read endpoints. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
+Implemented read assignments: BE002. Pending assignments BE005, BE006, BE007, BE008 retain their explicit 501 starters. Integration coverage checks real PostgreSQL data, validation, pagination and privacy for delivered tasks. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
 
 ## Private student profile and account notifications
 
@@ -33,7 +33,7 @@ Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED` or `AVATA
 | POST `/auth/login`        | credentials      | Profile and opaque HttpOnly cookie; previous browser token revoked after valid login |
 | POST `/auth/logout`       | optional session | Revoke current token and clear cookie; idempotent                                    |
 | GET `/auth/me`            | session          | Own `{userId,name,email}`                                                            |
-| GET `/categories`         | none             | Currently 501; BE002 restores `[{categoryId,categoryName}]`                          |
+| GET `/categories`         | none             | Paginated `[{categoryId,categoryName}]`, ordered by category ID                      |
 | GET `/locations`          | none             | Paginated `[{locationId,locationName,detail}]` (implemented in BE003)                |
 | GET `/item-reports`       | none             | Currently 501; BE005 restores paginated reports with optional filters                |
 | GET `/item-reports/:id`   | none             | Currently 501; BE006 restores single report or 404                                   |
