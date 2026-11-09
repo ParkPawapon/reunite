@@ -11,13 +11,10 @@ export class ClaimService {
       'BE007 is awaiting implementation',
     );
   }
-  // BE008: replace placeholder with owned claim lookup and non-disclosing 404 NOT_FOUND check.
-  async find(_id: number, _userId: number): Promise<Claim> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE008 is awaiting implementation',
-    );
+  async find(id: number, userId: number): Promise<Claim> {
+    const claim = await this.repository.findOwned(id, userId);
+    if (!claim) throw new AppError('NOT_FOUND', 404, 'Claim not found');
+    return claim;
   }
   // FK existence is enforced atomically by PostgreSQL. Further eligibility rules are undecided.
   create(userId: number, input: ClaimInput) {
