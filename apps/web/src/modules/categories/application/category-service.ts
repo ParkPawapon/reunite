@@ -6,7 +6,7 @@ export interface CategoryService {
 }
 
 export class DefaultCategoryService implements CategoryService {
-  constructor(private readonly categoryRepository: CategoryRepository) { }
+  constructor(private readonly categoryRepository: CategoryRepository) {}
 
   async list(page: Page): Promise<Category[]> {
     return this.categoryRepository.list(page);
