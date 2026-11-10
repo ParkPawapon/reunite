@@ -420,7 +420,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
           context(reportId),
         )
       ).status,
-    ).toBe(501);
+    ).toBe(200);
     expect(
       (
         await apiHandlers.getReport(
@@ -428,7 +428,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
           context(2147483647),
         )
       ).status,
-    ).toBe(501);
+    ).toBe(404);
   });
   it('enforces SQL FK, CHECK and date constraints without leaking internals', async () => {
     const values = [
@@ -489,21 +489,16 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       meta: { limit: 1, offset: 0 },
     });
     expect(listBody.data[0]).not.toHaveProperty('userId');
-    await expect(repository.find(reportId)).rejects.toMatchObject({
-      code: 'NOT_IMPLEMENTED',
-      status: 501,
-    });
+    expect(await repository.find(reportId)).toMatchObject({ reportId, userId });
+    expect(await repository.find(2147483647)).toBeNull();
     const detailResponse = await apiHandlers.getReport(
       request(`item-reports/${reportId}`),
       context(reportId),
     );
-    expect(detailResponse.status).toBe(501);
-    expect(await detailResponse.json()).toMatchObject({
-      error: {
-        code: 'NOT_IMPLEMENTED',
-        message: 'BE006 is awaiting implementation',
-      },
-    });
+    expect(detailResponse.status).toBe(200);
+    const detailBody = await json(detailResponse);
+    expect(detailBody.data).toMatchObject({ reportId });
+    expect(detailBody.data).not.toHaveProperty('userId');
     expect(
       (
         await apiHandlers.patchReport(

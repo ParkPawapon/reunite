@@ -1,20 +1,17 @@
 import 'server-only';
-import { AppError } from '@campus/shared';
-import { api } from '@/lib/http/api';
+import { api, idSchema, parse, success } from '@/lib/http/api';
 import type { RouteContext } from '@/lib/http/handlers';
 import type { ReportService } from '../application/report-service';
+import { reportDto } from './dto';
 
-// BE006: implement route id validation, service invocation and the documented response.
 export function getReport(
   request: Request,
-  _context: RouteContext,
-  _getService: () => ReportService,
+  context: RouteContext,
+  getService: () => ReportService,
 ) {
   return api(request, async () => {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE006 is awaiting implementation',
-    );
+    const id = parse(idSchema, (await context.params).id);
+    const report = await getService().find(id);
+    return success(reportDto(report), 200);
   });
 }

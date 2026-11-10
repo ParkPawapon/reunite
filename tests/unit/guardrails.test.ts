@@ -52,18 +52,36 @@ it('BE005 uses its domain repository contract', async () => {
   expect(await service.list(filter)).toBe(rows);
   expect(list).toHaveBeenCalledExactlyOnceWith(filter);
 });
-it('BE006 retains its explicit pending assignment', async () => {
+it('BE006 uses its domain repository contract', async () => {
+  const row = {
+    reportId: 7,
+    userId: 4,
+    categoryId: 1,
+    locationId: 2,
+    type: 'FOUND' as const,
+    title: 'Test report',
+    description: null,
+    image: null,
+    eventDatetime: '2026-11-04T05:30:00.000Z',
+    status: 'OPEN' as const,
+    createdAt: '2026-11-04T06:00:00.000Z',
+    updatedAt: '2026-11-04T06:00:00.000Z',
+  };
+  const find = vi
+    .fn<ReportRepository['find']>()
+    .mockResolvedValueOnce(row)
+    .mockResolvedValueOnce(null);
   const service = new ReportService({
-    list: vi.fn(),
-    create: vi.fn(),
-    find: vi.fn(),
-    updateOwned: vi.fn(),
+    ...{ list: vi.fn(), create: vi.fn(), find: vi.fn(), updateOwned: vi.fn() },
+    find,
   });
-  await expect(service.find(1)).rejects.toMatchObject({
-    code: 'NOT_IMPLEMENTED',
-    status: 501,
-    message: 'BE006 is awaiting implementation',
+  expect(await service.find(7)).toBe(row);
+  await expect(service.find(9)).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+    status: 404,
+    message: 'Report not found',
   });
+  expect(find.mock.calls).toEqual([[7], [9]]);
 });
 it('BE007 retains its explicit pending assignment', async () => {
   const service = new ClaimService({

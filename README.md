@@ -22,7 +22,7 @@ The account menu and Sidebar link to `/profile` for first/last name, student ID,
 
 The public [/coming-soon](http://localhost:3000/coming-soon) page presents the approved cinematic campus scene, interactive 3D clues and Agent Honk, with a countdown to **24 November 2026 (2569), 00:00 Asia/Bangkok**. It supports pause, reduced motion, static fallback and recoverable scene loading. See [Coming Soon implementation and verification](docs/design/coming-soon.md).
 
-The [backend assignment handoff](docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md) records integrated BE003 and delivered BE002, BE005 read endpoints. BE006, BE007, BE008 remain reserved with explicit 501 starters.
+The [backend assignment handoff](docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md) records integrated BE003 and delivered BE002, BE005, BE006 read endpoints. BE007, BE008 remain reserved with explicit 501 starters.
 
 To create one local login account after migrations, run `bun run db:seed --development-only`. The command creates `demo@reunite.test` and a random password in the Git/Docker-ignored `tmp/local-seed/login-account.json`. Repeating it preserves the same account and credentials. See [local login seed safeguards](docs/DEVELOPMENT.md#one-local-login-account).
 
