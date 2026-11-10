@@ -25,13 +25,14 @@ const map = (row: Row): Claim => ({
 });
 export class PgClaimRepository implements ClaimRepository {
   constructor(private readonly db: Sql) {}
-  // BE007: implement parameterized SELECT scoped to user_id, ordered by claim_id DESC with LIMIT and OFFSET.
-  async listOwned(_userId: number, _page: Page): Promise<Claim[]> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE007 is awaiting implementation',
+  async listOwned(userId: number, page: Page): Promise<Claim[]> {
+    const rows = await query<Row>(
+      this.db,
+      `SELECT ${columns} FROM claims
+       WHERE user_id = $1 ORDER BY claim_id DESC LIMIT $2 OFFSET $3`,
+      [userId, page.limit, page.offset],
     );
+    return rows.map(map);
   }
   // BE008: implement parameterized SELECT scoped to claim_id and user_id, returning mapped Claim or null.
   async findOwned(_id: number, _userId: number): Promise<Claim | null> {
