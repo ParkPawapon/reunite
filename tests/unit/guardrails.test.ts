@@ -2,6 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { ReportService } from '@/modules/item-reports/application/report-service';
 import type { ReportRepository } from '@/modules/item-reports/domain/report';
 import { ClaimService } from '@/modules/claims/application/claim-service';
+import type { ClaimRepository } from '@/modules/claims/domain/claim';
 import { AuthService } from '@/modules/auth/application/auth-service';
 import type { AuthRepository } from '@/modules/auth/domain/auth';
 import { validateHistory } from '../../packages/database/src/migrations';
@@ -83,19 +84,18 @@ it('BE006 uses its domain repository contract', async () => {
   });
   expect(find.mock.calls).toEqual([[7], [9]]);
 });
-it('BE007 retains its explicit pending assignment', async () => {
+it('BE007 uses its domain repository contract', async () => {
+  const rows: Awaited<ReturnType<ClaimRepository['listOwned']>> = [];
+  const listOwned = vi
+    .fn<ClaimRepository['listOwned']>()
+    .mockResolvedValue(rows);
   const service = new ClaimService({
-    listOwned: vi.fn(),
-    create: vi.fn(),
-    findOwned: vi.fn(),
+    ...{ listOwned: vi.fn(), create: vi.fn(), findOwned: vi.fn() },
+    listOwned,
   });
-  await expect(service.list(4, { limit: 20, offset: 0 })).rejects.toMatchObject(
-    {
-      code: 'NOT_IMPLEMENTED',
-      status: 501,
-      message: 'BE007 is awaiting implementation',
-    },
-  );
+  const page = { limit: 20, offset: 0 };
+  expect(await service.list(4, page)).toBe(rows);
+  expect(listOwned).toHaveBeenCalledExactlyOnceWith(4, page);
 });
 it('BE008 retains its explicit pending assignment', async () => {
   const service = new ClaimService({

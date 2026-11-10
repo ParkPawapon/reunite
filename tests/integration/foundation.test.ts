@@ -541,15 +541,11 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     );
     expect((await json(update)).data.title).toBe('Updated');
   });
-  it('creates PENDING claims and preserves BE007/BE008 claim read handoffs', async () => {
+  it('creates PENDING claims and verifies private claim read contracts', async () => {
     const claimRepository = new PgClaimRepository(pool);
-    await expect(
-      claimRepository.listOwned(otherId, { limit: 20, offset: 0 }),
-    ).rejects.toMatchObject({
-      code: 'NOT_IMPLEMENTED',
-      status: 501,
-      message: 'BE007 is awaiting implementation',
-    });
+    expect(
+      await claimRepository.listOwned(otherId, { limit: 20, offset: 0 }),
+    ).toEqual([]);
     const response = await apiHandlers.createClaim(
       request(
         'claims',
@@ -575,12 +571,10 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     const listResponse = await apiHandlers.listClaims(
       request('claims', 'GET', undefined, otherCookie),
     );
-    expect(listResponse.status).toBe(501);
-    expect(await listResponse.json()).toMatchObject({
-      error: {
-        code: 'NOT_IMPLEMENTED',
-        message: 'BE007 is awaiting implementation',
-      },
+    expect(listResponse.status).toBe(200);
+    expect(await listResponse.json()).toEqual({
+      data: [claim],
+      meta: { limit: 20, offset: 0 },
     });
     const detailResponse = await apiHandlers.getClaim(
       request(`claims/${claimId}`, 'GET', undefined, otherCookie),
