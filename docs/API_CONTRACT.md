@@ -4,7 +4,7 @@
 
 BE003 is implemented: public `GET /api/v1/locations` reads PostgreSQL and returns ordered, paginated locationId/locationName/nullable detail with the standard response envelope. Invalid, unknown and duplicate query parameters return 422.
 
-Implemented read assignments: BE002, BE005, BE006, BE007. Pending assignments BE008 retain their explicit 501 starters. Integration coverage checks real PostgreSQL data, validation, pagination and privacy for delivered tasks. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
+Implemented read assignments: BE002, BE005, BE006, BE007, BE008. All assigned catalog, public-report and own-claim read endpoints now return their documented real-data responses. Integration coverage checks real PostgreSQL data, validation, pagination and privacy for delivered tasks. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
 
 ## Private student profile and account notifications
 
@@ -40,7 +40,7 @@ Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED` or `AVATA
 | POST `/item-reports`      | session          | Create report as current user, `OPEN`; 201                                           |
 | PATCH `/item-reports/:id` | owner session    | Safe field update; other owners/missing reports return 404                           |
 | GET `/claims`             | session          | Own claims only, paginated by descending claim ID                                    |
-| GET `/claims/:id`         | claimant session | Currently 501; BE008 restores own claim or non-disclosing 404                        |
+| GET `/claims/:id`         | claimant session | Own claim/evidence or non-disclosing 404                                             |
 | POST `/claims`            | session          | Current claimant, supplied report/evidence, DB `PENDING` and timestamp; 201          |
 
 ## Requests and output

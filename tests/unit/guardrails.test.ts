@@ -97,17 +97,34 @@ it('BE007 uses its domain repository contract', async () => {
   expect(await service.list(4, page)).toBe(rows);
   expect(listOwned).toHaveBeenCalledExactlyOnceWith(4, page);
 });
-it('BE008 retains its explicit pending assignment', async () => {
+it('BE008 uses its domain repository contract', async () => {
+  const row = {
+    claimId: 8,
+    reportId: 7,
+    userId: 4,
+    evidence: 'Synthetic private receipt',
+    status: 'PENDING' as const,
+    claimDate: '2026-11-04T06:00:00.000Z',
+    updatedAt: '2026-11-04T06:00:00.000Z',
+  };
+  const findOwned = vi
+    .fn<ClaimRepository['findOwned']>()
+    .mockResolvedValueOnce(row)
+    .mockResolvedValueOnce(null);
   const service = new ClaimService({
-    listOwned: vi.fn(),
-    create: vi.fn(),
-    findOwned: vi.fn(),
+    ...{ listOwned: vi.fn(), create: vi.fn(), findOwned: vi.fn() },
+    findOwned,
   });
-  await expect(service.find(1, 4)).rejects.toMatchObject({
-    code: 'NOT_IMPLEMENTED',
-    status: 501,
-    message: 'BE008 is awaiting implementation',
+  expect(await service.find(8, 4)).toBe(row);
+  await expect(service.find(9, 4)).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+    status: 404,
+    message: 'Claim not found',
   });
+  expect(findOwned.mock.calls).toEqual([
+    [8, 4],
+    [9, 4],
+  ]);
 });
 it('rejects migration checksum changes, gaps, unknown versions and duplicates', () => {
   const files = [
