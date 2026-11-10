@@ -134,6 +134,12 @@ test('completes a paused manual 360 orbit and supports keyboard reset', async ({
     .getByRole('button', { name: 'คืนมุมมองเริ่มต้น', exact: true })
     .click();
   const canvas = page.locator('[data-campus-world] canvas');
+  // Model readiness precedes its opacity transition; compare fully presented frames.
+  await expect(canvas).toHaveCSS('opacity', '1');
+  await expect(page.locator('[data-campus-world] img')).toHaveCSS(
+    'opacity',
+    '0',
+  );
   const front = await canvas.screenshot();
   for (let i = 0; i < 8; i++)
     await page

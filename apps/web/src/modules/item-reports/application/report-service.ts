@@ -9,14 +9,11 @@ import type {
 
 export class ReportService {
   constructor(private readonly repository: ReportRepository) {}
-  // BE005: replace placeholder with repository invocation.
-  async list(_filter: ReportFilter): Promise<Report[]> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE005 is awaiting implementation',
-    );
+
+  list(filter: ReportFilter): Promise<Report[]> {
+    return this.repository.list(filter);
   }
+
   // BE006: replace placeholder with repository lookup and 404 NOT_FOUND check.
   async find(_id: number): Promise<Report> {
     throw new AppError(
