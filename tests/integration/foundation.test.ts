@@ -561,13 +561,8 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     expect(claim.userId).toBe(otherId);
     expect(claim.claimDate).toMatch(/Z$/);
     expect(claim.updatedAt).toBe(claim.claimDate);
-    await expect(
-      claimRepository.findOwned(claimId, otherId),
-    ).rejects.toMatchObject({
-      code: 'NOT_IMPLEMENTED',
-      status: 501,
-      message: 'BE008 is awaiting implementation',
-    });
+    expect(await claimRepository.findOwned(claimId, otherId)).toEqual(claim);
+    expect(await claimRepository.findOwned(claimId, userId)).toBeNull();
     const listResponse = await apiHandlers.listClaims(
       request('claims', 'GET', undefined, otherCookie),
     );
@@ -580,13 +575,16 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       request(`claims/${claimId}`, 'GET', undefined, otherCookie),
       context(claimId),
     );
-    expect(detailResponse.status).toBe(501);
-    expect(await detailResponse.json()).toMatchObject({
-      error: {
-        code: 'NOT_IMPLEMENTED',
-        message: 'BE008 is awaiting implementation',
-      },
-    });
+    expect(detailResponse.status).toBe(200);
+    expect(await detailResponse.json()).toEqual({ data: claim });
+    expect(
+      (
+        await apiHandlers.getClaim(
+          request(`claims/${claimId}`, 'GET', undefined, cookie),
+          context(claimId),
+        )
+      ).status,
+    ).toBe(404);
     await expect(
       pool.query('UPDATE claims SET status = $1 WHERE claim_id = $2', [
         'OPEN',

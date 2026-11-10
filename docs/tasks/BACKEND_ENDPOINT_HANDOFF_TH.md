@@ -8,19 +8,19 @@
 
 | รหัส TASK | ผู้รับผิดชอบ                   | HTTP Method & Endpoint         | โมดูล (`apps/web/src/modules/*`) | Branch มาตรฐาน                 | สถานะปัจจุบัน                                              |
 | --------- | ------------------------------ | ------------------------------ | -------------------------------- | ------------------------------ | ---------------------------------------------------------- |
-| **BE002** | สมาชิกทีม (รอบก่อนหน้า)        | `GET /api/v1/categories`       | `modules/categories/`            | `BE002/list-item-categories`   | รวมงานแล้วใน PR #21 (200 / 404 ตามสัญญา)                   |
+| **BE002** | สมาชิกทีม (รอบก่อนหน้า)        | `GET /api/v1/categories`       | `modules/categories/`            | `BE002/list-item-categories`   | รวมงานแล้วใน PR #21                                        |
 | **BE003** | สมาชิกทีม (รอบก่อนหน้า)        | `GET /api/v1/locations`        | `modules/locations/`             | `BE003/list-report-locations`  | **เสร็จสมบูรณ์และรวมเข้า `main` แล้ว (PR #12)** (`200 OK`) |
-| **BE005** | **เพื่อนคนที่ 1 (TASK ที่ 1)** | `GET /api/v1/item-reports`     | `modules/item-reports/`          | `BE005/list-item-reports`      | รวมงานแล้วใน PR #22 (200 / 404 ตามสัญญา)                   |
-| **BE006** | **เพื่อนคนที่ 1 (TASK ที่ 2)** | `GET /api/v1/item-reports/:id` | `modules/item-reports/`          | `BE006/get-item-report-detail` | รวมงานแล้วใน PR #23 (200 / 404 ตามสัญญา)                   |
-| **BE007** | **เพื่อนคนที่ 2 (TASK ที่ 1)** | `GET /api/v1/claims`           | `modules/claims/`                | `BE007/list-owned-claims`      | รวมงานแล้วใน PR #19 (200 / 404 ตามสัญญา)                   |
-| **BE008** | **เพื่อนคนที่ 2 (TASK ที่ 2)** | `GET /api/v1/claims/:id`       | `modules/claims/`                | `BE008/get-owned-claim-detail` | **เปิดงานรอบใหม่ (`501 NOT_IMPLEMENTED`)**                 |
+| **BE005** | **เพื่อนคนที่ 1 (TASK ที่ 1)** | `GET /api/v1/item-reports`     | `modules/item-reports/`          | `BE005/list-item-reports`      | รวมงานแล้วใน PR #22                                        |
+| **BE006** | **เพื่อนคนที่ 1 (TASK ที่ 2)** | `GET /api/v1/item-reports/:id` | `modules/item-reports/`          | `BE006/get-item-report-detail` | รวมงานแล้วใน PR #23                                        |
+| **BE007** | **เพื่อนคนที่ 2 (TASK ที่ 1)** | `GET /api/v1/claims`           | `modules/claims/`                | `BE007/list-owned-claims`      | รวมงานแล้วใน PR #19                                        |
+| **BE008** | **เพื่อนคนที่ 2 (TASK ที่ 2)** | `GET /api/v1/claims/:id`       | `modules/claims/`                | `BE008/get-owned-claim-detail` | รวมงานแล้วใน PR #20                                        |
 
 > **หลักการออกแบบเพื่อให้ทั้ง 2 คนทำงานขนานกันได้ทันที (Zero-Conflict Parallel Work):**
 >
 > - **เพื่อนคนที่ 1 (`BE005`, `BE006`)** ทำงานเฉพาะภายในโฟลเดอร์ `apps/web/src/modules/item-reports/` เท่านั้น
 > - **เพื่อนคนที่ 2 (`BE007`, `BE008`)** ทำงานเฉพาะภายในโฟลเดอร์ `apps/web/src/modules/claims/` เท่านั้น
 > - ส่วนเชื่อมต่อกลางใน `apps/web/src/lib/http/handlers.ts`, `apps/web/src/lib/composition.ts` และไฟล์ Route (`apps/web/src/app/api/v1/**/route.ts`) ถูกผูกเข้ากับฟังก์ชันแยกของแต่ละงานไว้เรียบร้อยแล้ว **ทั้งสองคนจึงไม่ต้องแก้ไขไฟล์กลางร่วมกัน และสามารถทำ TASK ของตนเองได้ทันทีโดยไม่ต้องรอกัน**
-> - งานเริ่มต้นใช้ 501 เพื่อแยก TASK ให้ทีม สถานะส่งมอบล่าสุด: BE002, BE005, BE006, BE007 รวมงานแล้ว; BE008 ยังเป็นงานรอดำเนินการ สัญญาด้านล่างเก็บเป็นเกณฑ์ตรวจรับและเอกสารอ้างอิง
+> - งานเริ่มต้นใช้ 501 เพื่อแยก TASK ให้ทีม สถานะส่งมอบล่าสุด: BE002, BE005, BE006, BE007, BE008 รวมงานแล้ว ครบทุกเส้นอ่านข้อมูลที่มอบหมาย สัญญาด้านล่างเก็บเป็นเกณฑ์ตรวจรับและเอกสารอ้างอิง
 
 ---
 
@@ -71,7 +71,7 @@ HTTP Request (เช่น GET /api/v1/item-reports?type=LOST&limit=10)
 
 ---
 
-## 3. บทพูดสำหรับสั่งงานเพื่อน (เข้าใจง่าย มีคำอธิบายศัพท์เทคนิคครบ)
+## 3. แนวทางมอบหมายงานเดิม (เก็บเป็นข้อมูลอ้างอิงหลังส่งมอบ)
 
 ### 3.1 บทเปิดคุยรวมกับเพื่อนทั้ง 2 คน
 
@@ -84,7 +84,7 @@ HTTP Request (เช่น GET /api/v1/item-reports?type=LOST&limit=10)
 >
 > เพื่อให้ทำงานง่ายและไม่ชนกันเลย เราแยกให้ **คนที่ 1 ทำโมดูล `item-reports` (`BE005` กับ `BE006`)** และ **คนที่ 2 ทำโมดูล `claims` (`BE007` กับ `BE008`)** ทั้งสองคนทำในโฟลเดอร์โมดูลของตัวเองได้เลย ไม่ต้องรอกัน และไม่ต้องแก้ไฟล์กลางร่วมกัน
 >
-> ตอนนี้เราถอดโค้ดส่วน Business Logic และคำสั่ง SQL ของทั้ง 4 เส้นออกไว้ให้แล้ว ถ้าลองยิง API ตอนนี้จะได้รหัส `501 NOT_IMPLEMENTED` ซึ่งแปลว่ารอให้พวกนายมาเขียนต่อให้เสร็จสมบูรณ์
+> เมื่อเริ่มมอบหมายงาน ทั้ง 4 เส้นใช้ `501 NOT_IMPLEMENTED` เพื่อให้ทีมแยกพัฒนา ปัจจุบันส่งมอบครบแล้วและอ่านข้อมูลจริงจาก PostgreSQL ส่วนนี้เก็บแนวทางมอบหมายเดิมไว้ประกอบสัญญาของแต่ละ TASK
 >
 > เวลาเขียนในแต่ละเส้น ให้ไล่ตาม 3 ชั้นมาตรฐานของโปรเจกต์เสมอ คือ:
 >
@@ -445,4 +445,4 @@ bun run dev
 
 - **`BE003` (`GET /api/v1/locations`):** ส่งมอบและรวมเข้า `main` แล้วใน [PR #12](https://github.com/ParkPawapon/reunite/pull/12) สามารถดูโค้ดใน `apps/web/src/modules/locations/` เป็นตัวอย่างต้นแบบ (Reference Implementation) ของการแบ่งชั้น Presentation (`list-locations.ts`), Application (`location-service.ts`), Domain (`location.ts`) และ Infrastructure (`pg-location-repository.ts`) ได้โดยตรง
 - **`BE002` (`GET /api/v1/categories`):** รวมงานแล้วใน PR #21 อ่าน categories จริงเรียง `category_id ASC` และคืน `{ data: [{ categoryId, categoryName }], meta: { limit, offset } }`
-- **สถานะการตรวจรับโดยผู้รวมงาน:** ปรับ assertion และเพิ่ม PostgreSQL integration coverage แล้วสำหรับ BE002, BE005, BE006, BE007; คงการตรวจ 501 สำหรับ BE008 จนกว่าจะส่งมอบ ผู้รับงานยังทำเฉพาะโมดูล ส่วนงาน test และการรวมเป็นหน้าที่ผู้รวมงานตามข้อตกลงเดิม
+- **สถานะการตรวจรับโดยผู้รวมงาน:** ปรับ assertion และเพิ่ม PostgreSQL integration coverage แล้วสำหรับ BE002, BE005, BE006, BE007, BE008 ครบทุก TASK ผู้รับงานยังทำเฉพาะโมดูล ส่วนงาน test และการรวมเป็นหน้าที่ผู้รวมงานตามข้อตกลงเดิม

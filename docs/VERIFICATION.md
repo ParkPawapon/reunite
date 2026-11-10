@@ -2,6 +2,16 @@
 
 This file records executed verification by revision. Historical sections retain the limits that applied at the time; the delivery section records the subsequent hosted checks.
 
+## Backend read endpoint integration (2026-11-10, Asia/Bangkok)
+
+- Integrated the teammate implementations for BE002 categories, BE005 report listing, BE006 report detail, BE007 owned claim listing and BE008 owned claim detail. Module presentation, application services and handwritten parameterized PostgreSQL repositories retain their existing boundaries. No schema, migration, frontend design or business policy was added.
+- The complete source tree passes local formatting, lint, strict typecheck and production build; all 66 unit, 133 real PostgreSQL integration and 32 Chromium browser tests pass. The integration suite includes 92 requirement cases for the five delivered tasks, replacing the corresponding starter-501 expectations while retaining existing foundation/security coverage.
+- A production standalone server passed 18 actual HTTP checks across the delivered endpoints: real data, pagination, filters, validation, request IDs, no-store headers, unauthenticated access and claim-owner isolation. A foreign claim and an absent claim return the same 404 contract. These fixtures use disposable schemas in the separate test database; the normal application database is not reseeded.
+- The integrator owns regression-suite updates under HANDOFF section 8. Shared routing/composition and the original six migration files are unchanged. Public report responses omit owner identity; private claim queries use session identity and never accept a caller-selected user ID.
+- Existing browser fixtures now wait for actual rendering/network lifecycle events: model presentation before orbit image comparisons, observer visibility before offscreen GPU assertions and request failure before stalled-login reload. The 360-degree orbit and pause/countdown checks have separate cases. All existing behavior assertions and thresholds remain enabled, with no increased timeout or skipped test. Browser plugin not available; verification uses the repository's Playwright Chromium suite against a production standalone build.
+- Each delivery PR contains one signed task commit with contributor credit. Original and latest teammate revisions are preserved by archive tags. Final-head hosted CI, repository policy, CodeQL and Docker non-root live/ready checks must pass before each merge; use the PR checks for their exact revision and run results.
+- The one-review/CODEOWNERS requirement stays active. Only ParkPawapon's existing PR review bypass is used; required checks, signatures and branch integrity retain no bypass actors. This verification is not a production deployment or full accessibility/device certification.
+
 ## Pull-request delivery (2026-11-07, Asia/Bangkok)
 
 - Integrated the teammate's BE003 location endpoint in PR #12 and delivered account APIs (BE004), the account workspace (FE005), system recovery pages (FE006), campus exterior assets (MAP002) and the approved launch page (FE007) as separate tasks. Each PR contains one signed task commit; the repository additionally records its required merge commit.

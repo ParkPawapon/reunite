@@ -26,4 +26,4 @@ The scene controller owns its request, WebGL context, input controls, observers,
 
 ## Backend assignment starter
 
-BE003 and BE002, BE005, BE006, BE007 read endpoints are integrated through module-owned presentation, application services and parameterized SQL repositories. BE008 retain explicit 501 starters. Shared routing/composition remains unchanged. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
+BE003 and BE002, BE005, BE006, BE007, BE008 read endpoints are integrated through module-owned presentation, application services and parameterized SQL repositories. All assigned reads are implemented; report DTOs omit owner identity and claims remain scoped to the authenticated claimant. Shared routing/composition remains unchanged. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).

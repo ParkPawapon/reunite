@@ -1,6 +1,6 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
-import { AppError, type Page } from '@campus/shared';
+import type { Page } from '@campus/shared';
 import type { Claim, ClaimRepository, ClaimInput } from '../domain/claim';
 
 type Row = {
@@ -34,13 +34,13 @@ export class PgClaimRepository implements ClaimRepository {
     );
     return rows.map(map);
   }
-  // BE008: implement parameterized SELECT scoped to claim_id and user_id, returning mapped Claim or null.
-  async findOwned(_id: number, _userId: number): Promise<Claim | null> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE008 is awaiting implementation',
+  async findOwned(id: number, userId: number): Promise<Claim | null> {
+    const [row] = await query<Row>(
+      this.db,
+      `SELECT ${columns} FROM claims WHERE claim_id = $1 AND user_id = $2`,
+      [id, userId],
     );
+    return row ? map(row) : null;
   }
   async create(userId: number, input: ClaimInput) {
     const [row] = await query<Row>(
