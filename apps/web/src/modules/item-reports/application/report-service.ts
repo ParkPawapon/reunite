@@ -14,14 +14,12 @@ export class ReportService {
     return this.repository.list(filter);
   }
 
-  // BE006: replace placeholder with repository lookup and 404 NOT_FOUND check.
-  async find(_id: number): Promise<Report> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE006 is awaiting implementation',
-    );
+  async find(id: number): Promise<Report> {
+    const report = await this.repository.find(id);
+    if (!report) throw new AppError('NOT_FOUND', 404, 'Report not found');
+    return report;
   }
+
   create(userId: number, input: ReportInput) {
     return this.repository.create(userId, input);
   }
