@@ -41,38 +41,53 @@ it('rejects non-owner or missing report update with 404', async () => {
     title: 'Stolen edit',
   });
 });
-it('exposes explicit 501 placeholders for BE005-BE008 report and claim read services', async () => {
-  const reportService = new ReportService({
+it('BE005 retains its explicit pending assignment', async () => {
+  const service = new ReportService({
     list: vi.fn(),
     create: vi.fn(),
     find: vi.fn(),
     updateOwned: vi.fn(),
   });
-  const claimService = new ClaimService({
-    listOwned: vi.fn(),
-    create: vi.fn(),
-    findOwned: vi.fn(),
-  });
-  await expect(
-    reportService.list({ limit: 20, offset: 0 }),
-  ).rejects.toMatchObject({
+  await expect(service.list({ limit: 20, offset: 0 })).rejects.toMatchObject({
     code: 'NOT_IMPLEMENTED',
     status: 501,
     message: 'BE005 is awaiting implementation',
   });
-  await expect(reportService.find(1)).rejects.toMatchObject({
+});
+it('BE006 retains its explicit pending assignment', async () => {
+  const service = new ReportService({
+    list: vi.fn(),
+    create: vi.fn(),
+    find: vi.fn(),
+    updateOwned: vi.fn(),
+  });
+  await expect(service.find(1)).rejects.toMatchObject({
     code: 'NOT_IMPLEMENTED',
     status: 501,
     message: 'BE006 is awaiting implementation',
   });
-  await expect(
-    claimService.list(1, { limit: 20, offset: 0 }),
-  ).rejects.toMatchObject({
-    code: 'NOT_IMPLEMENTED',
-    status: 501,
-    message: 'BE007 is awaiting implementation',
+});
+it('BE007 retains its explicit pending assignment', async () => {
+  const service = new ClaimService({
+    listOwned: vi.fn(),
+    create: vi.fn(),
+    findOwned: vi.fn(),
   });
-  await expect(claimService.find(1, 2)).rejects.toMatchObject({
+  await expect(service.list(4, { limit: 20, offset: 0 })).rejects.toMatchObject(
+    {
+      code: 'NOT_IMPLEMENTED',
+      status: 501,
+      message: 'BE007 is awaiting implementation',
+    },
+  );
+});
+it('BE008 retains its explicit pending assignment', async () => {
+  const service = new ClaimService({
+    listOwned: vi.fn(),
+    create: vi.fn(),
+    findOwned: vi.fn(),
+  });
+  await expect(service.find(1, 4)).rejects.toMatchObject({
     code: 'NOT_IMPLEMENTED',
     status: 501,
     message: 'BE008 is awaiting implementation',

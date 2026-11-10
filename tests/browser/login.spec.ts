@@ -193,28 +193,22 @@ test('offers a working reload when the login-form download stalls', async ({
   page.on('pageerror', (error) => errors.push(error.message));
   const pattern = formChunkPattern();
   let release = () => {};
-  let network: 'stalled' | 'failed' | 'recovered' = 'stalled';
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
-  let pending: Promise<void> | undefined;
-  const documentPattern = '**/login';
-  await page.route(documentPattern, async (route) => {
-    if (route.request().isNavigationRequest() && network === 'failed')
-      network = 'recovered';
-    await route.continue();
-  });
+  const pending: Promise<void>[] = [];
   await page.route(pattern, async (route) => {
-    if (network === 'recovered') {
-      await route.continue();
-      return;
-    }
-    if (network === 'failed') {
+    const failed = page.waitForEvent(
+      'requestfailed',
+      (request) => request === route.request(),
+    );
+    const settled = (async () => {
+      await gate;
       await route.abort();
-      return;
-    }
-    pending = gate.then(() => route.abort());
-    await pending;
+      await failed;
+    })();
+    pending.push(settled);
+    await settled;
   });
   try {
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
@@ -226,11 +220,11 @@ test('offers a working reload when the login-form download stalls', async ({
       timeout: 18_000,
     });
     await expect(page.locator('input')).toHaveCount(0);
-    // Settle the old request before reload so Chromium cannot coalesce the new chunk with it.
-    // Keep failures enabled until a real document request; the button cannot disappear early.
-    network = 'failed';
+    // Wait for Chromium's failure event, not only acknowledgement of the abort command.
+    // The rejected import cannot recover until the user starts a new document.
     release();
-    await pending;
+    await Promise.all(pending);
+    await page.unroute(pattern);
     await expect(page.locator('[data-login-load-error]')).toBeVisible();
     await page
       .getByRole('button', { name: 'ลองโหลดใหม่', exact: true })
@@ -240,9 +234,8 @@ test('offers a working reload when the login-form download stalls', async ({
     expect(errors).toEqual([]);
   } finally {
     release();
-    await pending;
+    await Promise.all(pending);
     await page.unroute(pattern);
-    await page.unroute(documentPattern);
   }
 });
 
