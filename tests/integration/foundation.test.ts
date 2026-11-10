@@ -472,29 +472,26 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       /item_reports|23503|constraint|postgresql|password/,
     );
   });
-  it('preserves BE005/BE006 report read handoffs and scopes report updates to the owner', async () => {
+  it('checks report read contracts and scopes report updates to the owner', async () => {
     const repository = new PgReportRepository(pool);
-    await expect(
-      repository.list({ limit: 20, offset: 0 }),
-    ).rejects.toMatchObject({
-      code: 'NOT_IMPLEMENTED',
-      status: 501,
-      message: 'BE005 is awaiting implementation',
-    });
-    await expect(repository.find(reportId)).rejects.toMatchObject({
-      code: 'NOT_IMPLEMENTED',
-      status: 501,
-      message: 'BE006 is awaiting implementation',
-    });
+    expect(await repository.list({ limit: 20, offset: 0 })).toEqual([
+      expect.objectContaining({ reportId, userId }),
+    ]);
     const listResponse = await apiHandlers.listReports(
       request('item-reports?limit=1&offset=0&type=FOUND'),
     );
-    expect(listResponse.status).toBe(501);
-    expect(await listResponse.json()).toMatchObject({
-      error: {
-        code: 'NOT_IMPLEMENTED',
-        message: 'BE005 is awaiting implementation',
-      },
+    expect(listResponse.status).toBe(200);
+    const listBody = (await listResponse.json()) as {
+      data: Record<string, unknown>[];
+    };
+    expect(listBody).toMatchObject({
+      data: [{ reportId, type: 'FOUND' }],
+      meta: { limit: 1, offset: 0 },
+    });
+    expect(listBody.data[0]).not.toHaveProperty('userId');
+    await expect(repository.find(reportId)).rejects.toMatchObject({
+      code: 'NOT_IMPLEMENTED',
+      status: 501,
     });
     const detailResponse = await apiHandlers.getReport(
       request(`item-reports/${reportId}`),

@@ -4,7 +4,7 @@
 
 BE003 is implemented: public `GET /api/v1/locations` reads PostgreSQL and returns ordered, paginated locationId/locationName/nullable detail with the standard response envelope. Invalid, unknown and duplicate query parameters return 422.
 
-Implemented read assignments: BE002. Pending assignments BE005, BE006, BE007, BE008 retain their explicit 501 starters. Integration coverage checks real PostgreSQL data, validation, pagination and privacy for delivered tasks. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
+Implemented read assignments: BE002, BE005. Pending assignments BE006, BE007, BE008 retain their explicit 501 starters. Integration coverage checks real PostgreSQL data, validation, pagination and privacy for delivered tasks. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
 
 ## Private student profile and account notifications
 
@@ -35,7 +35,7 @@ Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED` or `AVATA
 | GET `/auth/me`            | session          | Own `{userId,name,email}`                                                            |
 | GET `/categories`         | none             | Paginated `[{categoryId,categoryName}]`, ordered by category ID                      |
 | GET `/locations`          | none             | Paginated `[{locationId,locationName,detail}]` (implemented in BE003)                |
-| GET `/item-reports`       | none             | Currently 501; BE005 restores paginated reports with optional filters                |
+| GET `/item-reports`       | none             | Paginated public reports, optional filters, newest report ID first                   |
 | GET `/item-reports/:id`   | none             | Currently 501; BE006 restores single report or 404                                   |
 | POST `/item-reports`      | session          | Create report as current user, `OPEN`; 201                                           |
 | PATCH `/item-reports/:id` | owner session    | Safe field update; other owners/missing reports return 404                           |

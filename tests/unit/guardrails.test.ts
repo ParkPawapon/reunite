@@ -41,18 +41,16 @@ it('rejects non-owner or missing report update with 404', async () => {
     title: 'Stolen edit',
   });
 });
-it('BE005 retains its explicit pending assignment', async () => {
+it('BE005 uses its domain repository contract', async () => {
+  const rows: Awaited<ReturnType<ReportRepository['list']>> = [];
+  const list = vi.fn<ReportRepository['list']>().mockResolvedValue(rows);
   const service = new ReportService({
-    list: vi.fn(),
-    create: vi.fn(),
-    find: vi.fn(),
-    updateOwned: vi.fn(),
+    ...{ list: vi.fn(), create: vi.fn(), find: vi.fn(), updateOwned: vi.fn() },
+    list,
   });
-  await expect(service.list({ limit: 20, offset: 0 })).rejects.toMatchObject({
-    code: 'NOT_IMPLEMENTED',
-    status: 501,
-    message: 'BE005 is awaiting implementation',
-  });
+  const filter = { limit: 20, offset: 0, type: 'FOUND' as const };
+  expect(await service.list(filter)).toBe(rows);
+  expect(list).toHaveBeenCalledExactlyOnceWith(filter);
 });
 it('BE006 retains its explicit pending assignment', async () => {
   const service = new ReportService({
