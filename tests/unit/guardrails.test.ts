@@ -34,6 +34,8 @@ it('rejects non-owner or missing report update with 404', async () => {
     create: vi.fn(),
     find: vi.fn(),
     updateOwned: vi.fn(async () => null),
+    updateStatusOwned: vi.fn(),
+    listOwned: vi.fn(),
   };
   await expect(
     new ReportService(repository).update(1, 2, { title: 'Stolen edit' }),
@@ -46,7 +48,14 @@ it('BE005 uses its domain repository contract', async () => {
   const rows: Awaited<ReturnType<ReportRepository['list']>> = [];
   const list = vi.fn<ReportRepository['list']>().mockResolvedValue(rows);
   const service = new ReportService({
-    ...{ list: vi.fn(), create: vi.fn(), find: vi.fn(), updateOwned: vi.fn() },
+    ...{
+      list: vi.fn(),
+      create: vi.fn(),
+      find: vi.fn(),
+      updateOwned: vi.fn(),
+      updateStatusOwned: vi.fn(),
+      listOwned: vi.fn(),
+    },
     list,
   });
   const filter = { limit: 20, offset: 0, type: 'FOUND' as const };
@@ -73,7 +82,14 @@ it('BE006 uses its domain repository contract', async () => {
     .mockResolvedValueOnce(row)
     .mockResolvedValueOnce(null);
   const service = new ReportService({
-    ...{ list: vi.fn(), create: vi.fn(), find: vi.fn(), updateOwned: vi.fn() },
+    ...{
+      list: vi.fn(),
+      create: vi.fn(),
+      find: vi.fn(),
+      updateOwned: vi.fn(),
+      updateStatusOwned: vi.fn(),
+      listOwned: vi.fn(),
+    },
     find,
   });
   expect(await service.find(7)).toBe(row);
@@ -90,7 +106,13 @@ it('BE007 uses its domain repository contract', async () => {
     .fn<ClaimRepository['listOwned']>()
     .mockResolvedValue(rows);
   const service = new ClaimService({
-    ...{ listOwned: vi.fn(), create: vi.fn(), findOwned: vi.fn() },
+    ...{
+      listOwned: vi.fn(),
+      create: vi.fn(),
+      findOwned: vi.fn(),
+      reviewReportClaim: vi.fn(),
+      listForReportOwner: vi.fn(),
+    },
     listOwned,
   });
   const page = { limit: 20, offset: 0 };
@@ -112,7 +134,13 @@ it('BE008 uses its domain repository contract', async () => {
     .mockResolvedValueOnce(row)
     .mockResolvedValueOnce(null);
   const service = new ClaimService({
-    ...{ listOwned: vi.fn(), create: vi.fn(), findOwned: vi.fn() },
+    ...{
+      listOwned: vi.fn(),
+      create: vi.fn(),
+      findOwned: vi.fn(),
+      reviewReportClaim: vi.fn(),
+      listForReportOwner: vi.fn(),
+    },
     findOwned,
   });
   expect(await service.find(8, 4)).toBe(row);
@@ -125,6 +153,74 @@ it('BE008 uses its domain repository contract', async () => {
     [8, 4],
     [9, 4],
   ]);
+});
+it('BE009 starts with 501 until teammate implements report status transition', async () => {
+  const repository: ReportRepository = {
+    list: vi.fn(),
+    create: vi.fn(),
+    find: vi.fn(),
+    updateOwned: vi.fn(),
+    updateStatusOwned: vi.fn(),
+    listOwned: vi.fn(),
+  };
+  const service = new ReportService(repository);
+  await expect(service.updateStatus(1, 2, 'RESOLVED')).rejects.toMatchObject({
+    code: 'NOT_IMPLEMENTED',
+    status: 501,
+    message: 'BE009 is awaiting implementation',
+  });
+});
+it('BE010 starts with 501 until teammate implements claim status review', async () => {
+  const repository: ClaimRepository = {
+    listOwned: vi.fn(),
+    findOwned: vi.fn(),
+    create: vi.fn(),
+    reviewReportClaim: vi.fn(),
+    listForReportOwner: vi.fn(),
+  };
+  const service = new ClaimService(repository);
+  await expect(
+    service.updateStatus(1, 2, { status: 'APPROVED' }),
+  ).rejects.toMatchObject({
+    code: 'NOT_IMPLEMENTED',
+    status: 501,
+    message: 'BE010 is awaiting implementation',
+  });
+});
+it('BE011 starts with 501 until teammate implements own reports listing', async () => {
+  const repository: ReportRepository = {
+    list: vi.fn(),
+    create: vi.fn(),
+    find: vi.fn(),
+    updateOwned: vi.fn(),
+    updateStatusOwned: vi.fn(),
+    listOwned: vi.fn(),
+  };
+  const service = new ReportService(repository);
+  await expect(
+    service.listOwned(1, { limit: 20, offset: 0 }),
+  ).rejects.toMatchObject({
+    code: 'NOT_IMPLEMENTED',
+    status: 501,
+    message: 'BE011 is awaiting implementation',
+  });
+});
+it('BE012 starts with 501 until teammate implements report incoming claims listing', async () => {
+  const repository: ClaimRepository = {
+    listOwned: vi.fn(),
+    findOwned: vi.fn(),
+    create: vi.fn(),
+    reviewReportClaim: vi.fn(),
+    listForReportOwner: vi.fn(),
+  };
+  const service = new ClaimService(repository);
+  await expect(
+    service.listForReport(1, 2, { limit: 20, offset: 0 }),
+  ).rejects.toMatchObject({
+    code: 'NOT_IMPLEMENTED',
+    status: 501,
+    message: 'BE012 is awaiting implementation',
+  });
 });
 it('rejects migration checksum changes, gaps, unknown versions and duplicates', () => {
   const files = [

@@ -24,24 +24,40 @@ Profile input uses `firstName`/`lastName` (1–100 characters), canonical email 
 
 Avatar decoding accepts still images only, checks actual decoded format against MIME, limits decoded pixels to 16 million, resizes to at most 384×384, and stores at most 128 KiB of WebP with a SHA-256 version. No uploaded URL or filename is accepted. Oversized input returns 413, unsupported MIME 415 and corrupt/mismatched/animated images 422. Unauthenticated requests return 401, and cross-origin mutations 403. URLs under `/profile/avatar?v=<version>` are cache-busting references for the same private image, not public resources or other-account selectors.
 
-Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED` or `AVATAR_UPDATED`), UTC ISO `createdAt` and nullable `readAt`. Events come only from actual profile/photo changes and commit atomically with them. No personal-field snapshots, dummy alerts, matching/claim events, email delivery or notification image publishing are implemented. Mark-read preserves events with newer IDs. The client refreshes on opening/focus/account edits and every 60 seconds while visible.
+Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED`, `AVATAR_UPDATED`, `MATCH_SUGGESTED`), UTC ISO `createdAt` and nullable `readAt`. Events commit atomically with actual account changes or an accepted current matching result. No personal-field snapshots, dummy alerts, claim events, email delivery or notification image publishing are implemented. Mark-read preserves events with newer IDs. The client refreshes on opening/focus/account edits and every 10 seconds while visible.
 
-| Method / path             | Authentication   | Behavior                                                                             |
-| ------------------------- | ---------------- | ------------------------------------------------------------------------------------ |
-| GET `/health/live`        | none             | `{status:"live"}`; no database access                                                |
-| GET `/health/ready`       | none             | `{status:"ready"}` after bounded database ping; otherwise 503                        |
-| POST `/auth/login`        | credentials      | Profile and opaque HttpOnly cookie; previous browser token revoked after valid login |
-| POST `/auth/logout`       | optional session | Revoke current token and clear cookie; idempotent                                    |
-| GET `/auth/me`            | session          | Own `{userId,name,email}`                                                            |
-| GET `/categories`         | none             | Paginated `[{categoryId,categoryName}]`, ordered by category ID                      |
-| GET `/locations`          | none             | Paginated `[{locationId,locationName,detail}]` (implemented in BE003)                |
-| GET `/item-reports`       | none             | Paginated public reports, optional filters, newest report ID first                   |
-| GET `/item-reports/:id`   | none             | Public single report or 404; reporter identity omitted                               |
-| POST `/item-reports`      | session          | Create report as current user, `OPEN`; 201                                           |
-| PATCH `/item-reports/:id` | owner session    | Safe field update; other owners/missing reports return 404                           |
-| GET `/claims`             | session          | Own claims only, paginated by descending claim ID                                    |
-| GET `/claims/:id`         | claimant session | Own claim/evidence or non-disclosing 404                                             |
-| POST `/claims`            | session          | Current claimant, supplied report/evidence, DB `PENDING` and timestamp; 201          |
+## Item matching and item photos
+
+| Method/path                          | Authentication      | Behavior                                                                             |
+| ------------------------------------ | ------------------- | ------------------------------------------------------------------------------------ |
+| `GET /matches?before=123`            | Session             | Own current match suggestions, 20 items/keyset cursor, job counts and service status |
+| `GET /item-reports/:id/image`        | Public              | Normalized item WebP, 404 if absent                                                  |
+| `GET /item-reports/:id/image/access` | Owner               | `{ hasImage: boolean }` for image controls; non-owner/missing report returns 404     |
+| `PUT /item-reports/:id/image`        | Owner + same-origin | Raw JPEG/PNG/WebP, <=5 MiB; normalizes and stores item photo; `{ updated: true }`    |
+| `DELETE /item-reports/:id/image`     | Owner + same-origin | Clears stored photo and reference; `{ updated: true }`                               |
+
+See [MATCHING.md](MATCHING.md) for the exact match DTO, privacy, provider contract, cost reservations, retries and release limitations. The dashboard matching panel and its polling were removed at the user's request; the authenticated API remains available. The notification bell uses 10-second polling while visible, not a WebSocket or an instantaneous-delivery guarantee.
+
+| Method / path                    | Authentication       | Behavior                                                                               |
+| -------------------------------- | -------------------- | -------------------------------------------------------------------------------------- |
+| GET `/health/live`               | none                 | `{status:"live"}`; no database access                                                  |
+| GET `/health/ready`              | none                 | `{status:"ready"}` after bounded database ping; otherwise 503                          |
+| POST `/auth/login`               | credentials          | Profile and opaque HttpOnly cookie; previous browser token revoked after valid login   |
+| POST `/auth/logout`              | optional session     | Revoke current token and clear cookie; idempotent                                      |
+| GET `/auth/me`                   | session              | Own `{userId,name,email}`                                                              |
+| GET `/categories`                | none                 | Paginated `[{categoryId,categoryName}]`, ordered by category ID                        |
+| GET `/locations`                 | none                 | Paginated `[{locationId,locationName,detail}]` (implemented in BE003)                  |
+| GET `/item-reports`              | none                 | Paginated public reports, optional filters, newest report ID first                     |
+| GET `/item-reports/:id`          | none                 | Public single report or 404; reporter identity omitted                                 |
+| POST `/item-reports`             | session              | Create report as current user, `OPEN`; 201                                             |
+| PATCH `/item-reports/:id`        | owner session        | Safe field update; other owners/missing reports return 404                             |
+| PATCH `/item-reports/:id/status` | owner session        | Report status lifecycle transition (`RESOLVED`, `CLOSED`); non-owner returns 404       |
+| GET `/item-reports/me`           | session              | Paginated own reports, newest first, for managing own items (BE011)                    |
+| GET `/item-reports/:id/claims`   | report-owner session | Paginated claims submitted on owned report; non-owner returns 404 (BE012)              |
+| GET `/claims`                    | session              | Own claims only, paginated by descending claim ID                                      |
+| GET `/claims/:id`                | claimant session     | Own claim/evidence or non-disclosing 404                                               |
+| POST `/claims`                   | session              | Current claimant, supplied report/evidence, DB `PENDING` and timestamp; 201            |
+| PATCH `/claims/:id/status`       | report-owner session | Review and approve/reject claim (`APPROVED`, `REJECTED`); non-report-owner returns 404 |
 
 ## Requests and output
 
@@ -75,4 +91,4 @@ Claim creation: `{ "reportId": 1, "evidence": "Private identifying details" }`. 
 
 400 malformed/missing JSON; 401 absent/invalid/expired session or credentials; 403 failed origin check; 404 missing/not-owned object; 409 uniqueness conflict; 413 oversized JSON; 415 non-JSON content type; 422 validation/invalid reference/check constraint; 429 account login throttle; 500 sanitized unexpected failure; 503 readiness/connectivity failures. Validation messages do not echo rejected input. Database codes, SQL, stacks and secrets never enter response bodies.
 
-There is no registration, catalog write API, status-transition API, claim approval endpoint, matching endpoint, item-report upload or notification publishing endpoint. Private profile photos and typed account notifications use the implemented routes above.
+There is no registration, catalog write API, or external notification publishing endpoint. Report status lifecycle (`PATCH /api/v1/item-reports/:id/status`, BE009), claim review (`PATCH /api/v1/claims/:id/status`, BE010), own report feed (`GET /api/v1/item-reports/me`, BE011), and report incoming claims feed (`GET /api/v1/item-reports/:id/claims`, BE012) are defined with 501 starter stubs and assigned for implementation (see [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md)). Matching and owner-scoped item-image routes are now implemented; their exact payloads and limits are documented in [MATCHING.md](MATCHING.md). Private profile photos remain separate from public item images.

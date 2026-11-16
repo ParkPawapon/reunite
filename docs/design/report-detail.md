@@ -1,0 +1,28 @@
+# Item detail modal
+
+The November 16 brief asks for a substantially cleaner, minimal detail modal in the existing Reunite direction. The supplied dashboard/modal screenshot is the starting reference. A hand-authored HTML concept was rendered and reviewed before implementation; no generated item photos, new palette or illustration assets are used. The concept keeps the same real report fields and image workflow.
+
+The visual idea is **รายละเอียดที่อ่านจบในสายตาเดียว**: the report title comes first, incident location receives one quiet neutral highlight, category and the two distinct dates follow, and photo management is a single compact row. The primary empty-photo copy is **รูปช่วยให้จำง่าย**. The existing **ของสำคัญ มีเจ้าของ** signature and **กลับไปดูรายการ** close action finish the surface. An absent photo does not create an empty media tile. The externally processed image-purpose disclosure remains visible to the owner.
+
+## Design system and component ownership
+
+- White 720px paper, 24px corners, 32px content gutters; at <=600px the modal has 12px outer margins, 20px corners and 22px content gutters. Existing neutral/orange/semantic tokens supply all production colors. Outfit and Noto Sans Thai remain inherited from the shared app typography.
+- Title 25px/1.5 (21px on mobile), description 15px/1.9, location 15px, field values 13px and concise 11–12px supporting copy. Title and description are allowed to wrap; long content scrolls inside the modal, while close/navigation remain reachable. No report text is truncated for display.
+- The existing stroke icon component supplies close, camera, arrow and the added pin/plus glyphs. Buttons have at least 44px targets. A short transform entry and MUI exit transition honor device reduced motion and the shared motion preference, including portalled content.
+- `ReportDetail` owns fetch/cancellation, entry/exit, the semantic title and definition list, and composition. `ReportDetailSkeleton` matches the actual text/metadata layout. `ReportPhoto` owns real local image loading, intact `object-fit:contain` framing, failure/retry and the full-image link. `ReportImageUpload` owns permission checks, picker, validation, mutation and local feedback. Modal styling is isolated in `report-detail.module.css`; obsolete board/matching upload styles were removed.
+- Detail and image-access reads begin together. A successful photo mutation refreshes the record without replacing the whole ready surface with a skeleton. Duplicate mutations are blocked during upload/revalidation; the same file can be selected again after failure. Non-owner controls remain absent, and failed permission lookup has an explicit retry.
+- The confirmed image mutation updates the local image reference before record revalidation. Removing a photo therefore does not remount a request for the deleted image or briefly show a false image error. The real database response remains authoritative for the refreshed record.
+
+## Accessibility and safety
+
+MUI Dialog keeps its focus containment, background isolation, Escape and focus restoration. Initial focus moves to the title after the real entry transition. Close animation finishes before the parent removes the dialog. The labelled scroll region is keyboard reachable; the definition list has valid direct `dt`/`dd` grouping. Status is communicated with text as well as color. Automated contrast checks run after finite entry transitions finish, preserving the actual assertions and the contrast tokens.
+
+The implementation follows the existing [MUI Dialog](https://mui.com/material-ui/react-dialog/) and [WAI-ARIA modal pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/). This is a tested implementation, not a claim of universal accessibility certification. External image URLs remain explicit user-opened links; only the application's bounded stored item images are rendered automatically. No database, API, ownership policy or paid-AI setting is changed by this design iteration.
+
+## Visual comparison criteria
+
+The code-native concept and rendered screenshot are compared for: unchanged report copy/fields; title hierarchy and wrapping; white paper and existing color tokens; 720px framing/gutters; pin/camera/plus stroke treatment; quiet location highlight; absence of a fake no-photo tile; intact uploaded photos; mobile two-column dates; and motion/focus behavior. The concept's flat neutral background intentionally becomes the actual dashboard backdrop. Real incident/submission dates come from PostgreSQL rather than fixed concept values. The full-image/error/loading states extend the same anatomy.
+
+The checked flow is dashboard -> report detail -> read location/dates -> attach/replace/remove a photo -> close and return focus to the invoking report. Tests use only the managed disposable PostgreSQL schema. Screenshot artifacts are saved outside the repository and attached to the browser test results.
+
+The implementation screenshot was inspected against the code-native concept at 1280×900 and at 390×844. Copy/field order, title sizing, white paper, location emphasis, icon stroke, spacing and uploaded-image framing match the specified direction. Intentional differences are the real blurred dashboard behind the paper, dynamic dates and the shared Outfit Latin glyphs. No material visual mismatch remained in those checked states; the full-image, error and long-content states were also exercised. Browser plugin is not installed: the existing Playwright production-browser suite supplies responsive/automated assertions, and the built-in IAB supplies the native local-page check. These are complementary checks, not physical-device/Safari certification.

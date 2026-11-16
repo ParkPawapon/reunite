@@ -1,5 +1,6 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
+import { AppError, type Page } from '@campus/shared';
 import type {
   Report,
   ReportRepository,
@@ -99,6 +100,7 @@ export class PgReportRepository implements ReportRepository {
       title = CASE WHEN $3::boolean THEN $4::varchar ELSE title END,
       description = CASE WHEN $5::boolean THEN $6::text ELSE description END,
       image = CASE WHEN $7::boolean THEN $8::varchar ELSE image END,
+      image_data = CASE WHEN $7::boolean THEN NULL ELSE image_data END,
       category_id = CASE WHEN $9::boolean THEN $10::integer ELSE category_id END,
       location_id = CASE WHEN $11::boolean THEN $12::integer ELSE location_id END
       WHERE report_id = $1 AND user_id = $2 RETURNING ${columns}`,
@@ -118,5 +120,23 @@ export class PgReportRepository implements ReportRepository {
       ],
     );
     return row ? map(row) : null;
+  }
+  async updateStatusOwned(
+    _id: number,
+    _userId: number,
+    _status: 'RESOLVED' | 'CLOSED',
+  ): Promise<Report | null> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE009 is awaiting implementation',
+    );
+  }
+  async listOwned(_userId: number, _page: Page): Promise<Report[]> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE011 is awaiting implementation',
+    );
   }
 }

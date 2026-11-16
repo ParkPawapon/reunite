@@ -89,7 +89,7 @@ afterAll(() => fixture.close());
 
 describe('student profile and private notification workflow', () => {
   it('upgrades legacy accounts without inventing personal data or losing active sessions', async () => {
-    expect(await migrate(pool)).toEqual(['0005', '0006']);
+    expect(await migrate(pool)).toEqual(['0005', '0006', '0007', '0008']);
     expect(
       await data(await handlers.profile(request('profile'))),
     ).toMatchObject({
@@ -104,7 +104,7 @@ describe('student profile and private notification workflow', () => {
       'SELECT tablename FROM pg_tables WHERE schemaname=$1',
       [fixture.schema],
     );
-    expect(tables.rowCount).toBe(9);
+    expect(tables.rowCount).toBe(10);
     expect(
       (await pool.query('SELECT token_hash FROM auth_sessions')).rowCount,
     ).toBe(2);

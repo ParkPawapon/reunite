@@ -77,7 +77,7 @@ try {
   );
   if (!input.success)
     throw new Error('Local seed credential file has an invalid format');
-  const { result, dataset } = await withTransaction(
+  const { result, dataset, reportCounts } = await withTransaction(
     getPool(),
     async (client) => {
       const accountResult = await seedDevelopmentAccount(client, input.data);
@@ -85,14 +85,32 @@ try {
         client,
         accountResult.userId,
       );
-      return { result: accountResult, dataset: datasetSummary };
+      const counts = { LOST: 0, FOUND: 0 };
+      const grouped = await client.query<{
+        type: 'LOST' | 'FOUND';
+        count: number;
+      }>(
+        `SELECT type, count(*)::integer AS count FROM item_reports
+         WHERE report_id = ANY($1::integer[]) GROUP BY type`,
+        [datasetSummary.reportIds],
+      );
+      for (const row of grouped.rows) counts[row.type] = row.count;
+      if (counts.LOST !== 20 || counts.FOUND !== 20)
+        throw new Error(
+          'Local seed requires exactly 20 LOST and 20 FOUND fixtures',
+        );
+      return {
+        result: accountResult,
+        dataset: datasetSummary,
+        reportCounts: counts,
+      };
     },
   );
   console.info(
     `Local seed ${result.created ? 'created' : 'reused'} one account: ${input.data.email}`,
   );
   console.info(
-    `Local seed dataset ready: ${dataset.categoryIds.length} categories, ${dataset.locationIds.length} locations, ${dataset.reportIds.length} item reports (IDs: ${dataset.reportIds.join(', ')}), ${dataset.ownedClaimIds.length + dataset.peerClaimIds.length} claims (owned IDs: ${dataset.ownedClaimIds.join(', ')}; peer IDs: ${dataset.peerClaimIds.join(', ')})`,
+    `Local seed dataset ready: ${dataset.categoryIds.length} categories, ${dataset.locationIds.length} locations, ${dataset.reportIds.length} item reports (LOST: ${reportCounts.LOST}; FOUND: ${reportCounts.FOUND}), ${dataset.ownedClaimIds.length + dataset.peerClaimIds.length} claims`,
   );
   console.info(
     'Credentials: tmp/local-seed/login-account.json (ignored by Git and Docker; password not logged)',

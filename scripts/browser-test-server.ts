@@ -29,12 +29,35 @@ try {
   registerBrowserSchema(database.schema);
   await database.open();
   await migrate(database.pool);
-  await database.pool.query(
-    'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
+  const account = await database.pool.query<{ user_id: number }>(
+    'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING user_id',
     [
       browserAccount.name,
       browserAccount.email,
       await hashPassword(browserAccount.password),
+    ],
+  );
+  const category = await database.pool.query<{ category_id: number }>(
+    'INSERT INTO categories(category_name) VALUES($1) RETURNING category_id',
+    ['หมวดหมู่ทดสอบ'],
+  );
+  const location = await database.pool.query<{ location_id: number }>(
+    'INSERT INTO locations(location_name) VALUES($1) RETURNING location_id',
+    ['สถานที่ทดสอบ'],
+  );
+  await database.pool.query(
+    `INSERT INTO item_reports(user_id, category_id, location_id, type, title, description, event_datetime, status)
+     SELECT $1, $2, $3, CASE WHEN n <= 12 THEN 'LOST' ELSE 'FOUND' END,
+       CASE WHEN n <= 12 THEN 'ของหายทดสอบ ' || n ELSE 'ของที่พบทดสอบ ' || (n - 12) END,
+       $4, $5::timestamptz + n * interval '1 hour',
+       CASE WHEN n = 11 THEN 'RESOLVED' WHEN n = 10 THEN 'CLOSED' ELSE 'OPEN' END
+     FROM generate_series(1,14) AS n`,
+    [
+      account.rows[0]?.user_id,
+      category.rows[0]?.category_id,
+      location.rows[0]?.location_id,
+      'รายละเอียดสำหรับทดสอบตาราง',
+      '2026-11-12T03:00:00Z',
     ],
   );
   const target = new URL(process.env.TEST_DATABASE_URL ?? '');
@@ -48,6 +71,9 @@ try {
       DATABASE_URL: target.toString(),
       SESSION_COOKIE_NAME: 'browser_test_session',
       LOG_LEVEL: 'silent',
+      MATCHING_ENABLED: 'false',
+      MATCHING_BUDGET_USD: '0',
+      OPENAI_API_KEY: '',
       HOSTNAME: '127.0.0.1',
       PORT: '3100',
     },

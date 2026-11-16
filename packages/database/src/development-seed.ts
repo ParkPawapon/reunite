@@ -1,12 +1,10 @@
 import 'server-only';
-import {
-  normalizeEmail,
-  type ClaimStatus,
-  type ReportStatus,
-  type ReportType,
-} from '@campus/shared';
+import { randomBytes } from 'node:crypto';
+import type { PoolClient } from 'pg';
+import { normalizeEmail, type ClaimStatus } from '@campus/shared';
 import { hashPassword, verifyPassword } from './password';
 import { query, type Sql } from './query';
+import { developmentSeedReports } from './development-report-fixtures';
 
 export type DevelopmentAccount = {
   name: string;
@@ -54,93 +52,6 @@ export const developmentSeedLocations = [
     detail: 'โซนโต๊ะนั่งรับประทานอาหารฝั่งทิศเหนือ',
   },
 ] as const;
-
-type SeedReportBlueprint = {
-  owner: 'primary' | 'peer';
-  categoryIndex: number;
-  locationIndex: number;
-  type: ReportType;
-  title: string;
-  description: string | null;
-  image: string | null;
-  eventDatetime: string;
-  status: ReportStatus;
-};
-
-const developmentSeedReports: readonly SeedReportBlueprint[] = [
-  {
-    owner: 'primary',
-    categoryIndex: 0,
-    locationIndex: 0,
-    type: 'LOST',
-    title: 'ทำหูฟังไร้สาย AirPods Pro หายพร้อมเคสสีขาว',
-    description:
-      'ลืมไว้บนโต๊ะอ่านหนังสือชั้น 1 อาคาร LX ช่วงเช้า ตัวเคสมีรอยขีดข่วนเล็กน้อยด้านหลัง',
-    image: 'https://images.example.test/reports/airpods-pro.webp',
-    eventDatetime: '2026-10-15T09:30:00.000Z',
-    status: 'OPEN',
-  },
-  {
-    owner: 'peer',
-    categoryIndex: 1,
-    locationIndex: 1,
-    type: 'FOUND',
-    title: 'พบบัตรนักศึกษา มจธ. ตกอยู่หน้าทางเข้าห้องสมุด',
-    description:
-      'พบบัตรนักศึกษาใส่ในซองใสตกอยู่บริเวณทางเข้าชั้น 2 โซน Co-working Space สำนักหอสมุด',
-    image: null,
-    eventDatetime: '2026-10-16T10:15:00.000Z',
-    status: 'OPEN',
-  },
-  {
-    owner: 'primary',
-    categoryIndex: 2,
-    locationIndex: 2,
-    type: 'LOST',
-    title: 'ลืมกระเป๋าผ้าสีกรมท่าไว้ในห้องเรียนรวม CB2',
-    description:
-      'กระเป๋าผ้าแคนวาสสีกรมท่า ข้างในมีสมุดจดเลกเชอร์และปากกาไฮไลต์',
-    image: null,
-    eventDatetime: '2026-10-17T13:00:00.000Z',
-    status: 'OPEN',
-  },
-  {
-    owner: 'peer',
-    categoryIndex: 3,
-    locationIndex: 3,
-    type: 'FOUND',
-    title: 'พบพวงกุญแจหอพักพร้อมคีย์การ์ดสีฟ้า',
-    description:
-      'เก็บได้บริเวณม้านั่งใต้อาคารวิศวกรรมศาสตร์ (ตึกแดง) มีพวงกุญแจตุ๊กตาเป็ดสีเหลืองห้อยอยู่',
-    image: 'https://images.example.test/reports/keycard-blue.webp',
-    eventDatetime: '2026-10-18T14:20:00.000Z',
-    status: 'OPEN',
-  },
-  {
-    owner: 'primary',
-    categoryIndex: 4,
-    locationIndex: 4,
-    type: 'FOUND',
-    title: 'พบกระบอกน้ำเก็บความเย็นสีดำลืมไว้ที่โรงอาหารกลาง',
-    description:
-      'กระบอกน้ำสแตนเลสสีดำด้าน ขนาด 24 ออนซ์ ส่งคืนเจ้าของเรียบร้อยแล้ว',
-    image: null,
-    eventDatetime: '2026-10-19T12:10:00.000Z',
-    status: 'RESOLVED',
-  },
-  {
-    owner: 'peer',
-    categoryIndex: 0,
-    locationIndex: 0,
-    type: 'LOST',
-    title: 'ทำสายชาร์จโน้ตบุ๊ก USB-C 65W หาย',
-    description:
-      'หัวชาร์จสีดำสายถัก ยาว 2 เมตร ปิดรายการเนื่องจากพบในกระเป๋าตัวเองแล้ว',
-    image: null,
-    eventDatetime: '2026-10-20T16:45:00.000Z',
-    status: 'CLOSED',
-  },
-];
 
 type SeedClaimBlueprint = {
   claimant: 'primary' | 'peer';
@@ -252,7 +163,7 @@ async function ensurePeerFixtureUser(db: Sql): Promise<number> {
     [
       'นักศึกษาตัวอย่าง (ผู้แจ้งคนที่ 2)',
       peerEmail,
-      await hashPassword('Reunite-Peer-Fixture-Only-Not-Interactive!'),
+      await hashPassword(randomBytes(32).toString('base64url')),
     ],
   );
   const [resolved] = await query<{ user_id: number }>(
@@ -267,9 +178,11 @@ async function ensurePeerFixtureUser(db: Sql): Promise<number> {
 }
 
 export async function seedDevelopmentDataset(
-  db: Sql,
+  db: PoolClient,
   primaryUserId: number,
 ): Promise<DevelopmentSeedDatasetSummary> {
+  // The caller owns the transaction. Serialize the dataset's select/insert pairs.
+  await query(db, 'SELECT pg_advisory_xact_lock($1, $2)', [20261116, 1]);
   const peerUserId = await ensurePeerFixtureUser(db);
 
   const categoryIds: number[] = [];
@@ -329,9 +242,10 @@ export async function seedDevelopmentDataset(
     const [existing] = await query<{ report_id: number }>(
       db,
       `SELECT report_id FROM item_reports
-       WHERE title = $1 AND event_datetime = $2::timestamptz
+       WHERE user_id = $1 AND type = $2
+         AND title = $3 AND event_datetime = $4::timestamptz
        ORDER BY report_id ASC LIMIT 1`,
-      [report.title, report.eventDatetime],
+      [ownerUserId, report.type, report.title, report.eventDatetime],
     );
     if (existing) {
       reportIds.push(existing.report_id);

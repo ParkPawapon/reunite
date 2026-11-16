@@ -21,7 +21,7 @@ export function Sidebar({
           href="/dashboard"
           prefetch={false}
           className={styles.brand}
-          aria-label="Reunite ภาพรวม"
+          aria-label="Reunite หน้าหลัก"
           onClick={onNavigate}
         >
           <span className={styles.brandFull}>
@@ -52,12 +52,12 @@ export function Sidebar({
           href="/dashboard"
           prefetch={false}
           aria-current={page === 'dashboard' ? 'page' : undefined}
-          aria-label="ภาพรวม"
-          title="ภาพรวม"
+          aria-label="หน้าหลัก"
+          title="หน้าหลัก"
           onClick={onNavigate}
         >
           <ShellIcon name="home" />
-          <span>ภาพรวม</span>
+          <span>หน้าหลัก</span>
           <ShellIcon
             name="arrow"
             className={styles.navArrow}

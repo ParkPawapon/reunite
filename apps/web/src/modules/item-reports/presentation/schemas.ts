@@ -43,6 +43,10 @@ export const reportPatchSchema = z
     (value) => Object.keys(value).length > 0,
     'Provide at least one safe field',
   );
+export const reportStatusPatchSchema = z.strictObject({
+  status: z.enum(['RESOLVED', 'CLOSED']),
+});
+
 export const reportFilterSchema = paginationSchema
   .extend({
     type: z.enum(['LOST', 'FOUND']).optional(),

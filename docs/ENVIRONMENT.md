@@ -1,5 +1,7 @@
 # Environment
 
+External matching uses server-only `MATCHING_ENABLED` (default `false`), `MATCHING_BUDGET_USD` (default `0`, conservative lifetime reservations) and private `OPENAI_API_KEY`. Never prefix the key with `NEXT_PUBLIC_` or send it in chat. Configure root `.env` for standalone/Compose and `apps/web/.env.local` for local Next dev, then restart the process. Paid processing requires an explicit budget of at least USD 0.10 and a working key. See [MATCHING.md](MATCHING.md) for the model, cost bound and live-verification blockers. Browser tests force matching off and clear the provider key.
+
 `bun run env:check` validates server and DB configuration without connecting. It prints invalid field names rather than supplied values. CI runs this check before migrations.
 
 Run `bun run env:setup` after install. It creates root `.env` from the example with a random hex password, then copies the same configuration into `apps/web/.env.local` only if each target is absent. Existing files are never overwritten. Root scripts/Compose use `.env`; local Next uses `.env.local`. Keep both in sync when changing DB settings. Examples are tracked; actual env files, test configuration, logs and credentials are ignored in Git and Docker context.

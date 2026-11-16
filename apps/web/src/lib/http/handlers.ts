@@ -14,9 +14,13 @@ import {
 import { reportDto } from '@/modules/item-reports/presentation/dto';
 import { listReports } from '@/modules/item-reports/presentation/list-reports';
 import { getReport } from '@/modules/item-reports/presentation/get-report';
+import { updateReportStatus } from '@/modules/item-reports/presentation/update-report-status';
+import { listOwnedReports } from '@/modules/item-reports/presentation/list-owned-reports';
 import { claimCreateSchema } from '@/modules/claims/presentation/schemas';
 import { listClaims } from '@/modules/claims/presentation/list-claims';
 import { getClaim } from '@/modules/claims/presentation/get-claim';
+import { updateClaimStatus } from '@/modules/claims/presentation/update-claim-status';
+import { listReportClaims } from '@/modules/claims/presentation/list-report-claims';
 import { listCategories } from '@/modules/categories/presentation/list-categories';
 import { listLocations } from '@/modules/locations/presentation/list-locations';
 
@@ -120,6 +124,16 @@ export function createHandlers(deps: Dependencies = defaults) {
           ),
         );
       }),
+    patchReportStatus: (request: Request, context: RouteContext) =>
+      updateReportStatus(
+        request,
+        context,
+        requireUser,
+        () => deps.services().reports,
+        mutation,
+      ),
+    listOwnedReports: (request: Request) =>
+      listOwnedReports(request, requireUser, () => deps.services().reports),
     listClaims: (request: Request) =>
       listClaims(request, requireUser, () => deps.services().claims),
     getClaim: (request: Request, context: RouteContext) =>
@@ -134,6 +148,21 @@ export function createHandlers(deps: Dependencies = defaults) {
           201,
         );
       }),
+    patchClaimStatus: (request: Request, context: RouteContext) =>
+      updateClaimStatus(
+        request,
+        context,
+        requireUser,
+        () => deps.services().claims,
+        mutation,
+      ),
+    listReportClaims: (request: Request, context: RouteContext) =>
+      listReportClaims(
+        request,
+        context,
+        requireUser,
+        () => deps.services().claims,
+      ),
   };
 }
 export const handlers = createHandlers();

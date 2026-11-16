@@ -70,7 +70,7 @@ export function AppShell({
         </Drawer>
         <div className={styles.workspace}>
           <Topbar
-            title={page === 'profile' ? 'โปรไฟล์' : 'ภาพรวม'}
+            title={page === 'profile' ? 'โปรไฟล์' : 'หน้าหลัก'}
             user={user}
             menuExpanded={desktop ? !compact : drawer}
             menuId={desktop ? 'desktop-navigation' : 'mobile-navigation'}
@@ -93,9 +93,7 @@ export function AppShell({
           />
           {loading && (
             <p role="status" className={styles.srOnly}>
-              {page === 'profile'
-                ? 'กำลังโหลดโปรไฟล์…'
-                : 'กำลังเตรียม Dashboard…'}
+              {page === 'profile' ? 'กำลังโหลดโปรไฟล์…' : 'กำลังโหลดหน้าหลัก…'}
             </p>
           )}
           <main
