@@ -1,9 +1,11 @@
 import { databaseConfig } from '../packages/database/src/config';
 import { serverConfig } from '../apps/web/src/config/server';
+import { matchingConfig } from '../apps/web/src/config/matching';
 
 try {
   databaseConfig();
   serverConfig();
+  matchingConfig();
   process.stdout.write(
     'Database and server environment valid (no connection attempted)\n',
   );

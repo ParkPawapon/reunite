@@ -106,6 +106,8 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       '0004',
       '0005',
       '0006',
+      '0007',
+      '0008',
     ]);
     expect(await migrate(pool)).toEqual([]);
     expect(
@@ -123,6 +125,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       'item_reports',
       'locations',
       'notifications',
+      'report_matches',
       'schema_migrations',
       'users',
     ]);
@@ -135,18 +138,22 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
   });
   it('rolls back failing migration DDL and releases its lock', async () => {
     const files = await readMigrations();
+    const nextVersion = String(Number(files.at(-1)?.version ?? 0) + 1).padStart(
+      4,
+      '0',
+    );
     const sql =
       'CREATE TABLE must_rollback (id integer); SELECT * FROM missing_table_for_migration_test;';
     await expect(
       migrate(pool, [
         ...files,
         {
-          version: '0007',
+          version: nextVersion,
           checksum: createHash('sha256').update(sql).digest('hex'),
           sql,
         },
       ]),
-    ).rejects.toThrow('0007');
+    ).rejects.toThrow(nextVersion);
     expect(
       (
         await pool.query<{ table: string | null }>(

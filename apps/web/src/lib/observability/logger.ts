@@ -1,5 +1,12 @@
 import 'server-only';
 
+export function logMatchingFailure() {
+  if (process.env.LOG_LEVEL !== 'silent')
+    console.error(
+      JSON.stringify({ level: 'error', event: 'matching_worker_unavailable' }),
+    );
+}
+
 export function logRequest(entry: {
   requestId: string;
   method: string;

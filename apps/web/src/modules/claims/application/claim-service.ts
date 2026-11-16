@@ -1,5 +1,10 @@
 import { AppError, type Page } from '@campus/shared';
-import type { Claim, ClaimRepository, ClaimInput } from '../domain/claim';
+import type {
+  Claim,
+  ClaimRepository,
+  ClaimInput,
+  ClaimStatusDecision,
+} from '../domain/claim';
 
 export class ClaimService {
   constructor(private readonly repository: ClaimRepository) {}
@@ -14,5 +19,27 @@ export class ClaimService {
   // FK existence is enforced atomically by PostgreSQL. Further eligibility rules are undecided.
   create(userId: number, input: ClaimInput) {
     return this.repository.create(userId, input);
+  }
+  async updateStatus(
+    _id: number,
+    _reportOwnerId: number,
+    _decision: ClaimStatusDecision,
+  ): Promise<Claim> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE010 is awaiting implementation',
+    );
+  }
+  async listForReport(
+    _reportId: number,
+    _reportOwnerId: number,
+    _page: Page,
+  ): Promise<Claim[]> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE012 is awaiting implementation',
+    );
   }
 }

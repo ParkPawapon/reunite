@@ -1,4 +1,4 @@
-import { AppError } from '@campus/shared';
+import { AppError, type Page } from '@campus/shared';
 import type {
   Report,
   ReportRepository,
@@ -27,5 +27,25 @@ export class ReportService {
     const report = await this.repository.updateOwned(id, userId, patch);
     if (!report) throw new AppError('NOT_FOUND', 404, 'Report not found');
     return report;
+  }
+
+  async updateStatus(
+    _id: number,
+    _userId: number,
+    _status: 'RESOLVED' | 'CLOSED',
+  ): Promise<Report> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE009 is awaiting implementation',
+    );
+  }
+
+  async listOwned(_userId: number, _page: Page): Promise<Report[]> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE011 is awaiting implementation',
+    );
   }
 }

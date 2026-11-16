@@ -20,7 +20,7 @@ Migration 0004 enforces canonical lowercase/trimmed email with the existing uniq
 - Claim eligibility/approval authority, report lifecycle and public-read policy.
 - PDPA/privacy notice, consent/lawful processing, access/erasure and retention policy for identities, reports, evidence, hashed throttling keys and expired sessions. This scaffold makes no legal-compliance claim.
 - Approved scheduled cleanup, backups/restore rehearsal, production TLS/proxy/secret management, least-privilege roles, edge abuse limits and monitoring.
-- Item-report attachment storage/validation policy and AI methodology before implementing those capabilities. Private profile-photo validation/storage is implemented separately as described below.
+- External matching accuracy evaluation, production consent/retention policy, approved API budget and credentials before enabling paid processing. Bounded item-image storage and matching architecture are implemented in [MATCHING.md](MATCHING.md); live-provider verification remains separate. Private profile photos are never sent to the matching provider.
 
 No admin roles, reset-password flow, OAuth provider, AI scores or approval actions are fabricated.
 

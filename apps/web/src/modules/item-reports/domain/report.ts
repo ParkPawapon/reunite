@@ -39,4 +39,10 @@ export interface ReportRepository {
     userId: number,
     patch: ReportPatch,
   ): Promise<Report | null>;
+  updateStatusOwned(
+    id: number,
+    userId: number,
+    status: 'RESOLVED' | 'CLOSED',
+  ): Promise<Report | null>;
+  listOwned(userId: number, page: Page): Promise<Report[]>;
 }

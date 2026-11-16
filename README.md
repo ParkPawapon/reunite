@@ -18,11 +18,11 @@ Open <http://localhost:3000>. The root redirects to `/login`, shows a 1.3-second
 
 Successful login opens the session-protected `/dashboard`: reusable Topbar, Sidebar, Footer and route skeleton, a real campus-render preview with its own loading/error state, and links to the existing campus map and university tour. Desktop navigation collapses; mobile uses an accessible Drawer. Account details and logout use the existing authentication system. See [Dashboard design and verification](docs/design/dashboard.md).
 
-The account menu and Sidebar link to `/profile` for first/last name, student ID, faculty, department, major, phone, email and a private profile photo. The Topbar bell shows real profile/photo activity with unread counts, Skeleton, retry and read-all. The Footer retains only its brand signature. Migrations `0005`–`0006` preserve existing accounts and sessions within nine physical tables. See [Profile and notifications](docs/design/profile-notifications.md).
+The account menu and Sidebar link to `/profile` for first/last name, student ID, faculty, department, major, phone, email and a private profile photo. The Topbar bell shows real account activity and accepted item-match suggestions with unread counts, Skeleton, retry and read-all. The Footer retains only its brand signature. Migrations preserve existing accounts and sessions. See [Profile and notifications](docs/design/profile-notifications.md) and [item matching](docs/MATCHING.md).
 
 The public [/coming-soon](http://localhost:3000/coming-soon) page presents the approved cinematic campus scene, interactive 3D clues and Agent Honk, with a countdown to **24 November 2026 (2569), 00:00 Asia/Bangkok**. It supports pause, reduced motion, static fallback and recoverable scene loading. See [Coming Soon implementation and verification](docs/design/coming-soon.md).
 
-The [backend assignment handoff](docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md) records integrated BE003 and delivered BE002, BE005, BE006, BE007, BE008 read endpoints. All assigned category/report/claim reads use real PostgreSQL data; private claims remain claimant-only.
+The [backend assignment handoff](docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md) records integrated BE003, delivered BE002, BE005, BE006, BE007, BE008 endpoints, and newly assigned BE009, BE010, BE011, BE012 tasks with 501 starter stubs. All assigned category/report/claim reads use real PostgreSQL data; private claims remain claimant-only and report mutations enforce ownership.
 
 To create one local login account after migrations, run `bun run db:seed --development-only`. The command creates `demo@reunite.test` and a random password in the Git/Docker-ignored `tmp/local-seed/login-account.json`. Repeating it preserves the same account and credentials. See [local login seed safeguards](docs/DEVELOPMENT.md#one-local-login-account).
 
@@ -34,7 +34,7 @@ The [KMUTT Bangmod campus study](research/kmutt-bangmod/README.md) is available 
 
 Run `bun run env:check` to validate server/database settings without connecting or printing secrets.
 
-`bun run db:cleanup-auth` previews expired technical authentication state; append `--apply` for one bounded cleanup batch. Database migration 0004 adds maintained timestamps, canonical email/nonblank constraints and measured composite indexes. Migrations 0005–0006 extend profiles and add account notifications; the current schema has nine tables. See the [database guide](docs/DATABASE.md) for safe upgrade and retention details.
+`bun run db:cleanup-auth` previews expired technical authentication state; append `--apply` for one bounded cleanup batch. Database migration 0004 adds maintained timestamps, canonical email/nonblank constraints and measured composite indexes. Migrations 0005–0006 extend profiles and account notifications. Migration 0007 adds a durable item matching queue/result table and bounded item photos; the current schema has ten tables. See the [database guide](docs/DATABASE.md) and [matching setup, cost cap and verification limits](docs/MATCHING.md).
 
 | Command                                            | Purpose                                                         |
 | -------------------------------------------------- | --------------------------------------------------------------- |
@@ -60,4 +60,4 @@ For a container deployment, run `docker compose up -d postgres`, `docker compose
 - `infra/docker`, `compose.yml`, `.github/workflows/ci.yml`: runtime and reproducible checks.
 - `docs`: [API](docs/API_CONTRACT.md), [development](docs/DEVELOPMENT.md), [environment](docs/ENVIRONMENT.md), [database](docs/DATABASE.md), [architecture](docs/ARCHITECTURE.md), [conventions](docs/SYSTEM_CONVENTIONS.md), [deployment](docs/DEPLOYMENT.md), [security](docs/SECURITY.md), [decisions](docs/DECISIONS.md), [verification](docs/VERIFICATION.md).
 
-This is a foundation, not a public-launch approval. Business policy for onboarding, report lifecycle, claim approval, privacy/retention, uploads and matching remains open. See the decision and security records.
+This is not a public-launch approval. Onboarding, report lifecycle, claim approval and production privacy/retention remain open. External item matching is implemented but disabled until a private API key and explicit USD budget are configured; live provider and held-out accuracy verification remain required. See the decision/security records and [matching guide](docs/MATCHING.md).

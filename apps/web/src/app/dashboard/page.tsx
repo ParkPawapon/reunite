@@ -5,8 +5,8 @@ import { DashboardContent } from '@/components/dashboard/dashboard-content';
 import { services } from '@/lib/composition';
 
 export const metadata: Metadata = {
-  title: 'ภาพรวม · Reunite',
-  description: 'พื้นที่เริ่มต้นของเพื่อนช่วยหาที่บางมด',
+  title: 'หน้าหลัก · Reunite',
+  description: 'รายการของหายและของที่พบ ช่วยกันหา พากลับคืน',
 };
 export default async function DashboardPage() {
   const user = await requirePageUser();

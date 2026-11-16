@@ -1,6 +1,6 @@
 export type AccountNotification = {
   notificationId: number;
-  kind: 'PROFILE_UPDATED' | 'AVATAR_UPDATED';
+  kind: 'PROFILE_UPDATED' | 'AVATAR_UPDATED' | 'MATCH_SUGGESTED';
   createdAt: string;
   readAt: string | null;
 };

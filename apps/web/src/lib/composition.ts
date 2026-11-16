@@ -14,6 +14,10 @@ import { PgProfileRepository } from '@/modules/users/infrastructure/pg-profile-r
 import { NotificationService } from '@/modules/notifications/application/notification-service';
 import { PgNotificationRepository } from '@/modules/notifications/infrastructure/pg-notification-repository';
 import { AppError } from '@campus/shared';
+import { MatchingService } from '@/modules/matching/application/matching-service';
+import { PgMatchReader } from '@/modules/matching/infrastructure/pg-match-reader';
+import { ReportImageService } from '@/modules/item-reports/application/report-image-service';
+import { PgReportImageRepository } from '@/modules/item-reports/infrastructure/pg-report-image-repository';
 
 // Explicit composition root. Each use case receives its port; no app dependency in the DB package.
 export function createServices(db: Sql) {
@@ -38,6 +42,8 @@ export function createServices(db: Sql) {
     ),
     notifications: new NotificationService(new PgNotificationRepository(db)),
     reports: new ReportService(new PgReportRepository(db)),
+    reportImages: new ReportImageService(new PgReportImageRepository(db)),
+    matching: new MatchingService(new PgMatchReader(db)),
     claims: new ClaimService(new PgClaimRepository(db)),
     categories: createCategoryService(db),
     locations: createLocationService(db),

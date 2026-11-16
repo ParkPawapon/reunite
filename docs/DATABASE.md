@@ -4,7 +4,9 @@ PostgreSQL 18.4 is pinned for Compose and CI. The two source PDFs have matching 
 
 `0002` adds technical `auth_sessions`: only SHA-256 digests of 256-bit random tokens, user FK, expiry and creation time. Logout deletes the row; reads enforce expiry. `0003` adds technical `auth_login_throttles`: hashed normalized account identifier, fixed-window start and atomic bounded attempt counter. `schema_migrations` tracks runner infrastructure. None of these are extra business entities.
 
-There are nine physical tables: the five original business tables, sessions, login throttles, migration tracking and in-app account notifications. No role or approval entity is added.
+There are ten physical tables: the five original business tables, sessions, login throttles, migration tracking, in-app notifications and `report_matches`. No role or approval entity is added.
+
+Migration `0007` adds the durable matching pair queue/result table and maintained report content revisions plus bounded item-image bytes. It extends real notification kinds with `MATCH_SUGGESTED`. Pair uniqueness, a partial queue index on `(available_at, match_id)` and a found-report reverse index support the implemented queries. The existing report `(type,status,report_id DESC)` index supports candidate discovery; no redundant report index is added. Cost reservations survive edits/retries and FK RESTRICT prevents erasing job/accounting history through report deletion. See [matching behavior, costs and retention limits](MATCHING.md).
 
 ## Student profile and notifications (0005–0006)
 

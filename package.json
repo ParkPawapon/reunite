@@ -26,6 +26,8 @@
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "test:browser": "playwright test",
+    "matching:evaluate": "node --conditions=react-server --import tsx scripts/evaluate-matching.ts",
+    "matching:status": "node --env-file-if-exists=.env --conditions=react-server --import tsx scripts/matching-status.ts",
     "db:migrate": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/migrate.ts",
     "db:migrate:status": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/migration-status.ts",
     "db:create-user": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/create-user.ts",

@@ -1,52 +1,43 @@
-# Dashboard and shared application shell
+# Dashboard: lost and found report board
 
-## Concept and scope
+## Current design (FE008, 2026-11-15)
 
-“สถานีเพื่อนช่วยหา” continues the Agent Honk login with the supplied KMUTT palette, Outfit and Noto Sans Thai. A deep burnt-orange sidebar anchors the white topbar and warm illustrated introduction. Cream active navigation, the yellow wordmark dot and a small existing goose illustration reinforce the detective's outfit. The topbar separates page context, account notifications, motion preferences and the real account. A compact brand signature finishes the footer; its map/tour links were removed at the user's request. An actual campus render connects the landing page to its working map. There are no invented report counts, activity feeds, search controls or unavailable menu destinations. See [profile and notifications](profile-notifications.md) for the later user-authorized account features.
+The signed-in home page is a table with two tabs: **ของหาย** (owners reporting something they lost) and **ของที่พบ** (people reporting something they found). The heading is **ช่วยกันหา พากลับคืน**. Short Thai copy, the existing KMUTT color tokens, Outfit/Noto Sans Thai typography, shared sidebar/topbar/footer and existing stroke icons remain the design system. The navigation and page title use **หน้าหลัก**.
 
-Successful login opens `/dashboard`. The map remains at `/research/kmutt-bangmod`; ordinary document links preserve its separate geolocation permission policy. The university Virtual Tour is an external link with a new-tab label. BE003 is integrated: locations return real paginated PostgreSQL data. BE002 remains assigned to its teammate, and categories retain the explicit 501 starter.
+The user's brief requests a minimal interface without AI imagery. The existing screen and that brief are the visual reference; no generated art, new palette, promotional hero, fake statistics or unrelated features were introduced. The previous campus welcome components remain available in the repository, and the real map is still accessible from the sidebar.
 
-## Component boundaries
+The subsequent November 16 request removes the entire “อาจเป็นของชิ้นเดียวกัน” panel. The report board now follows the page heading directly. Its matching-specific component, styles and client schema are removed, and the dashboard no longer polls the matching endpoint. Backend matching remains separate; match notifications link to the existing dashboard rather than a removed anchor.
 
-| Component                                        | Responsibility                                                          |
-| ------------------------------------------------ | ----------------------------------------------------------------------- |
-| `components/shell/app-shell.tsx`                 | Responsive frame, navigation state, shared motion policy and skip link  |
-| `components/shell/topbar.tsx`                    | Menu toggle, animation pause and actual session account/logout controls |
-| `components/shell/sidebar.tsx`                   | Brand and working navigation, shared by desktop and mobile Drawer       |
-| `components/shell/footer.tsx`                    | Brand signature without navigation links                                |
-| `components/shell/app-shell-skeleton.tsx`        | Complete frame fallback without personal data                           |
-| `components/dashboard/dashboard-content.tsx`     | Welcome, shared mascot and map guidance                                 |
-| `components/dashboard/campus-preview.tsx`        | Fixed-size image, real image download state and useful error fallback   |
-| `components/dashboard/dashboard-skeleton.tsx`    | Reserved content geometry during route loading                          |
-| `modules/auth/presentation/require-page-user.ts` | Server-side page guard using the existing session parser/service        |
-| `modules/auth/presentation/logout-client.ts`     | Same-origin logout transport with success validation                    |
+## Components and data boundaries
 
-The Next.js page composes these parts. SQL, authentication policy and database schema remain in their established modules. User name/email come from the current server-verified session. No credentials or tokens are passed to client components or browser storage.
+| Component                                             | Responsibility                                                       |
+| ----------------------------------------------------- | -------------------------------------------------------------------- |
+| `components/dashboard/dashboard-content.tsx`          | Tabs, request lifecycle, pagination, retry and selected report       |
+| `components/dashboard/report-table.tsx`               | Semantic table, status labels, dates, skeleton rows and empty state  |
+| `components/dashboard/report-detail.tsx`              | Accessible read-only detail dialog with a fresh API response         |
+| `components/dashboard/dashboard-skeleton.tsx`         | Route fallback matching the board geometry                           |
+| `modules/item-reports/presentation/reports-client.ts` | Validated HTTP transport and catalog-name lookup                     |
+| `components/shell/*`                                  | Shared navigation, account controls, notifications and motion policy |
 
-The page guard awaits request headers before reading runtime configuration or creating services. Protected pages therefore render per request, and the production/Docker build does not need deployment-only `APP_BASE_URL` or database credentials. Runtime configuration validation and session checks remain enforced when a real request arrives.
+The page retains its server-side session guard. Client components call the existing public report/category/location APIs; no SQL, database credentials or session tokens enter the client bundle. Backend rules and schema are unchanged.
 
-## Loading and motion
+List requests use `type=LOST` or `type=FOUND`, ten visible rows and one look-ahead row. Pagination shows the actual range on the current page; no total is fabricated. Changing tabs resets to page one. Old requests are aborted and late responses cannot overwrite the selected type. Categories and locations are read through their existing paginated endpoints, rather than assuming the first catalog page contains every name. Report responses are validated before display and HTTP failures use fixed, safe Thai copy.
 
-The content refinement separates `DashboardWelcome`, `CampusPreview` and `DashboardShortcuts`. The welcome gives the map one clear primary action; the side panel links to the existing personal profile and university Virtual Tour. Copy is shorter and the hero is more compact. The matching Dashboard Skeleton mirrors these sections. No unimplemented search, counts or report activity is added.
+Rows show item name/description, category, location, incident date and status. The incident date uses Asia/Bangkok and remains separate from the submission date displayed in the dialog. Reports are ordered by the API's descending report ID. Detail requests fetch the current public DTO, never private claim evidence or reporter profiles. Referenced images open only after a user action, in a separate tab with `noopener noreferrer`; untrusted protocols/credentials are rejected. This does not add item-image uploads.
 
-The latest toolbar revision keeps only the single-line page title, an icon-only motion control and a light account button. The campus badge, visible animation label, duplicate account caption and breadcrumb trail are removed. Account skeletons reserve the same avatar/name geometry as the ready toolbar.
+## Interaction, loading and accessibility
 
-Desktop sidebar tracks interpolate over 280 ms with aligned navigation rows; interrupted toggles retarget the current transition. Mobile Drawer enters over 240 ms and exits over 200 ms. Content sections reveal over 380 ms with a short 60 ms stagger. The image crossfades over 320 ms, its skeleton cover fades over 280 ms, and skeleton waves use a 1.65-second cycle. These are feedback durations, not resource readiness timers. Sidebar layout interpolation is confined to the dashboard's small grid; illustration/image feedback uses transform and opacity. Device reduced motion disables these transitions.
+- MUI tabs support arrows, focus and selection, with a shared labelled tabpanel.
+- A real request drives the skeleton. Empty, failed and loaded results have distinct copy. Refresh and retry execute real requests, with bounded network timeouts.
+- Horizontal scrolling stays inside the semantic table on narrow displays. Empty-state content stays within the visible board rather than the table's minimum width. The complete page must fit widths 320–1440 px, including enlarged text.
+- The detail dialog supports Escape, focus trapping and focus restoration. Dates use semantic `time` elements, headers use `scope`, and status text accompanies every color marker.
+- The November 16 detail-modal redesign adds a clearer title/location hierarchy, a compact photo section, matching Skeleton and contained image preview. [Modal design and component ownership](report-detail.md) records the final layout, copy and interaction checks.
+- Skeleton waves and short feedback honor the shared motion preference and device reduced motion. No artificial loading delay was added.
 
-The route `loading.tsx` renders the shared shell and dashboard skeleton during streaming. Placeholder shapes are hidden from assistive technology; one polite status and `aria-busy` describe loading. No artificial dashboard delay is introduced. The campus image separately keeps its reserved 200 px area and wave skeleton until its real `onLoad` or `onError` event. On resolution the decorative cover fades out and its hidden animation stops. A failed preview retains a working map link.
+The board displays actual API data, including the genuine empty state when no reports exist. The user subsequently authorized the manual local seed of twenty LOST and twenty FOUND reports (2026-11-16); their descriptions explicitly identify them as fictional data. Browser acceptance fixtures remain separate, inserting synthetic reports only into the managed disposable schema in the separate test database.
 
-The existing Motion mini goose animation is reused. The topbar pause control, live reduced-motion preference and document visibility stop continuous illustration/skeleton movement. Mobile Drawer and account-menu transitions are disabled for reduced motion. Other feedback uses short opacity, arrow and hover transitions. Desktop navigation changes between full labels and an icon rail; mobile uses MUI's modal focus management, Escape dismissal and focus restoration.
+## Verification
 
-Missing, malformed, duplicate, expired or unknown sessions redirect to login. With Next.js streaming this can be an HTTP redirect or a streamed redirect meta tag; neither path renders the authenticated dashboard. Dashboard errors show a retry action without exposing server details. Logout uses the real API, prevents duplicate requests, aborts after 15 seconds, retains an actionable error on failure and returns to login after confirmed revocation.
+The dashboard tests cover protected access, real PostgreSQL data, both tabs, pagination/reset, current details, empty/error/retry behavior, late responses, navigation, logout, motion, responsive layout and automated axe checks. Existing login/profile/notification/3D acceptance checks remain enabled. See `docs/VERIFICATION.md` for executed results and their limits; automated checks do not certify physical devices or complete accessibility conformance.
 
-## References and verification
-
-Reviewed 2026-11-06: [Oil UI](https://github.com/oil-oil/oil-ui) informed product-specific composition and screenshot review; [MUI Drawer](https://mui.com/material-ui/react-drawer/) informed mobile focus handling; [shadcn Sidebar](https://ui.shadcn.com/docs/components/sidebar) informed frame/component separation; [MUI Skeleton](https://mui.com/material-ui/react-skeleton/) informed loading placeholders; [Motion useAnimate](https://motion.dev/docs/react-use-animate) informed scoped animation. These are selected primary references, not an exhaustive repository survey. No third-party design scripts or skills were installed.
-
-[Vercel Web Interface Guidelines](https://vercel.com/design/guidelines) informed real links, reduced motion and compositor-friendly feedback. The [UI UX Pro Max repository](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) was also reviewed for design-system consistency. The project's existing palette and typography remain authoritative.
-
-The [dashboard artboard](https://p.superdesign.dev/draft/c0ed6185-e452-4a77-ab83-0e4ecf139fbd) records the visual direction. The running application and screenshots are used for interaction and visual verification.
-
-Browser checks use a disposable account in an isolated test database. Coverage includes login landing, session rejection, real profile data, desktop collapse, mobile Drawer/focus, responsive overflow, selected automated WCAG A/AA checks, pause/reduced motion, delayed/failed image loading and failed/successful logout. Existing login, loading-screen and map checks stay enabled. Automated checks are not a claim of full accessibility certification or physical-device validation.
-
-Run formatting, lint, strict typecheck, unit/integration tests, production build and `bun run test:browser` using the documented isolated database setup. Do not seed production data for visual review.
+Visual review compares the existing screen and the user's table/tab brief with the rendered implementation: the existing palette and fonts are retained, headings use the agreed short copy, the 248/88 px shell remains shared, all five table data columns are present, and responsive overflow is confined to the table. The old hero/map arrangement is intentionally replaced by the requested board. IAB confirmed both tab states at 1280×720; automated production-browser checks cover 320–1440 px. No material discrepancy from the requested table/tab behavior remained in those checks.

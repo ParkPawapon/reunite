@@ -1,7 +1,12 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
-import type { Page } from '@campus/shared';
-import type { Claim, ClaimRepository, ClaimInput } from '../domain/claim';
+import { AppError, type Page } from '@campus/shared';
+import type {
+  Claim,
+  ClaimRepository,
+  ClaimInput,
+  ClaimStatusDecision,
+} from '../domain/claim';
 
 type Row = {
   claim_id: number;
@@ -9,17 +14,25 @@ type Row = {
   user_id: number;
   evidence: string;
   status: Claim['status'];
+  resolution_note?: string | null;
+  resolved_by?: number | null;
   claim_date: Date;
   updated_at: Date;
 };
 const columns =
-  'claim_id, report_id, user_id, evidence, status, claim_date, updated_at';
+  'claim_id, report_id, user_id, evidence, status, resolution_note, resolved_by, claim_date, updated_at';
 const map = (row: Row): Claim => ({
   claimId: row.claim_id,
   reportId: row.report_id,
   userId: row.user_id,
   evidence: row.evidence,
   status: row.status,
+  ...(row.resolution_note !== null && row.resolution_note !== undefined
+    ? { resolutionNote: row.resolution_note }
+    : {}),
+  ...(row.resolved_by !== null && row.resolved_by !== undefined
+    ? { resolvedBy: row.resolved_by }
+    : {}),
   claimDate: row.claim_date.toISOString(),
   updatedAt: row.updated_at.toISOString(),
 });
@@ -50,5 +63,27 @@ export class PgClaimRepository implements ClaimRepository {
     );
     if (!row) throw new Error('Claim insert returned no row');
     return map(row);
+  }
+  async reviewReportClaim(
+    _claimId: number,
+    _reportOwnerId: number,
+    _decision: ClaimStatusDecision,
+  ): Promise<Claim | null> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE010 is awaiting implementation',
+    );
+  }
+  async listForReportOwner(
+    _reportId: number,
+    _reportOwnerId: number,
+    _page: Page,
+  ): Promise<Claim[]> {
+    throw new AppError(
+      'NOT_IMPLEMENTED',
+      501,
+      'BE012 is awaiting implementation',
+    );
   }
 }

@@ -1,6 +1,7 @@
 import type { SVGProps } from 'react';
 
 const paths = {
+  box: 'M3 7l9-4 9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4m-9 4v10M7 5l10 4',
   refresh: 'M20 11a8 8 0 1 0-2 6M20 4v7h-7',
   check: 'm5 12 4 4L19 6',
   alert: 'M12 3 2 21h20L12 3Zm0 6v5m0 3v1',
@@ -10,6 +11,8 @@ const paths = {
   camera: 'M4 7h4l2-3h4l2 3h4v13H4V7Zm12 6a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
   home: 'm3 10 9-7 9 7v10H3V10Zm6 10v-7h6v7',
   map: 'm3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Zm6-2v16m6-14v16',
+  pin: 'M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0ZM14.5 10a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z',
+  plus: 'M12 5v14M5 12h14',
   menu: 'M4 6h16M4 12h16M4 18h16',
   close: 'm6 6 12 12M6 18 18 6',
   arrow: 'M5 12h14m-6-6 6 6-6 6',

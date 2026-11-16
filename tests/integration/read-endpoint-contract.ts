@@ -349,6 +349,7 @@ export function verifyReadEndpointContract(
         await client.query('BEGIN');
         try {
           await client.query('DELETE FROM claims');
+          await client.query('DELETE FROM report_matches');
           await client.query('DELETE FROM item_reports');
           await client.query('DELETE FROM categories');
           const emptyHandlers = createHandlers({

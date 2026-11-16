@@ -16,7 +16,7 @@ const pageSchema = z.object({
   items: z.array(
     z.object({
       notificationId: z.number().int().positive(),
-      kind: z.enum(['PROFILE_UPDATED', 'AVATAR_UPDATED']),
+      kind: z.enum(['PROFILE_UPDATED', 'AVATAR_UPDATED', 'MATCH_SUGGESTED']),
       createdAt: z.iso.datetime(),
       readAt: z.iso.datetime().nullable(),
     }),
@@ -26,6 +26,11 @@ const pageSchema = z.object({
 });
 type Page = z.infer<typeof pageSchema>;
 const content = {
+  MATCH_SUGGESTED: {
+    title: 'มีสิ่งของที่อาจตรงกัน',
+    description: 'ตรวจสอบรายละเอียดกับรายการที่คุณแจ้งไว้',
+    icon: 'box',
+  },
   PROFILE_UPDATED: {
     title: 'บันทึกโปรไฟล์แล้ว',
     description: 'ข้อมูลส่วนบุคคลของคุณอัปเดตเรียบร้อย',
@@ -109,7 +114,7 @@ export function NotificationBell({
     const refresh = () => {
       if (document.visibilityState === 'visible') void load();
     };
-    const timer = window.setInterval(refresh, 60000);
+    const timer = window.setInterval(refresh, 10000);
     window.addEventListener('focus', refresh);
     window.addEventListener('reunite:account-updated', refresh);
     return () => {
@@ -269,7 +274,7 @@ export function NotificationBell({
                 alt=""
               />
               <h3>ยังไม่มีข่าวใหม่</h3>
-              <p>เมื่อมีการอัปเดตบัญชี เราจะแจ้งไว้ตรงนี้</p>
+              <p>ข่าวเกี่ยวกับรายการและบัญชีของคุณจะแสดงตรงนี้</p>
             </div>
           ) : data ? (
             <>
@@ -295,7 +300,14 @@ export function NotificationBell({
                       <ShellIcon name={content[item.kind].icon} />
                     </span>
                     <div>
-                      <a href="/profile" onClick={() => setAnchor(null)}>
+                      <a
+                        href={
+                          item.kind === 'MATCH_SUGGESTED'
+                            ? '/dashboard'
+                            : '/profile'
+                        }
+                        onClick={() => setAnchor(null)}
+                      >
                         {content[item.kind].title}
                       </a>
                       <p>{content[item.kind].description}</p>
