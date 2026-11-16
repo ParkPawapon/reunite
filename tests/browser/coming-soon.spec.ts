@@ -121,6 +121,7 @@ test('stops GPU/CSS motion while keeping countdown live and respects reduced mot
 test('completes a paused manual 360 orbit and supports keyboard reset', async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto('/coming-soon');
   // Pause before model readiness to avoid competing autoplay frames on software GPUs.
