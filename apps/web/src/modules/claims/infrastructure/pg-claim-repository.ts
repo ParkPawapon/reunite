@@ -76,14 +76,27 @@ export class PgClaimRepository implements ClaimRepository {
     );
   }
   async listForReportOwner(
-    _reportId: number,
-    _reportOwnerId: number,
-    _page: Page,
+    reportId: number,
+    reportOwnerId: number,
+    page: Page,
   ): Promise<Claim[]> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE012 is awaiting implementation',
+    const [ownedReport] = await query<{ report_id: number }>(
+      this.db,
+      'SELECT report_id FROM item_reports WHERE report_id = $1 AND user_id = $2',
+      [reportId, reportOwnerId],
     );
+    if (!ownedReport) throw new AppError('NOT_FOUND', 404, 'Report not found');
+
+    const rows = await query<Row>(
+      this.db,
+      `SELECT c.claim_id, c.report_id, c.user_id, c.evidence, c.status,
+              c.resolution_note, c.resolved_by, c.claim_date, c.updated_at
+       FROM claims c
+       WHERE c.report_id = $1
+       ORDER BY c.claim_id DESC
+       LIMIT $2 OFFSET $3`,
+      [reportId, page.limit, page.offset],
+    );
+    return rows.map(map);
   }
 }
