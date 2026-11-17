@@ -21,15 +21,17 @@ export class ClaimService {
     return this.repository.create(userId, input);
   }
   async updateStatus(
-    _id: number,
-    _reportOwnerId: number,
-    _decision: ClaimStatusDecision,
+    id: number,
+    reportOwnerId: number,
+    decision: ClaimStatusDecision,
   ): Promise<Claim> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE010 is awaiting implementation',
+    const claim = await this.repository.reviewReportClaim(
+      id,
+      reportOwnerId,
+      decision,
     );
+    if (!claim) throw new AppError('NOT_FOUND', 404, 'Claim not found');
+    return claim;
   }
   async listForReport(
     _reportId: number,
