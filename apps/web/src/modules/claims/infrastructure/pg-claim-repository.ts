@@ -65,15 +65,32 @@ export class PgClaimRepository implements ClaimRepository {
     return map(row);
   }
   async reviewReportClaim(
-    _claimId: number,
-    _reportOwnerId: number,
-    _decision: ClaimStatusDecision,
+    claimId: number,
+    reportOwnerId: number,
+    decision: ClaimStatusDecision,
   ): Promise<Claim | null> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE010 is awaiting implementation',
+    const [row] = await query<Row>(
+      this.db,
+      `UPDATE claims c
+       SET status = $3,
+           resolution_note = $4,
+           resolved_by = $2,
+           updated_at = NOW()
+       FROM item_reports r
+       WHERE c.report_id = r.report_id
+         AND c.claim_id = $1
+         AND r.user_id = $2
+         AND c.status = 'PENDING'
+       RETURNING c.claim_id, c.report_id, c.user_id, c.evidence, c.status,
+                 c.resolution_note, c.resolved_by, c.claim_date, c.updated_at`,
+      [
+        claimId,
+        reportOwnerId,
+        decision.status,
+        decision.resolutionNote ?? null,
+      ],
     );
+    return row ? map(row) : null;
   }
   async listForReportOwner(
     reportId: number,

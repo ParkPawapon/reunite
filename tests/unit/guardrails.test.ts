@@ -170,22 +170,46 @@ it('BE009 starts with 501 until teammate implements report status transition', a
     message: 'BE009 is awaiting implementation',
   });
 });
-it('BE010 starts with 501 until teammate implements claim status review', async () => {
-  const repository: ClaimRepository = {
-    listOwned: vi.fn(),
-    findOwned: vi.fn(),
-    create: vi.fn(),
-    reviewReportClaim: vi.fn(),
-    listForReportOwner: vi.fn(),
+it('BE010 uses its domain repository contract', async () => {
+  const row = {
+    claimId: 10,
+    reportId: 5,
+    userId: 3,
+    evidence: 'Evidence',
+    status: 'APPROVED' as const,
+    resolutionNote: 'Approved match',
+    resolvedBy: 2,
+    claimDate: '2026-11-04T06:00:00.000Z',
+    updatedAt: '2026-11-04T06:00:00.000Z',
   };
-  const service = new ClaimService(repository);
-  await expect(
-    service.updateStatus(1, 2, { status: 'APPROVED' }),
-  ).rejects.toMatchObject({
-    code: 'NOT_IMPLEMENTED',
-    status: 501,
-    message: 'BE010 is awaiting implementation',
+  const reviewReportClaim = vi
+    .fn<ClaimRepository['reviewReportClaim']>()
+    .mockResolvedValueOnce(row)
+    .mockResolvedValueOnce(null);
+  const service = new ClaimService({
+    ...{
+      listOwned: vi.fn(),
+      create: vi.fn(),
+      findOwned: vi.fn(),
+      reviewReportClaim: vi.fn(),
+      listForReportOwner: vi.fn(),
+    },
+    reviewReportClaim,
   });
+  const decision = {
+    status: 'APPROVED' as const,
+    resolutionNote: 'Approved match',
+  };
+  expect(await service.updateStatus(10, 2, decision)).toBe(row);
+  await expect(service.updateStatus(11, 2, decision)).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+    status: 404,
+    message: 'Claim not found',
+  });
+  expect(reviewReportClaim.mock.calls).toEqual([
+    [10, 2, decision],
+    [11, 2, decision],
+  ]);
 });
 it('BE011 starts with 501 until teammate implements own reports listing', async () => {
   const repository: ReportRepository = {
