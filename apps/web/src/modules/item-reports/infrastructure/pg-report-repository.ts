@@ -1,6 +1,6 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
-import { AppError, type Page } from '@campus/shared';
+import { Page } from '@campus/shared';
 import type {
   Report,
   ReportRepository,
@@ -137,11 +137,17 @@ export class PgReportRepository implements ReportRepository {
     );
     return row ? map(row) : null;
   }
-  async listOwned(_userId: number, _page: Page): Promise<Report[]> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE011 is awaiting implementation',
+  async listOwned(userId: number, page: Page): Promise<Report[]> {
+    const rows = await query<Row>(
+      this.db,
+      `SELECT report_id, user_id, category_id, location_id, type, title,
+        description, image, event_datetime, status, created_at, updated_at
+      FROM item_reports
+      WHERE user_id = $1
+      ORDER BY report_id DESC
+      LIMIT $2 OFFSET $3`,
+      [userId, page.limit, page.offset],
     );
+    return rows.map(map);
   }
 }
