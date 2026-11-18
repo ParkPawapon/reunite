@@ -32,14 +32,10 @@ export class ClaimService {
     );
   }
   async listForReport(
-    _reportId: number,
-    _reportOwnerId: number,
-    _page: Page,
+    reportId: number,
+    reportOwnerId: number,
+    page: Page,
   ): Promise<Claim[]> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE012 is awaiting implementation',
-    );
+    return this.repository.listForReportOwner(reportId, reportOwnerId, page);
   }
 }

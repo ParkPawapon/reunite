@@ -205,22 +205,24 @@ it('BE011 starts with 501 until teammate implements own reports listing', async 
     message: 'BE011 is awaiting implementation',
   });
 });
-it('BE012 starts with 501 until teammate implements report incoming claims listing', async () => {
-  const repository: ClaimRepository = {
-    listOwned: vi.fn(),
-    findOwned: vi.fn(),
-    create: vi.fn(),
-    reviewReportClaim: vi.fn(),
-    listForReportOwner: vi.fn(),
-  };
-  const service = new ClaimService(repository);
-  await expect(
-    service.listForReport(1, 2, { limit: 20, offset: 0 }),
-  ).rejects.toMatchObject({
-    code: 'NOT_IMPLEMENTED',
-    status: 501,
-    message: 'BE012 is awaiting implementation',
+it('BE012 uses its domain repository contract', async () => {
+  const rows: Awaited<ReturnType<ClaimRepository['listForReportOwner']>> = [];
+  const listForReportOwner = vi
+    .fn<ClaimRepository['listForReportOwner']>()
+    .mockResolvedValue(rows);
+  const service = new ClaimService({
+    ...{
+      listOwned: vi.fn(),
+      create: vi.fn(),
+      findOwned: vi.fn(),
+      reviewReportClaim: vi.fn(),
+      listForReportOwner: vi.fn(),
+    },
+    listForReportOwner,
   });
+  const page = { limit: 20, offset: 0 };
+  expect(await service.listForReport(5, 2, page)).toBe(rows);
+  expect(listForReportOwner).toHaveBeenCalledExactlyOnceWith(5, 2, page);
 });
 it('rejects migration checksum changes, gaps, unknown versions and duplicates', () => {
   const files = [
