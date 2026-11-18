@@ -137,7 +137,6 @@ export class PgReportRepository implements ReportRepository {
     );
     return row ? map(row) : null;
   }
-  
   async listOwned(_userId: number, _page: Page): Promise<Report[]> {
     throw new AppError(
       'NOT_IMPLEMENTED',
