@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   detailedWebModelUrl,
   heightBasis,
@@ -80,6 +87,16 @@ export function CampusViewer() {
   const navigation = useWalkNavigation(route);
   const { current, liveFix, arrived } = navigation;
   const walking = current !== null;
+  const startButton = useRef<HTMLButtonElement>(null);
+  const navigationHeading = useRef<HTMLHeadingElement>(null);
+  const focusNavigation = useRef(false);
+  useLayoutEffect(() => {
+    if (!focusNavigation.current) return;
+    (walking ? navigationHeading.current : startButton.current)?.focus({
+      preventScroll: true,
+    });
+    focusNavigation.current = false;
+  }, [walking]);
   const activeRoute = current?.route ?? route;
   const progress = current?.progress ?? null;
   const following = walking && follow;
@@ -95,12 +112,16 @@ export function CampusViewer() {
   );
 
   function startWalk() {
+    focusNavigation.current = true;
     setMode(modes[0]);
     setFollow(true);
     navigation.start();
   }
 
-  const endWalk = navigation.end;
+  function endWalk() {
+    focusNavigation.current = walking;
+    navigation.end();
+  }
 
   async function copyLink(id: string) {
     const url = new URL(placeFragment(id), window.location.href).href;
@@ -182,6 +203,7 @@ export function CampusViewer() {
         {walking && (
           <LocationControls
             gps={navigation.gps}
+            headingRef={navigationHeading}
             destination={
               placesById.get(to)?.building?.code ??
               placesById.get(to)?.label ??
@@ -190,7 +212,10 @@ export function CampusViewer() {
             arrived={arrived}
             rerouting={current.phase === 'rerouting'}
             recovery={current.phase === 'recovery'}
-            onRetry={navigation.start}
+            onRetry={() => {
+              navigationHeading.current?.focus({ preventScroll: true });
+              navigation.start();
+            }}
             onEnd={endWalk}
             following={following}
             progress={progress}
@@ -199,7 +224,7 @@ export function CampusViewer() {
         )}
         {!walking && route && (
           <div className={styles.controls}>
-            <button type="button" onClick={startWalk}>
+            <button type="button" ref={startButton} onClick={startWalk}>
               เริ่มเดิน
             </button>
           </div>

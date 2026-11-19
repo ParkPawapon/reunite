@@ -144,11 +144,20 @@ export function CampusModel({
         <div className={styles.controls} aria-label="ควบคุมมุมกล้อง 3 มิติ">
           <button
             type="button"
-            onClick={() => scene.current?.setView('perspective')}
+            onClick={() => {
+              onPan();
+              scene.current?.setView('perspective');
+            }}
           >
             ภาพรวม
           </button>
-          <button type="button" onClick={() => scene.current?.setView('north')}>
+          <button
+            type="button"
+            onClick={() => {
+              onPan();
+              scene.current?.setView('north');
+            }}
+          >
             มุมสูง
           </button>
           <button
@@ -161,35 +170,59 @@ export function CampusModel({
           {route && !following && (
             <button
               type="button"
-              onClick={() => scene.current?.focusRoute(route.segments)}
+              onClick={() => {
+                onPan();
+                scene.current?.focusRoute(route.segments);
+              }}
             >
               ขยายเส้นทาง
             </button>
           )}
-          <button type="button" onClick={() => scene.current?.rotate(1)}>
+          <button
+            type="button"
+            onClick={() => {
+              onPan();
+              scene.current?.rotate(1);
+            }}
+          >
             หมุนซ้าย 45°
           </button>
-          <button type="button" onClick={() => scene.current?.rotate(-1)}>
+          <button
+            type="button"
+            onClick={() => {
+              onPan();
+              scene.current?.rotate(-1);
+            }}
+          >
             หมุนขวา 45°
           </button>
           <button
             type="button"
             aria-label="ซูมเข้า"
-            onClick={() => scene.current?.zoom(1)}
+            onClick={() => {
+              onPan();
+              scene.current?.zoom(1);
+            }}
           >
             +
           </button>
           <button
             type="button"
             aria-label="ซูมออก"
-            onClick={() => scene.current?.zoom(-1)}
+            onClick={() => {
+              onPan();
+              scene.current?.zoom(-1);
+            }}
           >
             −
           </button>
           <button
             type="button"
             disabled={!place}
-            onClick={() => scene.current?.locate(place?.world ?? null)}
+            onClick={() => {
+              onPan();
+              scene.current?.locate(place?.world ?? null);
+            }}
           >
             กลับไปที่หมุด
           </button>

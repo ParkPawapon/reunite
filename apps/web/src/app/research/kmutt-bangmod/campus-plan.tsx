@@ -1,4 +1,10 @@
-import { useCallback, useRef, useState, type PointerEvent } from 'react';
+import {
+  useCallback,
+  useRef,
+  useState,
+  type PointerEvent,
+  type KeyboardEvent,
+} from 'react';
 import {
   campusRoutes,
   campusViewBox,
@@ -139,6 +145,45 @@ export function CampusPlan({
   function finishPan(event: PointerEvent<SVGSVGElement>) {
     if (drag.current?.id === event.pointerId) drag.current = null;
   }
+  const overviewLabel =
+    route && !following && !manualView && !routeFocus
+      ? 'ขยายเส้นทาง'
+      : 'ดูทั้งวิทยาเขต';
+
+  function changeOverview() {
+    setRouteFocus(overviewLabel === 'ขยายเส้นทาง');
+    setManualView(undefined);
+    onPan();
+  }
+
+  function panWithKeyboard(event: KeyboardEvent<SVGSVGElement>) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
+      return;
+    if (event.key === 'Home') {
+      event.preventDefault();
+      setRouteFocus(false);
+      setManualView(undefined);
+      onPan();
+      return;
+    }
+    const { x, y, width, height } = event.currentTarget.viewBox.baseVal;
+    const horizontal =
+      Number(event.key === 'ArrowRight') - Number(event.key === 'ArrowLeft');
+    const vertical =
+      Number(event.key === 'ArrowDown') - Number(event.key === 'ArrowUp');
+    if (!horizontal && !vertical) return;
+    event.preventDefault();
+    onPan();
+    setManualView(
+      [
+        x + (horizontal * width) / 10,
+        y + (vertical * height) / 10,
+        width,
+        height,
+      ].join(' '),
+    );
+  }
+
   const matched = progress && 'remaining' in progress ? progress : null;
   const paths = [
     ...routePaths(matched?.completed ?? []).map((path) => ({
@@ -174,7 +219,10 @@ export function CampusPlan({
         onPointerLeave={(event) => {
           if (!drag.current?.moved) finishPan(event);
         }}
-        role="img"
+        tabIndex={0}
+        onKeyDown={panWithKeyboard}
+        aria-describedby="campus-map-instructions"
+        role="group"
         aria-label={
           place
             ? `แผนที่มุมสูง จุดเลือก ${place.label}`
@@ -296,33 +344,23 @@ export function CampusPlan({
         )}
       </svg>
       <div className={styles.planFocus}>
-        <Tooltip
-          title={
-            route && !following && !manualView && !routeFocus
-              ? 'ขยายเส้นทาง'
-              : 'ดูทั้งวิทยาเขต'
-          }
-        >
+        <Tooltip title={overviewLabel}>
           <IconButton
             className={styles.iconControl}
-            aria-label={
-              route && !following && !manualView && !routeFocus
-                ? 'ขยายเส้นทาง'
-                : 'ดูทั้งวิทยาเขต'
-            }
-            onClick={() => {
-              setRouteFocus(
-                Boolean(route && !following && !manualView && !routeFocus),
-              );
-              setManualView(undefined);
-              onPan();
-            }}
+            aria-label={overviewLabel}
+            onClick={changeOverview}
           >
             <ShellIcon name="map" />
           </IconButton>
         </Tooltip>
       </div>
-      <p>↑ เหนือ · แตะอาคารหรือประตูเพื่อปักหมุด</p>
+      <p id="campus-map-instructions">
+        ↑ เหนือ · แตะอาคารเพื่อปักหมุด
+        <span className={styles.srOnly}>
+          {' '}
+          ใช้ปุ่มลูกศรเพื่อเลื่อนแผนที่ และปุ่ม Home เพื่อดูทั้งวิทยาเขต
+        </span>
+      </p>
     </div>
   );
 }

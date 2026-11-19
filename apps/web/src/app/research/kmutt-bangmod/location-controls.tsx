@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { ShellIcon } from '@/components/shell/shell-icon';
@@ -29,6 +30,7 @@ const number = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 });
 
 export function LocationControls({
   gps,
+  headingRef,
   progress,
   destination,
   arrived,
@@ -39,6 +41,7 @@ export function LocationControls({
   onRetry,
   onEnd,
 }: {
+  headingRef: Ref<HTMLHeadingElement>;
   gps: ReturnType<typeof useLivePosition>;
   progress: WalkProgress | null;
   destination: string;
@@ -68,7 +71,7 @@ export function LocationControls({
 
   return (
     <div className={styles.locationPanel}>
-      <h2 className={styles.destination}>
+      <h2 className={styles.destination} tabIndex={-1} ref={headingRef}>
         <ShellIcon name="pin" /> {destination}
       </h2>
       <p role="status" className={arrived ? styles.arrival : undefined}>
@@ -104,7 +107,7 @@ export function LocationControls({
           {explanation && <p>{explanation}</p>}
         </>
       )}
-      <div className={styles.controls}>
+      <div className={styles.controls} aria-label="ควบคุมการเดิน" role="group">
         {!arrived && (
           <Tooltip title="ตามตำแหน่งฉัน">
             <span>
