@@ -236,23 +236,25 @@ it('BE010 uses its domain repository contract', async () => {
     [11, 2, decision],
   ]);
 });
-it('BE011 starts with 501 until teammate implements own reports listing', async () => {
-  const repository: ReportRepository = {
-    list: vi.fn(),
-    create: vi.fn(),
-    find: vi.fn(),
-    updateOwned: vi.fn(),
-    updateStatusOwned: vi.fn(),
-    listOwned: vi.fn(),
-  };
-  const service = new ReportService(repository);
-  await expect(
-    service.listOwned(1, { limit: 20, offset: 0 }),
-  ).rejects.toMatchObject({
-    code: 'NOT_IMPLEMENTED',
-    status: 501,
-    message: 'BE011 is awaiting implementation',
+it('BE011 uses its domain repository contract', async () => {
+  const rows: Awaited<ReturnType<ReportRepository['listOwned']>> = [];
+  const listOwned = vi
+    .fn<ReportRepository['listOwned']>()
+    .mockResolvedValue(rows);
+  const service = new ReportService({
+    ...{
+      list: vi.fn(),
+      create: vi.fn(),
+      find: vi.fn(),
+      updateOwned: vi.fn(),
+      updateStatusOwned: vi.fn(),
+      listOwned: vi.fn(),
+    },
+    listOwned,
   });
+  const page = { limit: 20, offset: 0 };
+  expect(await service.listOwned(2, page)).toBe(rows);
+  expect(listOwned).toHaveBeenCalledExactlyOnceWith(2, page);
 });
 it('BE012 uses its domain repository contract', async () => {
   const rows: Awaited<ReturnType<ClaimRepository['listForReportOwner']>> = [];

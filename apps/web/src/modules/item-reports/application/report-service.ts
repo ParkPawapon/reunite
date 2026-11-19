@@ -39,11 +39,7 @@ export class ReportService {
     return report;
   }
 
-  async listOwned(_userId: number, _page: Page): Promise<Report[]> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE011 is awaiting implementation',
-    );
+  listOwned(userId: number, page: Page): Promise<Report[]> {
+    return this.repository.listOwned(userId, page);
   }
 }
