@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildings } from './catalog';
 import { CampusLoading } from './campus-loading';
 import { CampusPlan } from './campus-plan';
-import type { LiveFix } from './live-position';
+import { useSmoothPosition } from './use-smooth-position';
+import type { LiveFix, WalkProgress } from './live-position';
 import { mapLabels } from './map-labels';
 import { placesById, type Place } from './places';
 import type { CampusScene, PinPosition } from './scene';
@@ -29,6 +30,9 @@ export function CampusModel({
   liveFix,
   following,
   onSelect,
+  onPan,
+  progress,
+  navigating,
   onBack,
 }: {
   assetUrl: string;
@@ -36,6 +40,9 @@ export function CampusModel({
   route: WalkRoute | null;
   liveFix: LiveFix | null;
   following: boolean;
+  onPan: () => void;
+  progress: WalkProgress | null;
+  navigating: boolean;
   onSelect: (id: string) => void;
   onBack: () => void;
 }) {
@@ -65,6 +72,7 @@ export function CampusModel({
           assetUrl,
           knownIds,
           onSelect,
+          onPan,
           onPin(position) {
             positionMarker(pin.current, position);
           },
@@ -107,7 +115,7 @@ export function CampusModel({
       scene.current?.dispose();
       scene.current = null;
     };
-  }, [assetUrl, onSelect]);
+  }, [assetUrl, onPan, onSelect]);
 
   useEffect(() => {
     const view = scene.current;
@@ -118,12 +126,16 @@ export function CampusModel({
   }, [place, state]);
 
   useEffect(() => {
-    scene.current?.setRoute(route?.segments ?? []);
-  }, [route, state]);
+    scene.current?.setRoute(route?.segments ?? [], progress, navigating);
+  }, [route, progress, navigating, state]);
 
-  useEffect(() => {
-    scene.current?.setLiveFix(liveFix, following);
-  }, [liveFix, following, state]);
+  const drawPosition = useCallback(
+    (fix: LiveFix | null) => {
+      if (state === 'ready') scene.current?.setLiveFix(fix, following);
+    },
+    [following, state],
+  );
+  useSmoothPosition(liveFix, drawPosition);
 
   const ready = state === 'ready';
   return (
@@ -132,11 +144,20 @@ export function CampusModel({
         <div className={styles.controls} aria-label="ควบคุมมุมกล้อง 3 มิติ">
           <button
             type="button"
-            onClick={() => scene.current?.setView('perspective')}
+            onClick={() => {
+              onPan();
+              scene.current?.setView('perspective');
+            }}
           >
             ภาพรวม
           </button>
-          <button type="button" onClick={() => scene.current?.setView('north')}>
+          <button
+            type="button"
+            onClick={() => {
+              onPan();
+              scene.current?.setView('north');
+            }}
+          >
             มุมสูง
           </button>
           <button
@@ -149,35 +170,59 @@ export function CampusModel({
           {route && !following && (
             <button
               type="button"
-              onClick={() => scene.current?.focusRoute(route.segments)}
+              onClick={() => {
+                onPan();
+                scene.current?.focusRoute(route.segments);
+              }}
             >
               ขยายเส้นทาง
             </button>
           )}
-          <button type="button" onClick={() => scene.current?.rotate(1)}>
+          <button
+            type="button"
+            onClick={() => {
+              onPan();
+              scene.current?.rotate(1);
+            }}
+          >
             หมุนซ้าย 45°
           </button>
-          <button type="button" onClick={() => scene.current?.rotate(-1)}>
+          <button
+            type="button"
+            onClick={() => {
+              onPan();
+              scene.current?.rotate(-1);
+            }}
+          >
             หมุนขวา 45°
           </button>
           <button
             type="button"
             aria-label="ซูมเข้า"
-            onClick={() => scene.current?.zoom(1)}
+            onClick={() => {
+              onPan();
+              scene.current?.zoom(1);
+            }}
           >
             +
           </button>
           <button
             type="button"
             aria-label="ซูมออก"
-            onClick={() => scene.current?.zoom(-1)}
+            onClick={() => {
+              onPan();
+              scene.current?.zoom(-1);
+            }}
           >
             −
           </button>
           <button
             type="button"
             disabled={!place}
-            onClick={() => scene.current?.locate(place?.world ?? null)}
+            onClick={() => {
+              onPan();
+              scene.current?.locate(place?.world ?? null);
+            }}
           >
             กลับไปที่หมุด
           </button>
@@ -238,7 +283,10 @@ export function CampusModel({
               hidden
               aria-hidden="true"
             >
-              เริ่ม {placesById.get(route.from.id)?.building?.code}
+              {route.liveOrigin
+                ? 'เริ่มใหม่'
+                : 'เริ่ม ' +
+                  (placesById.get(route.from.id)?.building?.code ?? '')}
             </span>
             <span
               className={styles.endLabel}
@@ -258,6 +306,9 @@ export function CampusModel({
             liveFix={liveFix}
             following={following}
             onSelect={onSelect}
+            onPan={onPan}
+            progress={progress}
+            navigating={navigating}
           />
         )}
       </div>

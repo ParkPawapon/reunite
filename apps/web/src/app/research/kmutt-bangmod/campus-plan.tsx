@@ -1,4 +1,10 @@
-import { useState } from 'react';
+import {
+  useCallback,
+  useRef,
+  useState,
+  type PointerEvent,
+  type KeyboardEvent,
+} from 'react';
 import {
   campusRoutes,
   campusViewBox,
@@ -7,10 +13,14 @@ import {
   placesById,
   type Place,
 } from './places';
-import type { LiveFix } from './live-position';
+import { useSmoothPosition } from './use-smooth-position';
+import type { LiveFix, WalkProgress } from './live-position';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import { ShellIcon } from '@/components/shell/shell-icon';
 import { mapLabels } from './map-labels';
 import styles from './viewer.module.css';
-import type { WalkRoute } from './walking';
+import type { MapPoint, WalkRoute } from './walking';
 
 function routeViewBox(route: WalkRoute) {
   const points = route.segments.flatMap(({ from, to }) => [from, to]);
@@ -30,43 +40,166 @@ function routeViewBox(route: WalkRoute) {
   ].join(' ');
 }
 
+function routePaths(segments: readonly WalkRoute['segments'][number][]) {
+  const paths: { kind: WalkRoute['segments'][number]['kind']; d: string }[] =
+    [];
+  for (const segment of segments) {
+    const last = paths.at(-1);
+    if (last?.kind === segment.kind) last.d += 'L' + segment.to.join(',');
+    else
+      paths.push({
+        kind: segment.kind,
+        d: 'M' + segment.from.join(',') + 'L' + segment.to.join(','),
+      });
+  }
+  return paths;
+}
+
+function followView([x, z]: MapPoint) {
+  return [x - 95, z - 95, 190, 190].join(' ');
+}
+
 export function CampusPlan({
   place,
   route,
   liveFix,
   following,
   onSelect,
+  onPan,
+  progress,
+  navigating,
 }: {
   place?: Place;
   route: WalkRoute | null;
   liveFix: LiveFix | null;
   following: boolean;
+  onPan: () => void;
+  progress: WalkProgress | null;
+  navigating: boolean;
   onSelect: (id: string) => void;
 }) {
   const [routeFocus, setRouteFocus] = useState(false);
+  const [manualView, setManualView] = useState<string>();
+  const drag = useRef<{
+    id: number;
+    origin: DOMPoint;
+    inverse: DOMMatrix;
+    box: DOMRect;
+    moved: boolean;
+  } | null>(null);
   const viewBox =
-    liveFix && following
-      ? [liveFix.point[0] - 95, liveFix.point[1] - 95, 190, 190].join(' ')
-      : route && routeFocus
-        ? routeViewBox(route)
-        : campusViewBox;
-  const paths: { kind: WalkRoute['segments'][number]['kind']; d: string }[] =
-    [];
-  for (const segment of route?.segments ?? []) {
-    const last = paths.at(-1);
-    if (last?.kind === segment.kind) last.d += `L${segment.to.join(',')}`;
-    else
-      paths.push({
-        kind: segment.kind,
-        d: `M${segment.from.join(',')}L${segment.to.join(',')}`,
-      });
+    manualView ?? (route && routeFocus ? routeViewBox(route) : campusViewBox);
+  const mapElement = useRef<SVGSVGElement>(null);
+  const marker = useRef<SVGGElement>(null);
+  const drawPosition = useCallback(
+    (fix: LiveFix | null) => {
+      if (fix)
+        marker.current?.setAttribute(
+          'transform',
+          'translate(' + fix.point.join(' ') + ')',
+        );
+      if (!following || fix)
+        mapElement.current?.setAttribute(
+          'viewBox',
+          following && fix ? followView(fix.point) : viewBox,
+        );
+    },
+    [following, viewBox],
+  );
+  useSmoothPosition(liveFix, drawPosition);
+
+  function startPan(event: PointerEvent<SVGSVGElement>) {
+    if (!event.isPrimary || event.button !== 0) return;
+    const svg = event.currentTarget;
+    const inverse = svg.getScreenCTM()?.inverse();
+    if (!inverse) return;
+    const { x, y, width, height } = svg.viewBox.baseVal;
+    drag.current = {
+      id: event.pointerId,
+      origin: new DOMPoint(event.clientX, event.clientY),
+      inverse,
+      box: new DOMRect(x, y, width, height),
+      moved: false,
+    };
   }
+
+  function movePan(event: PointerEvent<SVGSVGElement>) {
+    const pan = drag.current;
+    if (!pan || pan.id !== event.pointerId) return;
+    const current = new DOMPoint(event.clientX, event.clientY);
+    if (!pan.moved) {
+      if (Math.hypot(current.x - pan.origin.x, current.y - pan.origin.y) < 5)
+        return;
+      pan.moved = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      onPan();
+    }
+    const start = pan.origin.matrixTransform(pan.inverse);
+    const end = current.matrixTransform(pan.inverse);
+    const { x, y, width, height } = pan.box;
+    setManualView(
+      [x + start.x - end.x, y + start.y - end.y, width, height].join(' '),
+    );
+  }
+
+  function finishPan(event: PointerEvent<SVGSVGElement>) {
+    if (drag.current?.id === event.pointerId) drag.current = null;
+  }
+  const overviewLabel =
+    route && !following && !manualView && !routeFocus
+      ? 'ขยายเส้นทาง'
+      : 'ดูทั้งวิทยาเขต';
+
+  function changeOverview() {
+    setRouteFocus(overviewLabel === 'ขยายเส้นทาง');
+    setManualView(undefined);
+    onPan();
+  }
+
+  function panWithKeyboard(event: KeyboardEvent<SVGSVGElement>) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
+      return;
+    if (event.key === 'Home') {
+      event.preventDefault();
+      setRouteFocus(false);
+      setManualView(undefined);
+      onPan();
+      return;
+    }
+    const { x, y, width, height } = event.currentTarget.viewBox.baseVal;
+    const horizontal =
+      Number(event.key === 'ArrowRight') - Number(event.key === 'ArrowLeft');
+    const vertical =
+      Number(event.key === 'ArrowDown') - Number(event.key === 'ArrowUp');
+    if (!horizontal && !vertical) return;
+    event.preventDefault();
+    onPan();
+    setManualView(
+      [
+        x + (horizontal * width) / 10,
+        y + (vertical * height) / 10,
+        width,
+        height,
+      ].join(' '),
+    );
+  }
+
+  const matched = progress && 'remaining' in progress ? progress : null;
+  const paths = [
+    ...routePaths(matched?.completed ?? []).map((path) => ({
+      ...path,
+      phase: 'completed',
+    })),
+    ...routePaths(matched?.remainingSegments ?? route?.segments ?? []).map(
+      (path) => ({ ...path, phase: navigating ? 'remaining' : undefined }),
+    ),
+  ];
   const endpoints = route
     ? ([
         [
           route.segments[0]?.from,
-          route.from.id,
-          'เริ่ม',
+          route.liveOrigin ? 'live-origin' : route.from.id,
+          route.liveOrigin ? 'เริ่มใหม่' : 'เริ่ม',
           styles.walkStart,
           -10,
         ],
@@ -76,8 +209,20 @@ export function CampusPlan({
   return (
     <div className={styles.plan}>
       <svg
+        ref={mapElement}
         viewBox={viewBox}
-        role="img"
+        onPointerDown={startPan}
+        onPointerMove={movePan}
+        onPointerUp={finishPan}
+        onPointerCancel={finishPan}
+        onLostPointerCapture={finishPan}
+        onPointerLeave={(event) => {
+          if (!drag.current?.moved) finishPan(event);
+        }}
+        tabIndex={0}
+        onKeyDown={panWithKeyboard}
+        aria-describedby="campus-map-instructions"
+        role="group"
         aria-label={
           place
             ? `แผนที่มุมสูง จุดเลือก ${place.label}`
@@ -150,8 +295,8 @@ export function CampusPlan({
             {paths.map(({ d }, index) => (
               <path key={index} className={styles.walkHalo} d={d} />
             ))}
-            {paths.map(({ kind, d }, index) => (
-              <path key={index} data-kind={kind} d={d} />
+            {paths.map(({ kind, d, phase }, index) => (
+              <path key={index} data-kind={kind} data-phase={phase} d={d} />
             ))}
             {endpoints.map(([point, id, label, style, dy]) => {
               if (!point) return null;
@@ -184,7 +329,7 @@ export function CampusPlan({
           <g
             className={styles.livePosition}
             aria-label="ตำแหน่งของฉัน"
-            transform={`translate(${liveFix.point.join(' ')})`}
+            ref={marker}
           >
             <circle r={liveFix.accuracy} className={styles.liveAccuracy} />
             {liveFix.heading !== null && (
@@ -198,16 +343,24 @@ export function CampusPlan({
           </g>
         )}
       </svg>
-      {route && !following && (
-        <button
-          type="button"
-          className={styles.planFocus}
-          onClick={() => setRouteFocus(!routeFocus)}
-        >
-          {routeFocus ? 'ดูทั้งวิทยาเขต' : 'ขยายเส้นทาง'}
-        </button>
-      )}
-      <p>↑ เหนือ · แตะอาคารหรือประตูเพื่อปักหมุด</p>
+      <div className={styles.planFocus}>
+        <Tooltip title={overviewLabel}>
+          <IconButton
+            className={styles.iconControl}
+            aria-label={overviewLabel}
+            onClick={changeOverview}
+          >
+            <ShellIcon name="map" />
+          </IconButton>
+        </Tooltip>
+      </div>
+      <p id="campus-map-instructions">
+        ↑ เหนือ · แตะอาคารเพื่อปักหมุด
+        <span className={styles.srOnly}>
+          {' '}
+          ใช้ปุ่มลูกศรเพื่อเลื่อนแผนที่ และปุ่ม Home เพื่อดูทั้งวิทยาเขต
+        </span>
+      </p>
     </div>
   );
 }

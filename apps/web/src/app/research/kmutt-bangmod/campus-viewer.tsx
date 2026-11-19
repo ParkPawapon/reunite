@@ -1,6 +1,13 @@
 'use client';
 
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   detailedWebModelUrl,
   heightBasis,
@@ -17,7 +24,7 @@ import {
   placeSatelliteUrl,
 } from './places';
 import { WalkPlanner } from './walk-planner';
-import { useLivePosition } from './use-live-position';
+import { useWalkNavigation } from './use-walk-navigation';
 import { findWalk } from './walking';
 import styles from './viewer.module.css';
 
@@ -63,7 +70,6 @@ function readPlan(hash: string) {
     from,
     to,
     selected: parameters.get('place'),
-    route: findWalk(from, to),
   };
 }
 
@@ -76,10 +82,32 @@ export function CampusViewer() {
     fallbackUrl?: string;
   }>();
   const hash = useSyncExternalStore(subscribeToPlace, currentHash, () => '');
-  const { from, to, selected, route } = useMemo(() => readPlan(hash), [hash]);
-  const gps = useLivePosition();
-  const liveFix = gps.state.status === 'live' ? gps.state.fix : null;
-  const following = Boolean(liveFix && follow);
+  const { from, to, selected } = useMemo(() => readPlan(hash), [hash]);
+  const route = useMemo(() => findWalk(from, to), [from, to]);
+  const navigation = useWalkNavigation(route);
+  const { current, liveFix, arrived } = navigation;
+  const walking = current !== null;
+  const mapSection = useRef<HTMLElement>(null);
+  const startButton = useRef<HTMLButtonElement>(null);
+  const navigationHeading = useRef<HTMLHeadingElement>(null);
+  const focusNavigation = useRef(false);
+  useLayoutEffect(() => {
+    if (!focusNavigation.current) return;
+    (walking ? navigationHeading.current : startButton.current)?.focus({
+      preventScroll: walking,
+    });
+    if (walking && window.matchMedia('(max-width: 56rem)').matches) {
+      mapSection.current?.scrollIntoView({
+        block: 'start',
+        behavior: 'instant',
+      });
+    }
+    focusNavigation.current = false;
+  }, [walking]);
+  const activeRoute = current?.route ?? route;
+  const progress = current?.progress ?? null;
+  const following = walking && follow;
+  const pauseFollow = useCallback(() => setFollow(false), []);
   const place = selected ? placesById.get(selected) : undefined;
   const building = place?.building;
   const matches = findPlaces(query);
@@ -89,6 +117,18 @@ export function CampusViewer() {
       source,
     ]),
   );
+
+  function startWalk() {
+    focusNavigation.current = true;
+    setMode(modes[0]);
+    setFollow(true);
+    navigation.start();
+  }
+
+  function endWalk() {
+    focusNavigation.current = walking;
+    navigation.end();
+  }
 
   async function copyLink(id: string) {
     const url = new URL(placeFragment(id), window.location.href).href;
@@ -101,7 +141,107 @@ export function CampusViewer() {
   }
 
   return (
-    <div className={styles.viewer}>
+    <div className={styles.viewer} data-walking={walking}>
+      <section
+        ref={mapSection}
+        aria-label="แผนที่วิทยาเขต"
+        className={styles.map}
+      >
+        <div className={styles.controls} role="group" aria-label="รูปแบบแผนที่">
+          {modes.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={mode.id === option.id}
+              onClick={() => setMode(option)}
+            >
+              {option.label}
+            </button>
+          ))}
+          <a href={satelliteUrl} target="_blank" rel="noreferrer">
+            ภาพดาวเทียม Google Maps ↗
+          </a>
+        </div>
+        {mode.asset ? (
+          <CampusModel
+            key={mode.id}
+            assetUrl={mode.asset}
+            place={place}
+            route={activeRoute}
+            liveFix={liveFix}
+            following={following}
+            progress={progress}
+            navigating={walking}
+            onPan={pauseFollow}
+            onSelect={selectPlace}
+            onBack={() => setMode(modes[0])}
+          />
+        ) : (
+          <div className={styles.viewport} data-render-state="plan">
+            <CampusPlan
+              place={place}
+              route={activeRoute}
+              liveFix={liveFix}
+              following={following}
+              progress={progress}
+              navigating={walking}
+              onPan={pauseFollow}
+              onSelect={selectPlace}
+            />
+          </div>
+        )}
+      </section>
+      <aside className={styles.navigation} aria-label="การเดินในวิทยาเขต">
+        {!walking && (
+          <WalkPlanner
+            from={from}
+            to={to}
+            route={route}
+            onWalk={(origin, destination) => {
+              endWalk();
+              selectWalk(origin, destination);
+            }}
+            onClear={() => {
+              endWalk();
+              selectWalk('', '');
+            }}
+          />
+        )}
+        {walking && (
+          <LocationControls
+            gps={navigation.gps}
+            headingRef={navigationHeading}
+            destination={
+              placesById.get(to)?.building?.code ??
+              placesById.get(to)?.label ??
+              to
+            }
+            arrived={arrived}
+            rerouting={current.phase === 'rerouting'}
+            recovery={current.phase === 'recovery'}
+            onRetry={() => {
+              navigationHeading.current?.focus({ preventScroll: true });
+              navigation.start();
+            }}
+            onEnd={endWalk}
+            following={following}
+            progress={progress}
+            onFollow={() => setFollow(true)}
+          />
+        )}
+        {!walking && route && (
+          <div className={styles.controls}>
+            <button
+              type="button"
+              className={styles.startWalk}
+              ref={startButton}
+              onClick={startWalk}
+            >
+              เริ่มเดิน
+            </button>
+          </div>
+        )}
+      </aside>
       <section className={styles.catalog} aria-labelledby="campus-buildings">
         <h2 id="campus-buildings">ค้นหาอาคาร พื้นที่ และประตูวิทยาเขต</h2>
         <form
@@ -141,64 +281,6 @@ export function CampusViewer() {
         </ul>
         {matches.length === 0 && (
           <p role="status">ไม่พบอาคารหรือพื้นที่กลางแจ้งที่ตรงกับคำค้น</p>
-        )}
-      </section>
-      <section aria-label="แผนที่วิทยาเขต" className={styles.map}>
-        <WalkPlanner
-          from={from}
-          to={to}
-          route={route}
-          onWalk={selectWalk}
-          onClear={() => selectWalk('', '')}
-        />
-        <LocationControls
-          gps={{
-            ...gps,
-            start() {
-              setFollow(false);
-              gps.start();
-            },
-          }}
-          route={route}
-          following={following}
-          onFollow={() => setFollow(!follow)}
-        />
-        <div className={styles.controls} role="group" aria-label="รูปแบบแผนที่">
-          {modes.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={mode.id === option.id}
-              onClick={() => setMode(option)}
-            >
-              {option.label}
-            </button>
-          ))}
-          <a href={satelliteUrl} target="_blank" rel="noreferrer">
-            ภาพดาวเทียม Google Maps ↗
-          </a>
-        </div>
-        {mode.asset ? (
-          <CampusModel
-            key={mode.id}
-            assetUrl={mode.asset}
-            place={place}
-            route={route}
-            liveFix={liveFix}
-            following={following}
-            onSelect={selectPlace}
-            onBack={() => setMode(modes[0])}
-          />
-        ) : (
-          <div className={styles.viewport} data-render-state="plan">
-            <CampusPlan
-              place={place}
-              route={route}
-              liveFix={liveFix}
-              following={following}
-              onSelect={selectPlace}
-            />
-          </div>
         )}
       </section>
       <section
