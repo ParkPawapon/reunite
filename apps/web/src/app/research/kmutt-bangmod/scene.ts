@@ -25,7 +25,7 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createDaylightEnvironment } from './daylight-environment';
-import type { LiveFix } from './live-position';
+import type { LiveFix, WalkProgress } from './live-position';
 import {
   layoutMapLabels,
   mapLabels,
@@ -38,7 +38,11 @@ export type CampusScene = {
   setView: (view: View) => void;
   rotate: (direction: -1 | 1) => void;
   zoom: (direction: -1 | 1) => void;
-  setRoute: (segments: readonly WalkSegment[]) => void;
+  setRoute: (
+    segments: readonly WalkSegment[],
+    progress: WalkProgress | null,
+    navigating: boolean,
+  ) => void;
   focusRoute: (segments: readonly WalkSegment[]) => void;
   setLiveFix: (fix: LiveFix | null, following: boolean) => void;
   select: (id: string | null) => void;
@@ -63,6 +67,7 @@ export async function mountCampusScene({
   knownIds,
   signal,
   onSelect,
+  onPan,
   onPin,
   onLivePin,
   onRoutePins,
@@ -73,6 +78,7 @@ export async function mountCampusScene({
   assetUrl: string;
   knownIds: ReadonlySet<string>;
   signal: AbortSignal;
+  onPan: () => void;
   onSelect: (id: string) => void;
   onPin: (position: PinPosition) => void;
   onLivePin: (position: PinPosition) => void;
@@ -105,6 +111,14 @@ export async function mountCampusScene({
     color: '#704574',
     side: DoubleSide,
   });
+  const completedMaterial = new MeshBasicMaterial({
+    color: '#68716d',
+    side: DoubleSide,
+  });
+  const remainingMaterial = new MeshBasicMaterial({
+    color: '#c65013',
+    side: DoubleSide,
+  });
   const endMaterial = new MeshBasicMaterial({ color: '#893623' });
   const routeHalo = new MeshBasicMaterial({
     color: '#ffffff',
@@ -121,7 +135,17 @@ export async function mountCampusScene({
   );
   accuracyDisc.visible = false;
   accuracyDisc.rotation.x = -Math.PI / 2;
-  scene.add(accuracyDisc);
+  const headingGeometry = new BufferGeometry();
+  headingGeometry.setAttribute(
+    'position',
+    new Float32BufferAttribute([0, 0, -9, -2.7, 0, -4, 2.7, 0, -4], 3),
+  );
+  const headingArrow = new Mesh(
+    headingGeometry,
+    new MeshBasicMaterial({ color: '#2164ce', side: DoubleSide }),
+  );
+  headingArrow.visible = false;
+  scene.add(accuracyDisc, headingArrow);
   scene.add(routeOverlay);
   const routeMeshes: Mesh[] = [];
   const clearRoute = () => {
@@ -267,7 +291,11 @@ export async function mountCampusScene({
     roadMaterial.dispose();
     stepMaterial.dispose();
     endMaterial.dispose();
+    completedMaterial.dispose();
+    remainingMaterial.dispose();
     routeHalo.dispose();
+    headingGeometry.dispose();
+    headingArrow.material.dispose();
     accuracyDisc.geometry.dispose();
     accuracyDisc.material.dispose();
     key.shadow.dispose();
@@ -378,6 +406,7 @@ export async function mountCampusScene({
       controls.target.copy(ground);
     };
     controls.addEventListener('change', render);
+    controls.addEventListener('start', onPan);
     canvas.addEventListener('pointerdown', handleDown);
     canvas.addEventListener('pointerup', handleUp);
     canvas.addEventListener('pointercancel', handleCancel);
@@ -398,25 +427,41 @@ export async function mountCampusScene({
         camera.updateProjectionMatrix();
         render();
       },
-      setRoute(segments) {
+      setRoute(segments, progress, navigating) {
         clearRoute();
         const start = segments[0]?.from;
         const end = segments.at(-1)?.to;
         routeStart = start ? new Vector3(start[0], 0.31, start[1]) : null;
         routeEnd = end ? new Vector3(end[0], 0.31, end[1]) : null;
-        const paths: Record<WalkSegment['kind'], number[]> = {
+        const paths: Record<
+          WalkSegment['kind'] | 'completed' | 'remaining',
+          number[]
+        > = {
           walk: [],
           road: [],
           steps: [],
+          completed: [],
+          remaining: [],
         };
         const halo: number[] = [];
-        for (const segment of segments) {
+        const matched = progress && 'remaining' in progress ? progress : null;
+        const routeSegments = [
+          ...(matched?.completed ?? []).map((segment) => ({
+            segment,
+            phase: 'completed' as const,
+          })),
+          ...(matched?.remainingSegments ?? segments).map((segment) => ({
+            segment,
+            phase: navigating ? ('remaining' as const) : segment.kind,
+          })),
+        ];
+        for (const { segment, phase } of routeSegments) {
           const [x, z] = segment.from;
           const [endX, endZ] = segment.to;
           if (segment.metres <= 0) continue;
           for (const [vertices, width, y] of [
             [halo, 2.25, 0.26],
-            [paths[segment.kind], 1.45, 0.28],
+            [paths[phase], 1.45, 0.28],
           ] as const) {
             const dx = ((endZ - z) / segment.metres) * width;
             const dz = ((x - endX) / segment.metres) * width;
@@ -432,6 +477,8 @@ export async function mountCampusScene({
           [paths.walk, walkMaterial],
           [paths.road, roadMaterial],
           [paths.steps, stepMaterial],
+          [paths.completed, completedMaterial],
+          [paths.remaining, remainingMaterial],
         ] as const) {
           if (!vertices.length) continue;
           const geometry = new BufferGeometry();
@@ -478,9 +525,15 @@ export async function mountCampusScene({
       setLiveFix(fix, following) {
         livePin = fix ? new Vector3(fix.point[0], 0.4, fix.point[1]) : null;
         accuracyDisc.visible = Boolean(fix?.accuracy);
+        headingArrow.visible = fix?.heading != null;
         if (fix && livePin) {
           accuracyDisc.position.copy(livePin);
           accuracyDisc.scale.setScalar(fix.accuracy);
+          if (fix.heading !== null) {
+            headingArrow.position.copy(livePin);
+            headingArrow.position.y += 0.05;
+            headingArrow.rotation.y = (-fix.heading * Math.PI) / 180;
+          }
           if (following) moveTarget(livePin.x, livePin.z);
         }
         render();
