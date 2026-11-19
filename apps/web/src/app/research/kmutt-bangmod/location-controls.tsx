@@ -1,9 +1,8 @@
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { ShellIcon } from '@/components/shell/shell-icon';
-import { walkProgress } from './live-position';
+import type { WalkProgress } from './live-position';
 import type { useLivePosition } from './use-live-position';
-import type { WalkRoute } from './walking';
 import styles from './viewer.module.css';
 
 const messages = {
@@ -30,17 +29,17 @@ const number = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 });
 
 export function LocationControls({
   gps,
-  route,
+  progress,
   following,
   onFollow,
 }: {
   gps: ReturnType<typeof useLivePosition>;
-  route: WalkRoute | null;
+  progress: WalkProgress | null;
   following: boolean;
   onFollow: () => void;
 }) {
   const fix = gps.state.status === 'live' ? gps.state.fix : null;
-  const progress = fix && route ? walkProgress(route, fix) : null;
+
   return (
     <div className={styles.locationPanel}>
       <div className={styles.controls}>

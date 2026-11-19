@@ -127,7 +127,10 @@ it('estimates remaining distance only for an unambiguous fix near the planned pa
   if (!route || !start) throw new Error('Missing N7 approach');
   const fix = { point: start, accuracy: 4, heading: null };
   const progress = walkProgress(route, fix);
-  expect(progress).toEqual({ status: 'on-route', remaining: route.metres });
+  expect(progress).toMatchObject({
+    status: 'on-route',
+    remaining: route.metres,
+  });
   expect(walkProgress(route, { ...fix, accuracy: 40 }).status).toBe(
     'imprecise',
   );

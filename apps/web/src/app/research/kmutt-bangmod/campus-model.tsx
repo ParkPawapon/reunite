@@ -5,7 +5,7 @@ import { buildings } from './catalog';
 import { CampusLoading } from './campus-loading';
 import { CampusPlan } from './campus-plan';
 import { useSmoothPosition } from './use-smooth-position';
-import type { LiveFix } from './live-position';
+import type { LiveFix, WalkProgress } from './live-position';
 import { mapLabels } from './map-labels';
 import { placesById, type Place } from './places';
 import type { CampusScene, PinPosition } from './scene';
@@ -31,6 +31,8 @@ export function CampusModel({
   following,
   onSelect,
   onPan,
+  progress,
+  navigating,
   onBack,
 }: {
   assetUrl: string;
@@ -39,6 +41,8 @@ export function CampusModel({
   liveFix: LiveFix | null;
   following: boolean;
   onPan: () => void;
+  progress: WalkProgress | null;
+  navigating: boolean;
   onSelect: (id: string) => void;
   onBack: () => void;
 }) {
@@ -121,8 +125,8 @@ export function CampusModel({
   }, [place, state]);
 
   useEffect(() => {
-    scene.current?.setRoute(route?.segments ?? []);
-  }, [route, state]);
+    scene.current?.setRoute(route?.segments ?? [], progress, navigating);
+  }, [route, progress, navigating, state]);
 
   const drawPosition = useCallback(
     (fix: LiveFix | null) => {
@@ -266,6 +270,8 @@ export function CampusModel({
             following={following}
             onSelect={onSelect}
             onPan={onPan}
+            progress={progress}
+            navigating={navigating}
           />
         )}
       </div>

@@ -1,5 +1,5 @@
 import map from './anchors.generated.json';
-import type { MapPoint, WalkRoute } from './walking';
+import { projectOnSegment, type MapPoint, type WalkRoute } from './walking';
 
 export type LiveFix = {
   point: MapPoint;
@@ -65,23 +65,11 @@ export function walkProgress(route: WalkRoute, fix: LiveFix) {
   if (fix.accuracy > maxLiveAccuracy) return { status: 'imprecise' } as const;
   const [x, z] = fix.point;
   let travelled = 0;
-  const candidates = route.segments.map(({ from, to, metres }) => {
-    const dx = to[0] - from[0];
-    const dz = to[1] - from[1];
-    const fraction = Math.max(
-      0,
-      Math.min(
-        1,
-        ((x - from[0]) * dx + (z - from[1]) * dz) / (metres * metres),
-      ),
-    );
-    const distance = Math.hypot(
-      x - from[0] - fraction * dx,
-      z - from[1] - fraction * dz,
-    );
-    const along = travelled + metres * fraction;
-    travelled += metres;
-    return { distance, along };
+  const candidates = route.segments.map((segment, index) => {
+    const match = projectOnSegment(fix.point, segment.from, segment.to);
+    const along = travelled + segment.metres * match.fraction;
+    travelled += segment.metres;
+    return { ...match, segment, along, index };
   });
   candidates.sort((a, b) => a.distance - b.distance);
   const closest = candidates[0];
@@ -100,12 +88,33 @@ export function walkProgress(route: WalkRoute, fix: LiveFix) {
   }
   const remaining = Math.max(0, route.metres - closest.along);
   const end = route.segments.at(-1)?.to;
-  if (
+  const nearDestination =
     end &&
     remaining <= 10 &&
-    Math.hypot(x - end[0], z - end[1]) + fix.accuracy <= 14
-  ) {
-    return { status: 'near-destination' } as const;
-  }
-  return { status: 'on-route', remaining } as const;
+    Math.hypot(x - end[0], z - end[1]) + fix.accuracy <= 14;
+  const { segment, fraction, point, index, along } = closest;
+  const completed = route.segments.slice(0, index);
+  const remainingSegments = route.segments.slice(index + 1);
+  if (fraction > 0)
+    completed.push({
+      ...segment,
+      to: point,
+      metres: segment.metres * fraction,
+    });
+  if (fraction < 1)
+    remainingSegments.unshift({
+      ...segment,
+      from: point,
+      metres: segment.metres * (1 - fraction),
+    });
+  return {
+    status: nearDestination ? 'near-destination' : 'on-route',
+    remaining,
+    completed,
+    remainingSegments,
+    travelled: along,
+    matchedPoint: point,
+  } as const;
 }
+
+export type WalkProgress = ReturnType<typeof walkProgress>;

@@ -390,6 +390,14 @@
   stroke: #704574;
   stroke-dasharray: 1 4;
 }
+.walkOverlay path[data-phase='completed'] {
+  stroke: #68716d;
+  stroke-dasharray: none;
+}
+.walkOverlay path[data-phase='remaining'] {
+  stroke: #c65013;
+  stroke-dasharray: none;
+}
 .walkStart,
 .walkEnd {
   stroke: white;

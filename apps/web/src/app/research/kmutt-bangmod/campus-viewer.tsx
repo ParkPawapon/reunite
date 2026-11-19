@@ -15,6 +15,7 @@ import {
 } from './catalog';
 import { CampusModel } from './campus-model';
 import { CampusPlan } from './campus-plan';
+import { walkProgress } from './live-position';
 import { LocationControls } from './location-controls';
 import {
   findPlaces,
@@ -90,6 +91,10 @@ export function CampusViewer() {
   const { stop } = gps;
   useEffect(() => () => stop(), [planId, stop]);
   const liveFix = walking && gps.state.status === 'live' ? gps.state.fix : null;
+  const progress = useMemo(
+    () => (liveFix && route ? walkProgress(route, liveFix) : null),
+    [liveFix, route],
+  );
   const following = walking && follow;
   const pauseFollow = useCallback(() => setFollow(false), []);
   const place = selected ? placesById.get(selected) : undefined;
@@ -150,6 +155,8 @@ export function CampusViewer() {
             route={route}
             liveFix={liveFix}
             following={following}
+            progress={progress}
+            navigating={walking}
             onPan={pauseFollow}
             onSelect={selectPlace}
             onBack={() => setMode(modes[0])}
@@ -161,6 +168,8 @@ export function CampusViewer() {
               route={route}
               liveFix={liveFix}
               following={following}
+              progress={progress}
+              navigating={walking}
               onPan={pauseFollow}
               onSelect={selectPlace}
             />
@@ -184,8 +193,8 @@ export function CampusViewer() {
         {walking && (
           <LocationControls
             gps={{ ...gps, stop: endWalk }}
-            route={route}
             following={following}
+            progress={progress}
             onFollow={() => setFollow(true)}
           />
         )}

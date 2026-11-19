@@ -2,6 +2,24 @@ import map from './anchors.generated.json';
 
 type Kind = 'walk' | 'road' | 'steps';
 export type MapPoint = readonly [number, number];
+
+export function projectOnSegment(
+  [x, z]: MapPoint,
+  from: MapPoint,
+  to: MapPoint,
+) {
+  const dx = to[0] - from[0];
+  const dz = to[1] - from[1];
+  const squaredLength = dx * dx + dz * dz;
+  const fraction = squaredLength
+    ? Math.max(
+        0,
+        Math.min(1, ((x - from[0]) * dx + (z - from[1]) * dz) / squaredLength),
+      )
+    : 0;
+  const point: MapPoint = [from[0] + dx * fraction, from[1] + dz * fraction];
+  return { fraction, point, distance: Math.hypot(x - point[0], z - point[1]) };
+}
 type Edge = {
   to: number;
   metres: number;

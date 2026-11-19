@@ -8,7 +8,7 @@ import {
   type Place,
 } from './places';
 import { useSmoothPosition } from './use-smooth-position';
-import type { LiveFix } from './live-position';
+import type { LiveFix, WalkProgress } from './live-position';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { ShellIcon } from '@/components/shell/shell-icon';
@@ -34,6 +34,21 @@ function routeViewBox(route: WalkRoute) {
   ].join(' ');
 }
 
+function routePaths(segments: readonly WalkRoute['segments'][number][]) {
+  const paths: { kind: WalkRoute['segments'][number]['kind']; d: string }[] =
+    [];
+  for (const segment of segments) {
+    const last = paths.at(-1);
+    if (last?.kind === segment.kind) last.d += 'L' + segment.to.join(',');
+    else
+      paths.push({
+        kind: segment.kind,
+        d: 'M' + segment.from.join(',') + 'L' + segment.to.join(','),
+      });
+  }
+  return paths;
+}
+
 function followView([x, z]: MapPoint) {
   return [x - 95, z - 95, 190, 190].join(' ');
 }
@@ -45,12 +60,16 @@ export function CampusPlan({
   following,
   onSelect,
   onPan,
+  progress,
+  navigating,
 }: {
   place?: Place;
   route: WalkRoute | null;
   liveFix: LiveFix | null;
   following: boolean;
   onPan: () => void;
+  progress: WalkProgress | null;
+  navigating: boolean;
   onSelect: (id: string) => void;
 }) {
   const [routeFocus, setRouteFocus] = useState(false);
@@ -120,17 +139,16 @@ export function CampusPlan({
   function finishPan(event: PointerEvent<SVGSVGElement>) {
     if (drag.current?.id === event.pointerId) drag.current = null;
   }
-  const paths: { kind: WalkRoute['segments'][number]['kind']; d: string }[] =
-    [];
-  for (const segment of route?.segments ?? []) {
-    const last = paths.at(-1);
-    if (last?.kind === segment.kind) last.d += `L${segment.to.join(',')}`;
-    else
-      paths.push({
-        kind: segment.kind,
-        d: `M${segment.from.join(',')}L${segment.to.join(',')}`,
-      });
-  }
+  const matched = progress && 'remaining' in progress ? progress : null;
+  const paths = [
+    ...routePaths(matched?.completed ?? []).map((path) => ({
+      ...path,
+      phase: 'completed',
+    })),
+    ...routePaths(matched?.remainingSegments ?? route?.segments ?? []).map(
+      (path) => ({ ...path, phase: navigating ? 'remaining' : undefined }),
+    ),
+  ];
   const endpoints = route
     ? ([
         [
@@ -229,8 +247,8 @@ export function CampusPlan({
             {paths.map(({ d }, index) => (
               <path key={index} className={styles.walkHalo} d={d} />
             ))}
-            {paths.map(({ kind, d }, index) => (
-              <path key={index} data-kind={kind} d={d} />
+            {paths.map(({ kind, d, phase }, index) => (
+              <path key={index} data-kind={kind} data-phase={phase} d={d} />
             ))}
             {endpoints.map(([point, id, label, style, dy]) => {
               if (!point) return null;
