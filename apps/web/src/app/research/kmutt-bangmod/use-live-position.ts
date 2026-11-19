@@ -35,7 +35,9 @@ export function useLivePosition() {
     };
   }, [release]);
 
-  function start() {
+  function start(
+    onSample?: (sample: ReturnType<typeof readLiveFix> | null) => void,
+  ) {
     if (watch.current !== null) return;
     if (!window.isSecureContext) {
       setState({ status: 'insecure' });
@@ -53,9 +55,13 @@ export function useLivePosition() {
         const now = Date.now();
         const sample = readLiveFix(position, now);
         setState(sample);
+        onSample?.(sample);
         if (sample.status === 'live') {
           timer.current = window.setTimeout(
-            () => setState({ status: 'stale' }),
+            () => {
+              setState({ status: 'stale' });
+              onSample?.(null);
+            },
             liveFixAgeMs - Math.max(0, now - position.timestamp),
           );
         }
@@ -63,6 +69,7 @@ export function useLivePosition() {
       ({ code }) => {
         if (watch.current !== id) return;
         window.clearTimeout(timer.current);
+        onSample?.(null);
         if (code === 1) {
           release();
           setState({ status: 'denied' });

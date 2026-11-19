@@ -15,7 +15,6 @@ import {
 } from './catalog';
 import { CampusModel } from './campus-model';
 import { CampusPlan } from './campus-plan';
-import { walkProgress } from './live-position';
 import { LocationControls } from './location-controls';
 import {
   findPlaces,
@@ -24,7 +23,7 @@ import {
   placeSatelliteUrl,
 } from './places';
 import { WalkPlanner } from './walk-planner';
-import { useLivePosition } from './use-live-position';
+import { useWalkNavigation } from './use-walk-navigation';
 import { findWalk } from './walking';
 import styles from './viewer.module.css';
 
@@ -77,7 +76,6 @@ export function CampusViewer() {
   const [mode, setMode] = useState<(typeof modes)[number]>(modes[0]);
   const [query, setQuery] = useState('');
   const [follow, setFollow] = useState(false);
-  const [session, setSession] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<{
     id: string;
     fallbackUrl?: string;
@@ -85,16 +83,10 @@ export function CampusViewer() {
   const hash = useSyncExternalStore(subscribeToPlace, currentHash, () => '');
   const { from, to, selected } = useMemo(() => readPlan(hash), [hash]);
   const route = useMemo(() => findWalk(from, to), [from, to]);
-  const planId = JSON.stringify([from, to]);
-  const walking = session === planId;
-  const gps = useLivePosition();
-  const { stop } = gps;
-  useEffect(() => () => stop(), [planId, stop]);
-  const liveFix = walking && gps.state.status === 'live' ? gps.state.fix : null;
-  const progress = useMemo(
-    () => (liveFix && route ? walkProgress(route, liveFix) : null),
-    [liveFix, route],
-  );
+  const navigation = useWalkNavigation(route);
+  const { current, liveFix, arrived } = navigation;
+  const walking = current !== null;
+  const progress = current?.progress ?? null;
   const following = walking && follow;
   const pauseFollow = useCallback(() => setFollow(false), []);
   const place = selected ? placesById.get(selected) : undefined;
@@ -108,16 +100,12 @@ export function CampusViewer() {
   );
 
   function startWalk() {
-    setSession(planId);
     setMode(modes[0]);
     setFollow(true);
-    gps.start();
+    navigation.start();
   }
 
-  function endWalk() {
-    stop();
-    setSession(null);
-  }
+  const endWalk = navigation.end;
 
   async function copyLink(id: string) {
     const url = new URL(placeFragment(id), window.location.href).href;
@@ -176,23 +164,37 @@ export function CampusViewer() {
           </div>
         )}
       </section>
-      <aside className={styles.navigation} aria-label="การเดินในวิทยาเขต">
-        <WalkPlanner
-          from={from}
-          to={to}
-          route={route}
-          onWalk={(origin, destination) => {
-            endWalk();
-            selectWalk(origin, destination);
-          }}
-          onClear={() => {
-            endWalk();
-            selectWalk('', '');
-          }}
-        />
+      <aside
+        className={styles.navigation}
+        data-walking={walking}
+        aria-label="การเดินในวิทยาเขต"
+      >
+        {!walking && (
+          <WalkPlanner
+            from={from}
+            to={to}
+            route={route}
+            onWalk={(origin, destination) => {
+              endWalk();
+              selectWalk(origin, destination);
+            }}
+            onClear={() => {
+              endWalk();
+              selectWalk('', '');
+            }}
+          />
+        )}
         {walking && (
           <LocationControls
-            gps={{ ...gps, stop: endWalk }}
+            gps={navigation.gps}
+            destination={
+              placesById.get(to)?.building?.code ??
+              placesById.get(to)?.label ??
+              to
+            }
+            arrived={arrived}
+            onRetry={navigation.start}
+            onEnd={endWalk}
             following={following}
             progress={progress}
             onFollow={() => setFollow(true)}

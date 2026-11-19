@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { findPlaces, places, placesById } from './places';
-import { walkingEndpoints, type WalkRoute } from './walking';
+import { walkingEndpoints, walkingMinutes, type WalkRoute } from './walking';
 import styles from './viewer.module.css';
 
 const choices = places.filter((place) =>
@@ -77,7 +77,7 @@ export function WalkPlanner({
           <>
             <p className={styles.routeSummary}>
               <strong>{number.format(route.metres)} ม.</strong> · ประมาณ{' '}
-              {Math.max(1, Math.ceil(route.metres / 75))} นาที
+              {Math.max(1, Math.ceil(walkingMinutes(route.metres)))} นาที
             </p>
             <ul
               className={styles.routeLegend}

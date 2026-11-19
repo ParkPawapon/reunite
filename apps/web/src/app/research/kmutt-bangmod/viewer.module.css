@@ -180,6 +180,12 @@
   .results {
     max-height: 5.8rem;
   }
+  .navigation[data-walking='true'] {
+    padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
+  }
+  .viewer:has(.navigation[data-walking='true']) .viewport {
+    height: clamp(14rem, 47svh, 30rem);
+  }
 }
 
 .plan {
@@ -530,4 +536,34 @@
   border-radius: 0.4rem;
   background: #fff;
   color: #232725;
+}
+
+.destination,
+.arrival,
+.remaining {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.destination {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.arrival {
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+.remaining {
+  flex-wrap: wrap;
+  margin: 0.2rem 0;
+}
+.remaining strong {
+  font-size: clamp(1.65rem, 5vw, 2.4rem);
+  line-height: 1.15;
+}
+.locationPanel .controls {
+  margin: 0.5rem 0 0;
+}
+.locationPanel button {
+  gap: 0.35rem;
 }

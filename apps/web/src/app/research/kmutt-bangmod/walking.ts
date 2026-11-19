@@ -1,6 +1,10 @@
 import map from './anchors.generated.json';
 
 type Kind = 'walk' | 'road' | 'steps';
+export function walkingMinutes(metres: number) {
+  return metres / 75;
+}
+
 export type MapPoint = readonly [number, number];
 
 export function projectOnSegment(
