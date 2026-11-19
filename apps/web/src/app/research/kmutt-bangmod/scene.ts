@@ -135,7 +135,17 @@ export async function mountCampusScene({
   );
   accuracyDisc.visible = false;
   accuracyDisc.rotation.x = -Math.PI / 2;
-  scene.add(accuracyDisc);
+  const headingGeometry = new BufferGeometry();
+  headingGeometry.setAttribute(
+    'position',
+    new Float32BufferAttribute([0, 0, -9, -2.7, 0, -4, 2.7, 0, -4], 3),
+  );
+  const headingArrow = new Mesh(
+    headingGeometry,
+    new MeshBasicMaterial({ color: '#2164ce', side: DoubleSide }),
+  );
+  headingArrow.visible = false;
+  scene.add(accuracyDisc, headingArrow);
   scene.add(routeOverlay);
   const routeMeshes: Mesh[] = [];
   const clearRoute = () => {
@@ -284,6 +294,8 @@ export async function mountCampusScene({
     completedMaterial.dispose();
     remainingMaterial.dispose();
     routeHalo.dispose();
+    headingGeometry.dispose();
+    headingArrow.material.dispose();
     accuracyDisc.geometry.dispose();
     accuracyDisc.material.dispose();
     key.shadow.dispose();
@@ -513,9 +525,15 @@ export async function mountCampusScene({
       setLiveFix(fix, following) {
         livePin = fix ? new Vector3(fix.point[0], 0.4, fix.point[1]) : null;
         accuracyDisc.visible = Boolean(fix?.accuracy);
+        headingArrow.visible = fix?.heading != null;
         if (fix && livePin) {
           accuracyDisc.position.copy(livePin);
           accuracyDisc.scale.setScalar(fix.accuracy);
+          if (fix.heading !== null) {
+            headingArrow.position.copy(livePin);
+            headingArrow.position.y += 0.05;
+            headingArrow.rotation.y = (-fix.heading * Math.PI) / 180;
+          }
           if (following) moveTarget(livePin.x, livePin.z);
         }
         render();

@@ -32,6 +32,7 @@
   display: inline-flex;
   align-items: center;
 }
+.controls .startWalk,
 .controls button[aria-pressed='true'] {
   background: #273b32;
   color: white;
@@ -65,6 +66,7 @@
 }
 .map {
   grid-area: map;
+  align-self: start;
   padding: 0.75rem;
 }
 .controls {
@@ -189,11 +191,18 @@
   .results {
     max-height: 5.8rem;
   }
-  .navigation[data-walking='true'] {
+  .viewer[data-walking='true'] .navigation {
     padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
   }
-  .viewer:has(.navigation[data-walking='true']) .viewport {
-    height: clamp(14rem, 47svh, 30rem);
+  .viewer[data-walking='true'] .viewport {
+    height: clamp(13rem, 44svh, 28rem);
+  }
+  .viewer[data-walking='true'] .map > .controls {
+    gap: 0.3rem;
+    font-size: 0.82rem;
+  }
+  .viewer[data-walking='true'] .map > .controls a {
+    display: none;
   }
 }
 
@@ -466,9 +475,6 @@
   border-top: 0.2rem dotted #704574;
 }
 .locationPanel {
-  padding: 0.65rem;
-  border: 1px solid #c8cecc;
-  border-radius: 0.45rem;
   font-size: 0.875rem;
 }
 .locationPanel .controls {

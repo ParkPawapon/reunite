@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import { buildings } from '@/app/research/kmutt-bangmod/catalog';
 import {
+  type LiveFix,
   readLiveFix,
   walkProgress,
 } from '@/app/research/kmutt-bangmod/live-position';
@@ -10,7 +11,30 @@ import {
   placeSatelliteUrl,
   placesById,
 } from '@/app/research/kmutt-bangmod/places';
-import { findWalk } from '@/app/research/kmutt-bangmod/walking';
+import {
+  advanceWalk,
+  resolveReroute,
+  startWalkSession,
+} from '@/app/research/kmutt-bangmod/walk-navigation';
+import {
+  createWalkingGraph,
+  findWalk,
+  findWalkFromEdge,
+  matchWalkingEdge,
+  walkingMinutes,
+  type MapPoint,
+  type WalkRoute,
+} from '@/app/research/kmutt-bangmod/walking';
+
+function campusWalk() {
+  const route = findWalk('N7', 'S3');
+  if (!route) throw new Error('Missing N7–S3 route');
+  return route;
+}
+
+function gpsFix(point: MapPoint, accuracy = 4): LiveFix {
+  return { point, accuracy, heading: null };
+}
 
 const publicDir = new URL(
   '../../apps/web/public/research/kmutt-bangmod/',
@@ -348,3 +372,185 @@ it.each([
     }
   },
 );
+
+it('splits a route at the projected fix and updates distance when walking backward', () => {
+  const route: WalkRoute = {
+    ...campusWalk(),
+    metres: 120,
+    segments: [
+      { from: [0, 0], to: [90, 0], metres: 90, kind: 'walk', way: 1 },
+      { from: [90, 0], to: [90, 30], metres: 30, kind: 'road', way: 2 },
+    ],
+  };
+  const forward = walkProgress(route, gpsFix([90, 15]));
+  expect(forward).toEqual({
+    status: 'on-route',
+    travelled: 105,
+    remaining: 15,
+    matchedPoint: [90, 15],
+    completed: [
+      route.segments[0],
+      { from: [90, 0], to: [90, 15], metres: 15, kind: 'road', way: 2 },
+    ],
+    remainingSegments: [
+      { from: [90, 15], to: [90, 30], metres: 15, kind: 'road', way: 2 },
+    ],
+  });
+  const backward = walkProgress(route, gpsFix([45, 3]));
+  expect(backward).toMatchObject({
+    status: 'on-route',
+    travelled: 45,
+    remaining: 75,
+    matchedPoint: [45, 0],
+  });
+  expect(walkingMinutes(75)).toBe(1);
+  expect(walkingMinutes(15)).toBe(0.2);
+});
+
+it('uses the 25 m and 30 s boundaries and ignores invalid device heading', () => {
+  const timestamp = 100_000;
+  const coords = {
+    latitude: 13.65017,
+    longitude: 100.4951709,
+    accuracy: 25,
+    speed: 1.2,
+    heading: 0,
+  };
+  expect(readLiveFix({ timestamp, coords }, timestamp + 29_999)).toMatchObject({
+    status: 'live',
+    fix: { heading: 0, accuracy: 25 },
+  });
+  for (const accuracy of [25.01, 100]) {
+    expect(
+      readLiveFix({ timestamp, coords: { ...coords, accuracy } }, timestamp)
+        .status,
+    ).toBe('imprecise');
+  }
+  for (const age of [30_000, 30_001]) {
+    expect(readLiveFix({ timestamp, coords }, timestamp + age).status).toBe(
+      'stale',
+    );
+  }
+  for (const heading of [null, -1, 360, NaN]) {
+    expect(
+      readLiveFix({ timestamp, coords: { ...coords, heading } }, timestamp),
+    ).toMatchObject({ status: 'live', fix: { heading: null } });
+  }
+  expect(
+    readLiveFix({ timestamp, coords: { ...coords, speed: 0 } }, timestamp),
+  ).toMatchObject({ status: 'live', fix: { heading: null, stationary: true } });
+});
+
+it('routes from a partial one-way edge using only connected walkable ways', () => {
+  const graph = createWalkingGraph(
+    [
+      [0, 0],
+      [40, 0],
+      [40, 100],
+      [0, 100],
+      [90, 100],
+    ],
+    [
+      [0, 1, 'walk', 'yes', 1],
+      [0, 3, 'walk', 'no', 2],
+      [1, 2, 'walk', 'no', 3],
+      [1, 3, 'private', 'no', 4],
+      [2, 3, 'walk', 'no', 5],
+      [2, 4, 'walk', '-1', 6],
+    ],
+  );
+  const plan = campusWalk();
+  const match = matchWalkingEdge([10, 1], 4, graph);
+  if (match.status !== 'matched')
+    throw new Error('Expected a clear edge match');
+  const to = { ...plan.to, node: 3 };
+  const liveRoute = findWalkFromEdge({ ...plan, to }, match.match, graph);
+  expect(liveRoute?.to).toEqual(to);
+  expect(liveRoute?.liveOrigin).toBe(true);
+  expect(liveRoute?.metres).toBe(170);
+  expect(liveRoute?.segments[0]).toMatchObject({
+    from: [10, 0],
+    to: [40, 0],
+    metres: 30,
+  });
+  expect(liveRoute?.segments.map(({ way }) => way)).toEqual([1, 3, 5]);
+  expect(
+    findWalkFromEdge({ ...plan, to: { ...to, node: 4 } }, match.match, graph),
+  ).toBeNull();
+  const exactNode = matchWalkingEdge([0, 0], 4, graph);
+  if (exactNode.status !== 'matched')
+    throw new Error('Expected a junction match');
+  expect(
+    findWalkFromEdge({ ...plan, to }, exactNode.match, graph)?.metres,
+  ).toBe(100);
+  expect(matchWalkingEdge([500, 500], 4, graph).status).toBe('unmatched');
+});
+
+it('keeps separately mapped parallel paths ambiguous and excludes restricted edges', () => {
+  const graph = createWalkingGraph(
+    [
+      [0, 0],
+      [100, 0],
+      [0, 6],
+      [100, 6],
+      [0, 40],
+      [100, 40],
+    ],
+    [
+      [0, 1, 'walk', 'no', 1],
+      [2, 3, 'walk', 'no', 2],
+      [4, 5, 'private', 'no', 3],
+    ],
+  );
+  expect(matchWalkingEdge([50, 3], 5, graph).status).toBe('ambiguous');
+  expect(matchWalkingEdge([50, 40], 5, graph).status).toBe('unmatched');
+});
+
+it('requires consecutive trusted deviation fixes, reroutes to the original destination, and latches arrival', () => {
+  const route = campusWalk();
+  const origin = route.segments[0]?.from;
+  const end = route.segments.at(-1)?.to;
+  const alternative = findWalk('N10', 'S3')?.segments[0]?.from;
+  if (!origin || !end || !alternative)
+    throw new Error('Missing campus fixture');
+  const session = startWalkSession(route);
+  const offRoute = gpsFix(alternative);
+  const oneJump = advanceWalk(session, offRoute);
+  expect(oneJump).toMatchObject({ phase: 'walking', deviations: 1 });
+  expect(advanceWalk(oneJump, gpsFix(origin)).deviations).toBe(0);
+  expect(advanceWalk(oneJump, null).deviations).toBe(0);
+  expect(advanceWalk(oneJump, gpsFix(alternative, 30)).deviations).toBe(0);
+  const two = advanceWalk(oneJump, offRoute);
+  expect(two.phase).toBe('walking');
+  const pending = advanceWalk(two, offRoute);
+  expect(pending.phase).toBe('rerouting');
+  expect(advanceWalk(pending, offRoute)).toBe(pending);
+  expect(resolveReroute(advanceWalk(pending, null)).route).toBe(route);
+  const rerouted = resolveReroute(pending);
+  expect(rerouted.phase).toBe('walking');
+  expect(rerouted.route).toMatchObject({ to: route.to, liveOrigin: true });
+  expect(rerouted.progress).toMatchObject({ status: 'on-route', travelled: 0 });
+  expect(advanceWalk(rerouted, gpsFix(end, 26)).phase).toBe('walking');
+  const arrived = advanceWalk(rerouted, gpsFix(end));
+  expect(arrived.phase).toBe('arrived');
+  expect(advanceWalk(arrived, offRoute)).toBe(arrived);
+});
+
+it('clears deviation evidence at an ambiguous fix and allows manual replanning after a failed reroute', () => {
+  const route = campusWalk();
+  const offRoute = gpsFix([0, 0]);
+  const session = startWalkSession(route);
+  const oneJump = advanceWalk(session, offRoute);
+  expect(advanceWalk(oneJump, gpsFix([163.94, -64.05])).deviations).toBe(0);
+  const failed = resolveReroute(
+    advanceWalk(advanceWalk(oneJump, offRoute), offRoute),
+  );
+  expect(failed).toMatchObject({ phase: 'recovery', progress: null, route });
+  const newPlan = findWalk('N10', 'S3');
+  if (!newPlan) throw new Error('Missing manual recovery route');
+  expect(startWalkSession(newPlan)).toMatchObject({
+    phase: 'walking',
+    deviations: 0,
+    route: newPlan,
+  });
+});

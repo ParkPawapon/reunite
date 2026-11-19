@@ -35,7 +35,7 @@ export function useSmoothPosition(
     let frame = requestAnimationFrame(animate);
     function animate(now: number) {
       if (!fix || !start) return;
-      const fraction = Math.min(1, (now - started) / transitionMs);
+      const fraction = Math.max(0, Math.min(1, (now - started) / transitionMs));
       render({
         ...fix,
         point: [

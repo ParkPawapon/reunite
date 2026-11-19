@@ -56,10 +56,15 @@ export function useLivePosition() {
         window.clearTimeout(timer.current);
         const now = Date.now();
         const sample = readLiveFix(position, now);
+        if (
+          Number.isFinite(position.timestamp) &&
+          Math.abs(now - position.timestamp) < liveFixAgeMs
+        ) {
+          latestTimestamp = position.timestamp;
+        }
         setState(sample);
         onSample?.(sample);
         if (sample.status === 'live') {
-          latestTimestamp = position.timestamp;
           timer.current = window.setTimeout(
             () => {
               setState({ status: 'stale' });
@@ -104,10 +109,5 @@ export function useLivePosition() {
     setState({ status: 'off' });
   }, [release]);
 
-  const tracking =
-    state.status !== 'off' &&
-    state.status !== 'denied' &&
-    state.status !== 'unsupported' &&
-    state.status !== 'insecure';
-  return { state, tracking, start, stop };
+  return { state, start, stop };
 }

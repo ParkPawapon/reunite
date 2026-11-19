@@ -87,14 +87,21 @@ export function CampusViewer() {
   const navigation = useWalkNavigation(route);
   const { current, liveFix, arrived } = navigation;
   const walking = current !== null;
+  const mapSection = useRef<HTMLElement>(null);
   const startButton = useRef<HTMLButtonElement>(null);
   const navigationHeading = useRef<HTMLHeadingElement>(null);
   const focusNavigation = useRef(false);
   useLayoutEffect(() => {
     if (!focusNavigation.current) return;
     (walking ? navigationHeading.current : startButton.current)?.focus({
-      preventScroll: true,
+      preventScroll: walking,
     });
+    if (walking && window.matchMedia('(max-width: 56rem)').matches) {
+      mapSection.current?.scrollIntoView({
+        block: 'start',
+        behavior: 'instant',
+      });
+    }
     focusNavigation.current = false;
   }, [walking]);
   const activeRoute = current?.route ?? route;
@@ -134,8 +141,12 @@ export function CampusViewer() {
   }
 
   return (
-    <div className={styles.viewer}>
-      <section aria-label="แผนที่วิทยาเขต" className={styles.map}>
+    <div className={styles.viewer} data-walking={walking}>
+      <section
+        ref={mapSection}
+        aria-label="แผนที่วิทยาเขต"
+        className={styles.map}
+      >
         <div className={styles.controls} role="group" aria-label="รูปแบบแผนที่">
           {modes.map((option) => (
             <button
@@ -180,11 +191,7 @@ export function CampusViewer() {
           </div>
         )}
       </section>
-      <aside
-        className={styles.navigation}
-        data-walking={walking}
-        aria-label="การเดินในวิทยาเขต"
-      >
+      <aside className={styles.navigation} aria-label="การเดินในวิทยาเขต">
         {!walking && (
           <WalkPlanner
             from={from}
@@ -224,7 +231,12 @@ export function CampusViewer() {
         )}
         {!walking && route && (
           <div className={styles.controls}>
-            <button type="button" ref={startButton} onClick={startWalk}>
+            <button
+              type="button"
+              className={styles.startWalk}
+              ref={startButton}
+              onClick={startWalk}
+            >
               เริ่มเดิน
             </button>
           </div>

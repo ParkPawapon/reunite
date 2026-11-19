@@ -84,7 +84,12 @@ export function walkProgress(
   fix: LiveFix,
   edgeMatch?: WalkingEdgeMatch,
 ): WalkProgress {
-  if (fix.accuracy > maxLiveAccuracy) return { status: 'imprecise' } as const;
+  if (
+    !Number.isFinite(fix.accuracy) ||
+    fix.accuracy < 0 ||
+    fix.accuracy > maxLiveAccuracy
+  )
+    return { status: 'imprecise' } as const;
   const [x, z] = fix.point;
   let travelled = 0;
   const candidates = route.segments.map((segment, index) => {
