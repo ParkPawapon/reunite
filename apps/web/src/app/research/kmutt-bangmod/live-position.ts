@@ -7,6 +7,7 @@ export type LiveFix = {
   heading: number | null;
 };
 
+export const maxLiveAccuracy = 25;
 export const liveFixAgeMs = 30_000;
 const projection = map.liveProjection;
 const [left = 0, top = 0, width = 0, height = 0] = map.viewBox;
@@ -32,7 +33,7 @@ export function readLiveFix(position: PositionSample, now: number) {
   ) {
     return { status: 'stale' } as const;
   }
-  if (accuracy > 100) return { status: 'imprecise' } as const;
+  if (accuracy > maxLiveAccuracy) return { status: 'imprecise' } as const;
 
   const dLon = longitude - projection.origin.lon;
   const dLat = latitude - projection.origin.lat;
@@ -59,7 +60,7 @@ export function readLiveFix(position: PositionSample, now: number) {
 }
 
 export function walkProgress(route: WalkRoute, fix: LiveFix) {
-  if (fix.accuracy > 25) return { status: 'imprecise' } as const;
+  if (fix.accuracy > maxLiveAccuracy) return { status: 'imprecise' } as const;
   const [x, z] = fix.point;
   let travelled = 0;
   const candidates = route.segments.map(({ from, to, metres }) => {

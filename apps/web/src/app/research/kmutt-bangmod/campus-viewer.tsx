@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   detailedWebModelUrl,
   heightBasis,
@@ -84,7 +90,8 @@ export function CampusViewer() {
   const { stop } = gps;
   useEffect(() => () => stop(), [planId, stop]);
   const liveFix = walking && gps.state.status === 'live' ? gps.state.fix : null;
-  const following = Boolean(liveFix && follow);
+  const following = walking && follow;
+  const pauseFollow = useCallback(() => setFollow(false), []);
   const place = selected ? placesById.get(selected) : undefined;
   const building = place?.building;
   const matches = findPlaces(query);
@@ -143,6 +150,7 @@ export function CampusViewer() {
             route={route}
             liveFix={liveFix}
             following={following}
+            onPan={pauseFollow}
             onSelect={selectPlace}
             onBack={() => setMode(modes[0])}
           />
@@ -153,6 +161,7 @@ export function CampusViewer() {
               route={route}
               liveFix={liveFix}
               following={following}
+              onPan={pauseFollow}
               onSelect={selectPlace}
             />
           </div>
@@ -177,7 +186,7 @@ export function CampusViewer() {
             gps={{ ...gps, stop: endWalk }}
             route={route}
             following={following}
-            onFollow={() => setFollow(!follow)}
+            onFollow={() => setFollow(true)}
           />
         )}
         {!walking && route && (

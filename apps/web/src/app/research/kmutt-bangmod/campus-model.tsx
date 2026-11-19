@@ -29,6 +29,7 @@ export function CampusModel({
   liveFix,
   following,
   onSelect,
+  onPan,
   onBack,
 }: {
   assetUrl: string;
@@ -36,6 +37,7 @@ export function CampusModel({
   route: WalkRoute | null;
   liveFix: LiveFix | null;
   following: boolean;
+  onPan: () => void;
   onSelect: (id: string) => void;
   onBack: () => void;
 }) {
@@ -107,7 +109,7 @@ export function CampusModel({
       scene.current?.dispose();
       scene.current = null;
     };
-  }, [assetUrl, onSelect]);
+  }, [assetUrl, onPan, onSelect]);
 
   useEffect(() => {
     const view = scene.current;
@@ -258,6 +260,7 @@ export function CampusModel({
             liveFix={liveFix}
             following={following}
             onSelect={onSelect}
+            onPan={onPan}
           />
         )}
       </div>

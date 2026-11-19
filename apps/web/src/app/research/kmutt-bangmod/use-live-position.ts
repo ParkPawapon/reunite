@@ -6,6 +6,7 @@ type PositionState =
   | {
       status:
         | 'off'
+        | 'requesting'
         | 'searching'
         | 'denied'
         | 'unavailable'
@@ -44,7 +45,7 @@ export function useLivePosition() {
       setState({ status: 'unsupported' });
       return;
     }
-    setState({ status: 'searching' });
+    setState({ status: navigator.permissions ? 'requesting' : 'searching' });
     const id = navigator.geolocation.watchPosition(
       (position) => {
         if (watch.current !== id) return;
@@ -72,6 +73,20 @@ export function useLivePosition() {
       { enableHighAccuracy: true, maximumAge: 0, timeout: 12_000 },
     );
     watch.current = id;
+    void navigator.permissions
+      ?.query({ name: 'geolocation' })
+      .then(({ state: permission }) => {
+        if (watch.current !== id || permission !== 'granted') return;
+        setState((current) =>
+          current.status === 'requesting' ? { status: 'searching' } : current,
+        );
+      })
+      .catch(() => {
+        if (watch.current === id)
+          setState((current) =>
+            current.status === 'requesting' ? { status: 'searching' } : current,
+          );
+      });
   }
 
   const stop = useCallback(() => {

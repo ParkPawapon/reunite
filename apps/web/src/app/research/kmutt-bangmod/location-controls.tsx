@@ -1,3 +1,6 @@
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import { ShellIcon } from '@/components/shell/shell-icon';
 import { walkProgress } from './live-position';
 import type { useLivePosition } from './use-live-position';
 import type { WalkRoute } from './walking';
@@ -5,6 +8,7 @@ import styles from './viewer.module.css';
 
 const messages = {
   off: 'ตำแหน่งสดใช้เฉพาะบนอุปกรณ์และเริ่มเมื่อคุณอนุญาต',
+  requesting: 'กำลังขอสิทธิ์เข้าถึงตำแหน่ง…',
   searching: 'กำลังรอสัญญาณตำแหน่งจากอุปกรณ์…',
   live: 'กำลังแสดงตำแหน่งสด',
   denied:
@@ -12,7 +16,7 @@ const messages = {
   unavailable: 'ยังรับตำแหน่งไม่ได้ กำลังรอสัญญาณใหม่',
   unsupported: 'เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง',
   insecure: 'ตำแหน่งสดต้องเปิดเว็บผ่าน HTTPS หรือ localhost',
-  imprecise: 'ความคลาดเคลื่อนเกิน 100 ม. รอตำแหน่งที่แม่นยำขึ้น',
+  imprecise: 'สัญญาณ GPS ไม่แม่นยำ (เกิน 25 ม.)',
   stale: 'ตำแหน่งหมดอายุ กำลังรอตำแหน่งใหม่',
   outside: 'ตำแหน่งอยู่นอกขอบเขตแผนที่วิทยาเขต',
 };
@@ -48,11 +52,19 @@ export function LocationControls({
             เลือกต้นทางใหม่
           </button>
         )}
-        {fix && (
-          <button type="button" aria-pressed={following} onClick={onFollow}>
-            ให้แผนที่ตามตำแหน่ง
-          </button>
-        )}
+        <Tooltip title="ตามตำแหน่งฉัน">
+          <span>
+            <IconButton
+              className={styles.iconControl}
+              aria-label="ตามตำแหน่งฉัน"
+              aria-pressed={following}
+              disabled={!fix}
+              onClick={onFollow}
+            >
+              <ShellIcon name="target" />
+            </IconButton>
+          </span>
+        </Tooltip>
       </div>
       <p role="status">{messages[gps.state.status]}</p>
       {fix && (

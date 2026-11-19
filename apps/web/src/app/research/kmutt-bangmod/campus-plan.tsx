@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState, type PointerEvent } from 'react';
 import {
   campusRoutes,
   campusViewBox,
@@ -8,6 +8,9 @@ import {
   type Place,
 } from './places';
 import type { LiveFix } from './live-position';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import { ShellIcon } from '@/components/shell/shell-icon';
 import { mapLabels } from './map-labels';
 import styles from './viewer.module.css';
 import type { WalkRoute } from './walking';
@@ -36,20 +39,67 @@ export function CampusPlan({
   liveFix,
   following,
   onSelect,
+  onPan,
 }: {
   place?: Place;
   route: WalkRoute | null;
   liveFix: LiveFix | null;
   following: boolean;
+  onPan: () => void;
   onSelect: (id: string) => void;
 }) {
   const [routeFocus, setRouteFocus] = useState(false);
+  const [manualView, setManualView] = useState<string>();
+  const drag = useRef<{
+    id: number;
+    origin: DOMPoint;
+    inverse: DOMMatrix;
+    box: DOMRect;
+    moved: boolean;
+  } | null>(null);
   const viewBox =
     liveFix && following
       ? [liveFix.point[0] - 95, liveFix.point[1] - 95, 190, 190].join(' ')
-      : route && routeFocus
-        ? routeViewBox(route)
-        : campusViewBox;
+      : (manualView ??
+        (route && routeFocus ? routeViewBox(route) : campusViewBox));
+
+  function startPan(event: PointerEvent<SVGSVGElement>) {
+    if (!event.isPrimary || event.button !== 0) return;
+    const svg = event.currentTarget;
+    const inverse = svg.getScreenCTM()?.inverse();
+    if (!inverse) return;
+    const { x, y, width, height } = svg.viewBox.baseVal;
+    drag.current = {
+      id: event.pointerId,
+      origin: new DOMPoint(event.clientX, event.clientY),
+      inverse,
+      box: new DOMRect(x, y, width, height),
+      moved: false,
+    };
+  }
+
+  function movePan(event: PointerEvent<SVGSVGElement>) {
+    const pan = drag.current;
+    if (!pan || pan.id !== event.pointerId) return;
+    const current = new DOMPoint(event.clientX, event.clientY);
+    if (!pan.moved) {
+      if (Math.hypot(current.x - pan.origin.x, current.y - pan.origin.y) < 5)
+        return;
+      pan.moved = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      onPan();
+    }
+    const start = pan.origin.matrixTransform(pan.inverse);
+    const end = current.matrixTransform(pan.inverse);
+    const { x, y, width, height } = pan.box;
+    setManualView(
+      [x + start.x - end.x, y + start.y - end.y, width, height].join(' '),
+    );
+  }
+
+  function finishPan(event: PointerEvent<SVGSVGElement>) {
+    if (drag.current?.id === event.pointerId) drag.current = null;
+  }
   const paths: { kind: WalkRoute['segments'][number]['kind']; d: string }[] =
     [];
   for (const segment of route?.segments ?? []) {
@@ -77,6 +127,14 @@ export function CampusPlan({
     <div className={styles.plan}>
       <svg
         viewBox={viewBox}
+        onPointerDown={startPan}
+        onPointerMove={movePan}
+        onPointerUp={finishPan}
+        onPointerCancel={finishPan}
+        onLostPointerCapture={finishPan}
+        onPointerLeave={(event) => {
+          if (!drag.current?.moved) finishPan(event);
+        }}
         role="img"
         aria-label={
           place
@@ -198,15 +256,33 @@ export function CampusPlan({
           </g>
         )}
       </svg>
-      {route && !following && (
-        <button
-          type="button"
-          className={styles.planFocus}
-          onClick={() => setRouteFocus(!routeFocus)}
+      <div className={styles.planFocus}>
+        <Tooltip
+          title={
+            route && !following && !manualView && !routeFocus
+              ? 'ขยายเส้นทาง'
+              : 'ดูทั้งวิทยาเขต'
+          }
         >
-          {routeFocus ? 'ดูทั้งวิทยาเขต' : 'ขยายเส้นทาง'}
-        </button>
-      )}
+          <IconButton
+            className={styles.iconControl}
+            aria-label={
+              route && !following && !manualView && !routeFocus
+                ? 'ขยายเส้นทาง'
+                : 'ดูทั้งวิทยาเขต'
+            }
+            onClick={() => {
+              setRouteFocus(
+                Boolean(route && !following && !manualView && !routeFocus),
+              );
+              setManualView(undefined);
+              onPan();
+            }}
+          >
+            <ShellIcon name="map" />
+          </IconButton>
+        </Tooltip>
+      </div>
       <p>↑ เหนือ · แตะอาคารหรือประตูเพื่อปักหมุด</p>
     </div>
   );

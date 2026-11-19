@@ -63,6 +63,7 @@ export async function mountCampusScene({
   knownIds,
   signal,
   onSelect,
+  onPan,
   onPin,
   onLivePin,
   onRoutePins,
@@ -73,6 +74,7 @@ export async function mountCampusScene({
   assetUrl: string;
   knownIds: ReadonlySet<string>;
   signal: AbortSignal;
+  onPan: () => void;
   onSelect: (id: string) => void;
   onPin: (position: PinPosition) => void;
   onLivePin: (position: PinPosition) => void;
@@ -378,6 +380,7 @@ export async function mountCampusScene({
       controls.target.copy(ground);
     };
     controls.addEventListener('change', render);
+    controls.addEventListener('start', onPan);
     canvas.addEventListener('pointerdown', handleDown);
     canvas.addEventListener('pointerup', handleUp);
     canvas.addEventListener('pointercancel', handleCancel);
