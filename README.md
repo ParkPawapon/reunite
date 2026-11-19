@@ -51,6 +51,8 @@ Run `bun run env:check` to validate server/database settings without connecting 
 
 For a container deployment, run `docker compose up -d postgres`, `docker compose run --rm migrate`, then `docker compose up --build -d web`. Migrations are intentionally separate from web startup. Production cookies require HTTPS; use local `dev` for browser authentication over plain HTTP.
 
+For a hosted deployment, the [deployment guide](docs/DEPLOYMENT.md#vercel--supabase) covers running the Next.js frontend and API together on Vercel with Supabase PostgreSQL.
+
 ## Repository
 
 - `apps/web`: App Router, server modules, HTTP security, MUI/Tailwind typography.

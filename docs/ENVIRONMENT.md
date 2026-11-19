@@ -22,7 +22,7 @@ Run `bun run env:setup` after install. It creates root `.env` from the example w
 | POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD       | Compose DB initialization only; random local password from setup                                         |
 | POSTGRES_HOST_PORT                                    | Loopback host binding; default 5432                                                                      |
 | TEST_DATABASE_URL                                     | Required only for integration suite; distinct `_test` DB                                                 |
-| PROVISION_NAME / PROVISION_EMAIL / PROVISION_PASSWORD | Development provisioning shell inputs; never commit                                                      |
+| PROVISION_NAME / PROVISION_EMAIL / PROVISION_PASSWORD | Operator provisioning shell inputs; never commit                                                         |
 
 `DATABASE_URL` is validated lazily on first server DB use, so a production build needs no DB credentials or network database. `APP_BASE_URL`/session configuration is validated when authentication/mutations need it. Failures log/return sanitized errors; CLI/environment diagnostics never print the URL or supplied credentials. Database TLS query parameters are rejected in URLs: use `DB_SSL`/`DB_SSL_CA` to prevent pg URL parsing from overriding explicit certificate verification.
 

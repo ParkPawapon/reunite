@@ -245,7 +245,7 @@ it('normalizes item photos without cropping or metadata and rejects spoofed or o
     normalizeReportImage(source, 'image/svg+xml'),
   ).rejects.toMatchObject({ status: 415 });
   await expect(
-    normalizeReportImage(new Uint8Array(5 * 1024 * 1024 + 1), 'image/png'),
+    normalizeReportImage(new Uint8Array(4 * 1024 * 1024 + 1), 'image/png'),
   ).rejects.toMatchObject({ status: 413 });
 });
 it('enforces the byte limit on a streamed upload without a content-length header', async () => {

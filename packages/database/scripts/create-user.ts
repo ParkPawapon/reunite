@@ -4,13 +4,29 @@ import { hashPassword } from '../src/password';
 import { normalizeEmail } from '@campus/shared';
 
 try {
+  const flags = process.argv.slice(2);
+  const production = flags.length === 1 && flags[0] === '--production';
   if (
-    process.env.NODE_ENV === 'production' ||
-    !process.argv.includes('--development-only')
+    !production &&
+    (process.env.NODE_ENV === 'production' ||
+      flags.length !== 1 ||
+      flags[0] !== '--development-only')
   )
     throw new Error(
-      'Development provisioning requires --development-only and a non-production NODE_ENV',
+      'Development provisioning requires --development-only as the only flag and a non-production NODE_ENV. Use --production for a production account.',
     );
+  if (production) {
+    const origin = URL.parse(process.env.APP_BASE_URL ?? '');
+    if (
+      process.env.NODE_ENV !== 'production' ||
+      process.env.DB_SSL !== 'verify-full' ||
+      origin?.protocol !== 'https:' ||
+      origin.href !== `${origin.origin}/`
+    )
+      throw new Error(
+        'User provisioning in production requires NODE_ENV=production, DB_SSL=verify-full and an HTTPS APP_BASE_URL origin',
+      );
+  }
   const input = z
     .object({
       PROVISION_NAME: z.string().trim().min(1).max(100),
@@ -34,12 +50,15 @@ try {
     'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
     [name, email, await hashPassword(password)],
   );
-  console.info('Development user created');
+  console.info(
+    production ? 'Production user created' : 'Development user created',
+  );
 } catch (error) {
   console.error(
     error instanceof Error &&
       (error.message.startsWith('Set PROVISION') ||
-        error.message.startsWith('Development provisioning'))
+        error.message.startsWith('Development provisioning') ||
+        error.message.startsWith('User provisioning'))
       ? error.message
       : 'User provisioning failed; check database connection and duplicate email',
   );
