@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, useSyncExternalStore } from 'react';
 import { AnimatedGoose } from '@/components/loading/animated-goose';
 import { useMotionPolicy } from '@/components/loading/use-motion-policy';
@@ -94,7 +95,9 @@ export function ComingSoonExperience() {
           <span>·</span>
           <a href="https://docs.overturemaps.org/attribution/">Overture</a>
         </small>
-        <span lang="en">KMUTT · BANG MOD</span>
+        <Link className={styles.introLink} href="/landing" prefetch={false}>
+          รู้จัก Reunite
+        </Link>
       </footer>
     </div>
   );

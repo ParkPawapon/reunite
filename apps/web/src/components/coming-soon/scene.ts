@@ -2,7 +2,8 @@ import * as T from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { batchCampus, disposeSceneResources } from './scene-geometry';
+import { disposeSceneResources } from '@/components/scene-resources';
+import { batchCampus } from './scene-geometry';
 import { addLaunchProps, readLaunchPalette } from './scene-props';
 
 export type LaunchScene = {

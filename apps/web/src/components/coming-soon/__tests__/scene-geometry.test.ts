@@ -7,7 +7,8 @@ import {
   Mesh,
   MeshStandardMaterial,
 } from 'three';
-import { batchCampus, disposeSceneResources } from '../scene-geometry';
+import { disposeSceneResources } from '../../scene-resources';
+import { batchCampus } from '../scene-geometry';
 
 function triangle() {
   const geometry = new BufferGeometry();

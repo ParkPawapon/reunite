@@ -480,6 +480,15 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.introLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.875rem;
+  letter-spacing: 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
 .entry {
   animation: entry-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
