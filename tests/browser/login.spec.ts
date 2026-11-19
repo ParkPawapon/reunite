@@ -194,11 +194,16 @@ test('offers a working reload when the login-form download stalls', async ({
   page.on('pageerror', (error) => errors.push(error.message));
   const pattern = formChunkPattern();
   let release = () => {};
+  let allowRecovery = false;
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
   const pending: Promise<void>[] = [];
   await page.route(pattern, async (route) => {
+    if (allowRecovery) {
+      await route.continue();
+      return;
+    }
     const failed = page.waitForEvent(
       'requestfailed',
       (request) => request === route.request(),
@@ -225,7 +230,7 @@ test('offers a working reload when the login-form download stalls', async ({
     // The rejected import cannot recover until the user starts a new document.
     release();
     await Promise.all(pending);
-    await page.unroute(pattern);
+    allowRecovery = true;
     await expect(page.locator('[data-login-load-error]')).toBeVisible();
     await page
       .getByRole('button', { name: 'ลองโหลดใหม่', exact: true })
@@ -237,8 +242,8 @@ test('offers a working reload when the login-form download stalls', async ({
     expect(errors).toEqual([]);
   } finally {
     release();
-    await Promise.all(pending);
-    await page.unroute(pattern);
+    await Promise.allSettled(pending);
+    await page.unroute(pattern).catch(() => {});
   }
 });
 
