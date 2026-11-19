@@ -72,6 +72,7 @@ export function CampusModel({
           assetUrl,
           knownIds,
           onSelect,
+          onPan,
           onPin(position) {
             positionMarker(pin.current, position);
           },

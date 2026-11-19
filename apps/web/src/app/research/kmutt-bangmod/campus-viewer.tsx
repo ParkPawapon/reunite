@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   detailedWebModelUrl,
   heightBasis,

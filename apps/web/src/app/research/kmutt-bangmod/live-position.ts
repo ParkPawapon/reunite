@@ -61,7 +61,18 @@ export function readLiveFix(position: PositionSample, now: number) {
   return { status: 'live', fix } as const;
 }
 
-export function walkProgress(route: WalkRoute, fix: LiveFix) {
+type MatchedProgress = {
+  status: 'on-route' | 'near-destination';
+  remaining: number;
+  completed: WalkRoute['segments'];
+  remainingSegments: WalkRoute['segments'];
+  travelled: number;
+  matchedPoint: MapPoint;
+};
+export type WalkProgress =
+  MatchedProgress | { status: 'imprecise' | 'away' | 'ambiguous' };
+
+export function walkProgress(route: WalkRoute, fix: LiveFix): WalkProgress {
   if (fix.accuracy > maxLiveAccuracy) return { status: 'imprecise' } as const;
   const [x, z] = fix.point;
   let travelled = 0;
@@ -116,5 +127,3 @@ export function walkProgress(route: WalkRoute, fix: LiveFix) {
     matchedPoint: point,
   } as const;
 }
-
-export type WalkProgress = ReturnType<typeof walkProgress>;
