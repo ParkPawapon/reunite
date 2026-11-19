@@ -74,10 +74,10 @@ export function useLivePosition() {
     watch.current = id;
   }
 
-  function stop() {
+  const stop = useCallback(() => {
     release();
     setState({ status: 'off' });
-  }
+  }, [release]);
 
   const tracking =
     state.status !== 'off' &&

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   detailedWebModelUrl,
   heightBasis,
@@ -63,7 +63,6 @@ function readPlan(hash: string) {
     from,
     to,
     selected: parameters.get('place'),
-    route: findWalk(from, to),
   };
 }
 
@@ -71,14 +70,20 @@ export function CampusViewer() {
   const [mode, setMode] = useState<(typeof modes)[number]>(modes[0]);
   const [query, setQuery] = useState('');
   const [follow, setFollow] = useState(false);
+  const [session, setSession] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<{
     id: string;
     fallbackUrl?: string;
   }>();
   const hash = useSyncExternalStore(subscribeToPlace, currentHash, () => '');
-  const { from, to, selected, route } = useMemo(() => readPlan(hash), [hash]);
+  const { from, to, selected } = useMemo(() => readPlan(hash), [hash]);
+  const route = useMemo(() => findWalk(from, to), [from, to]);
+  const planId = JSON.stringify([from, to]);
+  const walking = session === planId;
   const gps = useLivePosition();
-  const liveFix = gps.state.status === 'live' ? gps.state.fix : null;
+  const { stop } = gps;
+  useEffect(() => () => stop(), [planId, stop]);
+  const liveFix = walking && gps.state.status === 'live' ? gps.state.fix : null;
   const following = Boolean(liveFix && follow);
   const place = selected ? placesById.get(selected) : undefined;
   const building = place?.building;
@@ -89,6 +94,18 @@ export function CampusViewer() {
       source,
     ]),
   );
+
+  function startWalk() {
+    setSession(planId);
+    setMode(modes[0]);
+    setFollow(true);
+    gps.start();
+  }
+
+  function endWalk() {
+    stop();
+    setSession(null);
+  }
 
   async function copyLink(id: string) {
     const url = new URL(placeFragment(id), window.location.href).href;
@@ -146,21 +163,30 @@ export function CampusViewer() {
           from={from}
           to={to}
           route={route}
-          onWalk={selectWalk}
-          onClear={() => selectWalk('', '')}
-        />
-        <LocationControls
-          gps={{
-            ...gps,
-            start() {
-              setFollow(false);
-              gps.start();
-            },
+          onWalk={(origin, destination) => {
+            endWalk();
+            selectWalk(origin, destination);
           }}
-          route={route}
-          following={following}
-          onFollow={() => setFollow(!follow)}
+          onClear={() => {
+            endWalk();
+            selectWalk('', '');
+          }}
         />
+        {walking && (
+          <LocationControls
+            gps={{ ...gps, stop: endWalk }}
+            route={route}
+            following={following}
+            onFollow={() => setFollow(!follow)}
+          />
+        )}
+        {!walking && route && (
+          <div className={styles.controls}>
+            <button type="button" onClick={startWalk}>
+              เริ่มเดิน
+            </button>
+          </div>
+        )}
       </aside>
       <section className={styles.catalog} aria-labelledby="campus-buildings">
         <h2 id="campus-buildings">ค้นหาอาคาร พื้นที่ และประตูวิทยาเขต</h2>

@@ -41,8 +41,13 @@ export function LocationControls({
     <div className={styles.locationPanel}>
       <div className={styles.controls}>
         <button type="button" onClick={gps.tracking ? gps.stop : gps.start}>
-          {gps.tracking ? 'หยุดแสดงตำแหน่ง' : 'แสดงตำแหน่งของฉัน'}
+          {gps.tracking ? 'จบการเดิน' : 'ลองรับตำแหน่งอีกครั้ง'}
         </button>
+        {!gps.tracking && (
+          <button type="button" onClick={gps.stop}>
+            เลือกต้นทางใหม่
+          </button>
+        )}
         {fix && (
           <button type="button" aria-pressed={following} onClick={onFollow}>
             ให้แผนที่ตามตำแหน่ง

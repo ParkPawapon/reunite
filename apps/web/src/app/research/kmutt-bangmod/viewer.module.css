@@ -344,7 +344,9 @@
   min-width: 0;
   display: grid;
 }
-.planner select {
+.planner select,
+.planner input {
+  min-height: 2.75rem;
   width: 100%;
   border: 1px solid #858f8a;
   border-radius: 0.35rem;

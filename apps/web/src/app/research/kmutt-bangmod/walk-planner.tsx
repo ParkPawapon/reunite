@@ -1,4 +1,5 @@
-import { places, placesById } from './places';
+import { useState } from 'react';
+import { findPlaces, places, placesById } from './places';
 import { walkingEndpoints, type WalkRoute } from './walking';
 import styles from './viewer.module.css';
 
@@ -58,17 +59,7 @@ export function WalkPlanner({
             ))}
           </select>
         </label>
-        <label>
-          ปลายทาง{' '}
-          <select name="to" defaultValue={to} required>
-            <option value="">เลือกปลายทาง</option>
-            {choices.map((place) => (
-              <option value={place.id} key={place.id}>
-                {place.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <DestinationField initial={to} />
         <div className={styles.controls}>
           <button type="submit">แสดงเส้นทางเดิน</button>
           <button type="button" onClick={() => onWalk('N7', 'S3')}>
@@ -147,5 +138,55 @@ export function WalkPlanner({
         )}
       </div>
     </section>
+  );
+}
+
+function DestinationField({ initial }: { initial: string }) {
+  const [query, setQuery] = useState('');
+  const [destination, setDestination] = useState(initial);
+  const matches = query
+    ? findPlaces(query).filter((place) =>
+        Object.hasOwn(walkingEndpoints, place.id),
+      )
+    : choices;
+  return (
+    <>
+      <label>
+        ค้นหาปลายทาง
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => {
+            const value = event.target.value;
+            setQuery(value);
+            const found = value.trim()
+              ? findPlaces(value).filter((place) =>
+                  Object.hasOwn(walkingEndpoints, place.id),
+                )
+              : [];
+            setDestination(found.length === 1 ? (found[0]?.id ?? '') : '');
+          }}
+          placeholder="ชื่อหรือรหัสอาคาร"
+        />
+      </label>
+      <label>
+        ปลายทาง
+        <select
+          name="to"
+          value={destination}
+          onChange={(event) => setDestination(event.target.value)}
+          required
+        >
+          <option value="">
+            {matches.length ? 'เลือกปลายทาง' : 'ไม่พบปลายทาง'}
+          </option>
+          {matches.map((place) => (
+            <option key={place.id} value={place.id}>
+              {place.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    </>
   );
 }
