@@ -250,7 +250,10 @@ export function CampusModel({
               hidden
               aria-hidden="true"
             >
-              เริ่ม {placesById.get(route.from.id)?.building?.code}
+              {route.liveOrigin
+                ? 'เริ่มใหม่'
+                : 'เริ่ม ' +
+                  (placesById.get(route.from.id)?.building?.code ?? '')}
             </span>
             <span
               className={styles.endLabel}

@@ -1,5 +1,12 @@
 import map from './anchors.generated.json';
-import { projectOnSegment, type MapPoint, type WalkRoute } from './walking';
+import {
+  matchUncertainty,
+  projectOnSegment,
+  routeMatchRadius,
+  type MapPoint,
+  type WalkingEdgeMatch,
+  type WalkRoute,
+} from './walking';
 
 export type LiveFix = {
   point: MapPoint;
@@ -72,7 +79,11 @@ type MatchedProgress = {
 export type WalkProgress =
   MatchedProgress | { status: 'imprecise' | 'away' | 'ambiguous' };
 
-export function walkProgress(route: WalkRoute, fix: LiveFix): WalkProgress {
+export function walkProgress(
+  route: WalkRoute,
+  fix: LiveFix,
+  edgeMatch?: WalkingEdgeMatch,
+): WalkProgress {
   if (fix.accuracy > maxLiveAccuracy) return { status: 'imprecise' } as const;
   const [x, z] = fix.point;
   let travelled = 0;
@@ -84,14 +95,20 @@ export function walkProgress(route: WalkRoute, fix: LiveFix): WalkProgress {
   });
   candidates.sort((a, b) => a.distance - b.distance);
   const closest = candidates[0];
-  if (!closest || closest.distance > Math.max(8, fix.accuracy)) {
+  if (!closest || closest.distance > routeMatchRadius(fix.accuracy)) {
     return { status: 'away' } as const;
   }
   if (
+    edgeMatch?.status === 'matched' &&
+    closest.distance > edgeMatch.match.distance + matchUncertainty(fix.accuracy)
+  ) {
+    return { status: 'away' };
+  }
+  if (
+    edgeMatch?.status === 'ambiguous' ||
     candidates.some(
       ({ distance, along }) =>
-        distance <=
-          closest.distance + Math.max(3, Math.min(12, fix.accuracy)) &&
+        distance <= closest.distance + matchUncertainty(fix.accuracy) &&
         Math.abs(along - closest.along) > 35,
     )
   ) {

@@ -48,15 +48,18 @@ export function useLivePosition() {
       return;
     }
     setState({ status: navigator.permissions ? 'requesting' : 'searching' });
+    let latestTimestamp = -Infinity;
     const id = navigator.geolocation.watchPosition(
       (position) => {
-        if (watch.current !== id) return;
+        if (watch.current !== id || position.timestamp <= latestTimestamp)
+          return;
         window.clearTimeout(timer.current);
         const now = Date.now();
         const sample = readLiveFix(position, now);
         setState(sample);
         onSample?.(sample);
         if (sample.status === 'live') {
+          latestTimestamp = position.timestamp;
           timer.current = window.setTimeout(
             () => {
               setState({ status: 'stale' });

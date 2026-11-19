@@ -153,8 +153,8 @@ export function CampusPlan({
     ? ([
         [
           route.segments[0]?.from,
-          route.from.id,
-          'เริ่ม',
+          route.liveOrigin ? 'live-origin' : route.from.id,
+          route.liveOrigin ? 'เริ่มใหม่' : 'เริ่ม',
           styles.walkStart,
           -10,
         ],

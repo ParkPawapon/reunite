@@ -80,6 +80,7 @@ export function CampusViewer() {
   const navigation = useWalkNavigation(route);
   const { current, liveFix, arrived } = navigation;
   const walking = current !== null;
+  const activeRoute = current?.route ?? route;
   const progress = current?.progress ?? null;
   const following = walking && follow;
   const pauseFollow = useCallback(() => setFollow(false), []);
@@ -134,7 +135,7 @@ export function CampusViewer() {
             key={mode.id}
             assetUrl={mode.asset}
             place={place}
-            route={route}
+            route={activeRoute}
             liveFix={liveFix}
             following={following}
             progress={progress}
@@ -147,7 +148,7 @@ export function CampusViewer() {
           <div className={styles.viewport} data-render-state="plan">
             <CampusPlan
               place={place}
-              route={route}
+              route={activeRoute}
               liveFix={liveFix}
               following={following}
               progress={progress}
@@ -187,6 +188,8 @@ export function CampusViewer() {
               to
             }
             arrived={arrived}
+            rerouting={current.phase === 'rerouting'}
+            recovery={current.phase === 'recovery'}
             onRetry={navigation.start}
             onEnd={endWalk}
             following={following}

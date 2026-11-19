@@ -32,6 +32,8 @@ export function LocationControls({
   progress,
   destination,
   arrived,
+  rerouting,
+  recovery,
   following,
   onFollow,
   onRetry,
@@ -41,6 +43,8 @@ export function LocationControls({
   progress: WalkProgress | null;
   destination: string;
   arrived: boolean;
+  rerouting: boolean;
+  recovery: boolean;
   following: boolean;
   onFollow: () => void;
   onRetry: () => void;
@@ -49,14 +53,15 @@ export function LocationControls({
   const { status } = gps.state;
   const matched = progress && 'remaining' in progress ? progress : null;
   const explanation =
-    progress && !('remaining' in progress)
+    !rerouting && !recovery && progress && !('remaining' in progress)
       ? progressMessages[progress.status]
       : '';
   const changeOrigin =
-    !arrived &&
-    ['denied', 'unavailable', 'unsupported', 'insecure', 'off'].includes(
-      status,
-    );
+    recovery ||
+    (!arrived &&
+      ['denied', 'unavailable', 'unsupported', 'insecure', 'off'].includes(
+        status,
+      ));
   const retry =
     !arrived &&
     (status === 'denied' || status === 'unavailable' || status === 'off');
@@ -71,6 +76,10 @@ export function LocationControls({
           <>
             <ShellIcon name="check" /> {'ถึงบริเวณ ' + destination + ' แล้ว'}
           </>
+        ) : rerouting ? (
+          'กำลังหาเส้นทางใหม่…'
+        ) : recovery ? (
+          'หาเส้นทางจากตำแหน่งนี้ไม่ได้ เลือกต้นทางใหม่เพื่อลองอีกครั้ง'
         ) : (
           messages[status]
         )}
