@@ -30,15 +30,13 @@ export class ReportService {
   }
 
   async updateStatus(
-    _id: number,
-    _userId: number,
-    _status: 'RESOLVED' | 'CLOSED',
+    id: number,
+    userId: number,
+    status: 'RESOLVED' | 'CLOSED',
   ): Promise<Report> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE009 is awaiting implementation',
-    );
+    const report = await this.repository.updateStatusOwned(id, userId, status);
+    if (!report) throw new AppError('NOT_FOUND', 404, 'Report not found');
+    return report;
   }
 
   async listOwned(_userId: number, _page: Page): Promise<Report[]> {
