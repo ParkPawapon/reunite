@@ -102,6 +102,66 @@ export function CampusViewer() {
 
   return (
     <div className={styles.viewer}>
+      <section aria-label="แผนที่วิทยาเขต" className={styles.map}>
+        <div className={styles.controls} role="group" aria-label="รูปแบบแผนที่">
+          {modes.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={mode.id === option.id}
+              onClick={() => setMode(option)}
+            >
+              {option.label}
+            </button>
+          ))}
+          <a href={satelliteUrl} target="_blank" rel="noreferrer">
+            ภาพดาวเทียม Google Maps ↗
+          </a>
+        </div>
+        {mode.asset ? (
+          <CampusModel
+            key={mode.id}
+            assetUrl={mode.asset}
+            place={place}
+            route={route}
+            liveFix={liveFix}
+            following={following}
+            onSelect={selectPlace}
+            onBack={() => setMode(modes[0])}
+          />
+        ) : (
+          <div className={styles.viewport} data-render-state="plan">
+            <CampusPlan
+              place={place}
+              route={route}
+              liveFix={liveFix}
+              following={following}
+              onSelect={selectPlace}
+            />
+          </div>
+        )}
+      </section>
+      <aside className={styles.navigation} aria-label="การเดินในวิทยาเขต">
+        <WalkPlanner
+          from={from}
+          to={to}
+          route={route}
+          onWalk={selectWalk}
+          onClear={() => selectWalk('', '')}
+        />
+        <LocationControls
+          gps={{
+            ...gps,
+            start() {
+              setFollow(false);
+              gps.start();
+            },
+          }}
+          route={route}
+          following={following}
+          onFollow={() => setFollow(!follow)}
+        />
+      </aside>
       <section className={styles.catalog} aria-labelledby="campus-buildings">
         <h2 id="campus-buildings">ค้นหาอาคาร พื้นที่ และประตูวิทยาเขต</h2>
         <form
@@ -141,64 +201,6 @@ export function CampusViewer() {
         </ul>
         {matches.length === 0 && (
           <p role="status">ไม่พบอาคารหรือพื้นที่กลางแจ้งที่ตรงกับคำค้น</p>
-        )}
-      </section>
-      <section aria-label="แผนที่วิทยาเขต" className={styles.map}>
-        <WalkPlanner
-          from={from}
-          to={to}
-          route={route}
-          onWalk={selectWalk}
-          onClear={() => selectWalk('', '')}
-        />
-        <LocationControls
-          gps={{
-            ...gps,
-            start() {
-              setFollow(false);
-              gps.start();
-            },
-          }}
-          route={route}
-          following={following}
-          onFollow={() => setFollow(!follow)}
-        />
-        <div className={styles.controls} role="group" aria-label="รูปแบบแผนที่">
-          {modes.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={mode.id === option.id}
-              onClick={() => setMode(option)}
-            >
-              {option.label}
-            </button>
-          ))}
-          <a href={satelliteUrl} target="_blank" rel="noreferrer">
-            ภาพดาวเทียม Google Maps ↗
-          </a>
-        </div>
-        {mode.asset ? (
-          <CampusModel
-            key={mode.id}
-            assetUrl={mode.asset}
-            place={place}
-            route={route}
-            liveFix={liveFix}
-            following={following}
-            onSelect={selectPlace}
-            onBack={() => setMode(modes[0])}
-          />
-        ) : (
-          <div className={styles.viewport} data-render-state="plan">
-            <CampusPlan
-              place={place}
-              route={route}
-              liveFix={liveFix}
-              following={following}
-              onSelect={selectPlace}
-            />
-          </div>
         )}
       </section>
       <section

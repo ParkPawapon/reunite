@@ -47,16 +47,21 @@
 .viewer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(16rem, 23rem);
-  grid-template-areas: 'map search' 'map details';
-  grid-template-rows: auto 1fr;
+  grid-template-areas: 'map navigation' 'map search' 'map details';
+  grid-template-rows: auto auto 1fr;
   gap: 1rem;
 }
 .map,
 .catalog,
+.navigation,
 .details {
   border: 1px solid #c8cecc;
   border-radius: 0.55rem;
   min-width: 0;
+}
+.navigation {
+  grid-area: navigation;
+  padding: 0.8rem;
 }
 .map {
   grid-area: map;
@@ -169,7 +174,7 @@
 @media (max-width: 56rem) {
   .viewer {
     grid-template-columns: 1fr;
-    grid-template-areas: 'search' 'map' 'details';
+    grid-template-areas: 'map' 'navigation' 'search' 'details';
     grid-template-rows: auto;
   }
   .results {
@@ -428,7 +433,6 @@
   border-top: 0.2rem dotted #704574;
 }
 .locationPanel {
-  margin-bottom: 0.75rem;
   padding: 0.65rem;
   border: 1px solid #c8cecc;
   border-radius: 0.45rem;
