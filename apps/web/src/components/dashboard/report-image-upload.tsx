@@ -8,6 +8,10 @@ import {
   accountRequest,
   AccountRequestError,
 } from '@/modules/users/presentation/profile-client';
+import {
+  MAX_REPORT_IMAGE_BYTES,
+  MAX_REPORT_IMAGE_MIB,
+} from '@/modules/item-reports/domain/report-image-policy';
 import styles from './report-detail.module.css';
 export function ReportImageUpload({
   reportId,
@@ -62,10 +66,12 @@ export function ReportImageUpload({
     setSaved('');
     if (
       file &&
-      (file.size > 5 * 1024 * 1024 ||
+      (file.size > MAX_REPORT_IMAGE_BYTES ||
         !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
     ) {
-      setError('ใช้ JPG, PNG หรือ WebP ขนาดไม่เกิน 5 MB');
+      setError(
+        `ใช้ JPG, PNG หรือ WebP ขนาดไม่เกิน ${MAX_REPORT_IMAGE_MIB} MiB`,
+      );
       return;
     }
     const controller = new AbortController();
@@ -157,7 +163,7 @@ export function ReportImageUpload({
           <strong>
             {access.hasImage ? 'รูปของรายการนี้' : 'รูปช่วยให้จำง่าย'}
           </strong>
-          <p>JPG, PNG หรือ WebP · ไม่เกิน 5 MB</p>
+          <p>JPG, PNG หรือ WebP · ไม่เกิน {MAX_REPORT_IMAGE_MIB} MiB</p>
         </div>
         <div className={styles.uploadActions}>
           <button

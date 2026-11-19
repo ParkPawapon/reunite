@@ -1,7 +1,10 @@
 import 'server-only';
 import sharp from 'sharp';
 import { AppError } from '@campus/shared';
-export const MAX_REPORT_IMAGE_BYTES = 5 * 1024 * 1024;
+import {
+  MAX_REPORT_IMAGE_BYTES,
+  MAX_REPORT_IMAGE_MIB,
+} from '../domain/report-image-policy';
 export async function normalizeReportImage(
   input: Uint8Array,
   contentType: string,
@@ -14,7 +17,11 @@ export async function normalizeReportImage(
   if (!expected)
     throw new AppError('UNSUPPORTED_MEDIA_TYPE', 415, 'Use JPEG, PNG or WebP');
   if (input.byteLength > MAX_REPORT_IMAGE_BYTES)
-    throw new AppError('PAYLOAD_TOO_LARGE', 413, 'Image exceeds 5 MiB');
+    throw new AppError(
+      'PAYLOAD_TOO_LARGE',
+      413,
+      `Image exceeds ${MAX_REPORT_IMAGE_MIB} MiB`,
+    );
   try {
     const image = sharp(input, {
       limitInputPixels: 24_000_000,

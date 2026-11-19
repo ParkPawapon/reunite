@@ -8,10 +8,8 @@ import {
 } from '@/config/matching';
 import { readSessionToken } from '@/lib/security/session';
 import { assertSameOrigin } from '@/lib/security/origin';
-import {
-  normalizeReportImage,
-  MAX_REPORT_IMAGE_BYTES,
-} from '@/modules/item-reports/infrastructure/report-image';
+import { MAX_REPORT_IMAGE_BYTES } from '@/modules/item-reports/domain/report-image-policy';
+import { normalizeReportImage } from '@/modules/item-reports/infrastructure/report-image';
 import { api, idSchema, parse, queryInput, success } from './api';
 import { binaryBody } from './binary-body';
 import type { RouteContext } from './handlers';

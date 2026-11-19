@@ -693,6 +693,18 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     );
     expect(production.status).toBe(1);
     expect(production.stderr).toContain('Development provisioning');
+    const withoutTls = spawnSync(process.execPath, [...args, '--production'], {
+      env: {
+        ...env,
+        NODE_ENV: 'production',
+        DB_SSL: 'disable',
+        APP_BASE_URL: 'https://example.vercel.app',
+      },
+      encoding: 'utf8',
+      windowsHide: true,
+    });
+    expect(withoutTls.status).toBe(1);
+    expect(withoutTls.stderr).toContain('DB_SSL=verify-full');
     const missingFlag = spawnSync(process.execPath, args, {
       env: { ...env, NODE_ENV: 'development' },
       encoding: 'utf8',
