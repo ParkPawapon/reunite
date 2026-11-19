@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildings } from './catalog';
 import { CampusLoading } from './campus-loading';
 import { CampusPlan } from './campus-plan';
+import { useSmoothPosition } from './use-smooth-position';
 import type { LiveFix } from './live-position';
 import { mapLabels } from './map-labels';
 import { placesById, type Place } from './places';
@@ -123,9 +124,13 @@ export function CampusModel({
     scene.current?.setRoute(route?.segments ?? []);
   }, [route, state]);
 
-  useEffect(() => {
-    scene.current?.setLiveFix(liveFix, following);
-  }, [liveFix, following, state]);
+  const drawPosition = useCallback(
+    (fix: LiveFix | null) => {
+      if (state === 'ready') scene.current?.setLiveFix(fix, following);
+    },
+    [following, state],
+  );
+  useSmoothPosition(liveFix, drawPosition);
 
   const ready = state === 'ready';
   return (

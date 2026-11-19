@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent } from 'react';
+import { useCallback, useRef, useState, type PointerEvent } from 'react';
 import {
   campusRoutes,
   campusViewBox,
@@ -7,13 +7,14 @@ import {
   placesById,
   type Place,
 } from './places';
+import { useSmoothPosition } from './use-smooth-position';
 import type { LiveFix } from './live-position';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { mapLabels } from './map-labels';
 import styles from './viewer.module.css';
-import type { WalkRoute } from './walking';
+import type { MapPoint, WalkRoute } from './walking';
 
 function routeViewBox(route: WalkRoute) {
   const points = route.segments.flatMap(({ from, to }) => [from, to]);
@@ -31,6 +32,10 @@ function routeViewBox(route: WalkRoute) {
     width,
     height,
   ].join(' ');
+}
+
+function followView([x, z]: MapPoint) {
+  return [x - 95, z - 95, 190, 190].join(' ');
 }
 
 export function CampusPlan({
@@ -58,10 +63,25 @@ export function CampusPlan({
     moved: boolean;
   } | null>(null);
   const viewBox =
-    liveFix && following
-      ? [liveFix.point[0] - 95, liveFix.point[1] - 95, 190, 190].join(' ')
-      : (manualView ??
-        (route && routeFocus ? routeViewBox(route) : campusViewBox));
+    manualView ?? (route && routeFocus ? routeViewBox(route) : campusViewBox);
+  const mapElement = useRef<SVGSVGElement>(null);
+  const marker = useRef<SVGGElement>(null);
+  const drawPosition = useCallback(
+    (fix: LiveFix | null) => {
+      if (fix)
+        marker.current?.setAttribute(
+          'transform',
+          'translate(' + fix.point.join(' ') + ')',
+        );
+      if (!following || fix)
+        mapElement.current?.setAttribute(
+          'viewBox',
+          following && fix ? followView(fix.point) : viewBox,
+        );
+    },
+    [following, viewBox],
+  );
+  useSmoothPosition(liveFix, drawPosition);
 
   function startPan(event: PointerEvent<SVGSVGElement>) {
     if (!event.isPrimary || event.button !== 0) return;
@@ -126,6 +146,7 @@ export function CampusPlan({
   return (
     <div className={styles.plan}>
       <svg
+        ref={mapElement}
         viewBox={viewBox}
         onPointerDown={startPan}
         onPointerMove={movePan}
@@ -242,7 +263,7 @@ export function CampusPlan({
           <g
             className={styles.livePosition}
             aria-label="ตำแหน่งของฉัน"
-            transform={`translate(${liveFix.point.join(' ')})`}
+            ref={marker}
           >
             <circle r={liveFix.accuracy} className={styles.liveAccuracy} />
             {liveFix.heading !== null && (

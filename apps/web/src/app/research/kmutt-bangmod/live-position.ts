@@ -5,6 +5,7 @@ export type LiveFix = {
   point: MapPoint;
   accuracy: number;
   heading: number | null;
+  stationary?: boolean;
 };
 
 export const maxLiveAccuracy = 25;
@@ -45,6 +46,7 @@ export function readLiveFix(position: PositionSample, now: number) {
   const fix: LiveFix = {
     point: [x, z],
     accuracy,
+    stationary: speed === 0,
     heading:
       speed !== null &&
       Number.isFinite(speed) &&
