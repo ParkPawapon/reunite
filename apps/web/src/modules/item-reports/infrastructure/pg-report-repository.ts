@@ -122,15 +122,20 @@ export class PgReportRepository implements ReportRepository {
     return row ? map(row) : null;
   }
   async updateStatusOwned(
-    _id: number,
-    _userId: number,
-    _status: 'RESOLVED' | 'CLOSED',
+    id: number,
+    userId: number,
+    status: 'RESOLVED' | 'CLOSED',
   ): Promise<Report | null> {
-    throw new AppError(
-      'NOT_IMPLEMENTED',
-      501,
-      'BE009 is awaiting implementation',
+    const [row] = await query<Row>(
+      this.db,
+      `UPDATE item_reports
+      SET status = $3, updated_at = NOW()
+      WHERE report_id = $1 AND user_id = $2 AND status = 'OPEN'
+      RETURNING report_id, user_id, category_id, location_id, type, title,
+          description, image, event_datetime, status, created_at, updated_at`,
+      [id, userId, status],
     );
+    return row ? map(row) : null;
   }
   async listOwned(_userId: number, _page: Page): Promise<Report[]> {
     throw new AppError(

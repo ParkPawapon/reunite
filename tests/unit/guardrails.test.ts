@@ -154,21 +154,46 @@ it('BE008 uses its domain repository contract', async () => {
     [9, 4],
   ]);
 });
-it('BE009 starts with 501 until teammate implements report status transition', async () => {
-  const repository: ReportRepository = {
-    list: vi.fn(),
-    create: vi.fn(),
-    find: vi.fn(),
-    updateOwned: vi.fn(),
-    updateStatusOwned: vi.fn(),
-    listOwned: vi.fn(),
+it('BE009 uses its domain repository contract', async () => {
+  const row = {
+    reportId: 9,
+    userId: 2,
+    categoryId: 1,
+    locationId: 1,
+    type: 'LOST' as const,
+    title: 'Updated status report',
+    description: null,
+    image: null,
+    eventDatetime: '2026-11-04T06:00:00.000Z',
+    status: 'RESOLVED' as const,
+    createdAt: '2026-11-04T06:00:00.000Z',
+    updatedAt: '2026-11-04T06:00:00.000Z',
   };
-  const service = new ReportService(repository);
-  await expect(service.updateStatus(1, 2, 'RESOLVED')).rejects.toMatchObject({
-    code: 'NOT_IMPLEMENTED',
-    status: 501,
-    message: 'BE009 is awaiting implementation',
+  const updateStatusOwned = vi
+    .fn<ReportRepository['updateStatusOwned']>()
+    .mockResolvedValueOnce(row)
+    .mockResolvedValueOnce(null);
+  const service = new ReportService({
+    ...{
+      list: vi.fn(),
+      create: vi.fn(),
+      find: vi.fn(),
+      updateOwned: vi.fn(),
+      updateStatusOwned: vi.fn(),
+      listOwned: vi.fn(),
+    },
+    updateStatusOwned,
   });
+  expect(await service.updateStatus(9, 2, 'RESOLVED')).toBe(row);
+  await expect(service.updateStatus(10, 2, 'CLOSED')).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+    status: 404,
+    message: 'Report not found',
+  });
+  expect(updateStatusOwned.mock.calls).toEqual([
+    [9, 2, 'RESOLVED'],
+    [10, 2, 'CLOSED'],
+  ]);
 });
 it('BE010 uses its domain repository contract', async () => {
   const row = {

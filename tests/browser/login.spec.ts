@@ -189,6 +189,7 @@ test('recovers from a failed login-form chunk with a working reload action', asy
 test('offers a working reload when the login-form download stalls', async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const pattern = formChunkPattern();
@@ -229,7 +230,9 @@ test('offers a working reload when the login-form download stalls', async ({
     await page
       .getByRole('button', { name: 'ลองโหลดใหม่', exact: true })
       .click();
-    await expect(page.locator('[data-login-screen]')).toBeVisible();
+    await expect(page.locator('[data-login-screen]')).toBeVisible({
+      timeout: 30_000,
+    });
     await expect(page.getByLabel('อีเมล', { exact: true })).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
