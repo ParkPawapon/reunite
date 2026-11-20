@@ -74,6 +74,23 @@ async function names(signal: AbortSignal) {
     ),
   };
 }
+export type ReportOption = { id: number; name: string };
+export async function loadReportOptions(signal: AbortSignal) {
+  const [categories, locations] = await Promise.all([
+    catalog('categories', categorySchema, signal),
+    catalog('locations', locationSchema, signal),
+  ]);
+  return {
+    categories: categories.map((row): ReportOption => ({
+      id: row.categoryId,
+      name: row.categoryName,
+    })),
+    locations: locations.map((row): ReportOption => ({
+      id: row.locationId,
+      name: row.locationName,
+    })),
+  };
+}
 function describe(
   row: z.infer<typeof reportSchema>,
   lookup: Awaited<ReturnType<typeof names>>,

@@ -1,6 +1,7 @@
 'use client';
 import { useId, useState } from 'react';
 import Button from '@mui/material/Button';
+import Skeleton from '@mui/material/Skeleton';
 import MenuItem from '@mui/material/MenuItem';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -8,6 +9,7 @@ import TextField from '@mui/material/TextField';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
+import type { ReportOption } from '@/modules/item-reports/presentation/reports-client';
 import type { ReportType } from '@/modules/item-reports/presentation/reports-client';
 import {
   DESCRIPTION_LIMIT,
@@ -15,9 +17,10 @@ import {
   tabCopy,
   type ReportDraft,
 } from './report-draft';
+import { useReportOptions } from './use-report-options';
 import styles from './report-submission.module.css';
 
-type Option = { id: number; name: string };
+type Option = ReportOption;
 
 // Labels sit above each field, so the outline must not reserve a notch for them.
 const baseSlots = {
@@ -29,6 +32,19 @@ const dateClass = (value: string) =>
 
 function SelectChevron({ className }: { className?: string }) {
   return <ShellIcon name="chevron" className={className} />;
+}
+function ChoiceSkeleton({ animate }: { animate: boolean }) {
+  return (
+    <div aria-hidden="true">
+      <Skeleton width={96} height={20} animation={animate ? 'wave' : false} />
+      <Skeleton
+        variant="rounded"
+        height={52}
+        animation={animate ? 'wave' : false}
+        className={styles.choiceSkeleton}
+      />
+    </div>
+  );
 }
 function Choice({
   label,
@@ -89,8 +105,11 @@ export function ReportSubmission() {
   });
   const draft = drafts[type];
   const copy = tabCopy[type];
-  const categories: Option[] = [];
-  const locations: Option[] = [];
+  const { state, retry } = useReportOptions();
+  const categories = state.status === 'ready' ? state.categories : [];
+  const locations = state.status === 'ready' ? state.locations : [];
+  const noOptions =
+    state.status === 'ready' && (!categories.length || !locations.length);
   const when = draft.date && draft.time ? `${draft.date}T${draft.time}` : '';
   const patch = (fields: Partial<ReportDraft>) =>
     setDrafts((current) => ({
@@ -141,6 +160,37 @@ export function ReportSubmission() {
           noValidate
           onSubmit={(event) => event.preventDefault()}
         >
+          {state.status === 'loading' ? (
+            <p className={styles.srOnly} role="status">
+              กำลังโหลดหมวดหมู่และสถานที่
+            </p>
+          ) : null}
+          {state.status === 'error' ? (
+            <div role="alert" className={styles.notice}>
+              <p>
+                โหลดหมวดหมู่และสถานที่ไม่สำเร็จ
+                ลองอีกครั้งเมื่อการเชื่อมต่อพร้อม
+              </p>
+              <Button
+                type="button"
+                variant="outlined"
+                className={styles.retry}
+                color="primary"
+                onClick={retry}
+                startIcon={<ShellIcon name="refresh" width={16} height={16} />}
+              >
+                ลองอีกครั้ง
+              </Button>
+            </div>
+          ) : null}
+          {noOptions ? (
+            <div role="status" className={styles.notice}>
+              <p>
+                ยังไม่มีหมวดหมู่หรือสถานที่ในระบบ จึงยังแจ้งรายการไม่ได้
+                กรุณาติดต่อผู้ดูแลระบบเพื่อเพิ่มข้อมูล แล้วกลับมาลองใหม่
+              </p>
+            </div>
+          ) : null}
           <div className={styles.grid}>
             <TextField
               required
@@ -151,20 +201,28 @@ export function ReportSubmission() {
               onChange={(event) => patch({ title: event.target.value })}
               slotProps={baseSlots}
             />
-            <Choice
-              label="หมวดหมู่"
-              placeholder="เลือกหมวดหมู่"
-              value={draft.categoryId}
-              options={categories}
-              onChange={(categoryId) => patch({ categoryId })}
-            />
-            <Choice
-              label={copy.place}
-              placeholder={copy.placePlaceholder}
-              value={draft.locationId}
-              options={locations}
-              onChange={(locationId) => patch({ locationId })}
-            />
+            {state.status === 'loading' ? (
+              <ChoiceSkeleton animate={motion} />
+            ) : (
+              <Choice
+                label="หมวดหมู่"
+                placeholder="เลือกหมวดหมู่"
+                value={draft.categoryId}
+                options={categories}
+                onChange={(categoryId) => patch({ categoryId })}
+              />
+            )}
+            {state.status === 'loading' ? (
+              <ChoiceSkeleton animate={motion} />
+            ) : (
+              <Choice
+                label={copy.place}
+                placeholder={copy.placePlaceholder}
+                value={draft.locationId}
+                options={locations}
+                onChange={(locationId) => patch({ locationId })}
+              />
+            )}
             {wide ? (
               <TextField
                 required
