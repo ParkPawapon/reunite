@@ -458,6 +458,9 @@ test('logs in through the real API and receives an HttpOnly session in the isola
     'Real auth fixture requires the managed isolated test server',
   );
   await openLogin(page);
+  await expect(
+    page.getByRole('link', { name: 'ดูแผนที่บางมด' }),
+  ).toHaveAttribute('href', '/map');
   await page.getByLabel('อีเมล').fill(browserAccount.email);
   await page
     .getByLabel('รหัสผ่าน', { exact: true })
@@ -495,7 +498,7 @@ test('logs in through the real API and receives an HttpOnly session in the isola
       session: sessionStorage.length,
     })),
   ).toEqual({ local: 0, session: 0 });
-  const navigation = await page.request.get('/research/kmutt-bangmod');
+  const navigation = await page.request.get('/map');
   expect(navigation.headers()['permissions-policy']).toContain(
     'geolocation=(self)',
   );

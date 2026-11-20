@@ -1,0 +1,38 @@
+.study {
+  max-width: 76rem;
+  margin-inline: auto;
+  padding: clamp(1rem, 5vw, 3.5rem);
+  line-height: 1.75;
+}
+
+.study header {
+  margin-bottom: 1.5rem;
+}
+
+.study h1 {
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.study a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.study a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-block: 0.85rem;
+}
+
+.downloads a {
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.7rem;
+}

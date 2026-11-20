@@ -1,6 +1,6 @@
 # KMUTT Bangmod building study model
 
-Open `/research/kmutt-bangmod` on the local Next.js app. The study is independent of Lost & Found, authentication, and PostgreSQL. The browser renders the checked-in GLB locally; no tile service, remote model requests, or API keys are needed. A searchable catalog and downloads remain available when WebGL is unavailable.
+Open `/research/kmutt-bangmod` for the campus study, model downloads and data sources. The public map at `/map` provides building search and 2D/3D views. Both are independent of Lost & Found, authentication, and PostgreSQL. The browser renders the checked-in GLB locally without a tile service or API key. The 2D map and study downloads remain available without WebGL.
 
 The [2026-11-06 exterior detail review](EXTERIOR-DETAIL-REVIEW.md) records the profiled
 joinery, FIBO ventilation/grid refinement, SIT upper screens, local PBR daylight,
@@ -65,7 +65,7 @@ The detailed GLB embeds one PNG atlas of lettering drawn from the transcriptions
 
 ## Exterior search and loading poster
 
-The map searches 39 building records, six outdoor areas, and four gates by code and Thai or English name. It opens with a clickable north-up plan that includes mapped roads and footpaths. Users can switch to the lightweight massing model or the detailed model, each downloaded on demand. Search and map selection share stable links such as `/research/kmutt-bangmod#place=N16`, and the selected place stays active when switching views. The map pins a point inside the selected footprint or at the mapped gate and opens a separate satellite comparison at that point.
+The map searches 39 building records, six outdoor areas, and four gates by code and Thai or English name. It opens with a clickable north-up plan that includes mapped roads and footpaths. Users can switch to the lightweight massing model or the detailed model, each downloaded on demand. Search and map selection share links such as `/map#place=N16`, and the selected place stays active when switching views. The map pins a point inside the selected footprint or at the mapped gate and opens a separate satellite comparison at that point.
 
 Map labels show building codes at campus scale and names when there is space on the 3D view. Users can hide these labels with **ชื่อบนแผนที่** to inspect signs attached to building facades.
 
@@ -73,7 +73,7 @@ Map labels show building codes at campus scale and names when there is space on 
 
 ## Walking routes and coordinate review
 
-Open `/research/kmutt-bangmod#from=N7&to=S3` to see the route between the mapped N7 approach and the mapped S3 main entrance. The browser connects shared OpenStreetMap nodes. It prefers footpaths over vehicle roads by applying a 20% cost penalty to shared road segments. Reported distance is the sum of physical segment lengths. Gate 2 is searchable but excluded from routing because the connecting driveway is tagged private. N19 is searchable and needs a verified connection to the walking network. Other building pins may terminate at a nearby mapped path, and the viewer labels this distinction. The route can include shared roads or stairs and has no live closure or accessibility data.
+Open `/map#from=N7&to=S3` to see the route between the mapped N7 approach and the mapped S3 main entrance. The browser connects shared OpenStreetMap nodes. It prefers footpaths over vehicle roads by applying a 20% cost penalty to shared road segments. Reported distance is the sum of physical segment lengths. Gate 2 is searchable but excluded from routing because the connecting driveway is tagged private. N19 is searchable and needs a verified connection to the walking network. Other building pins may terminate at a nearby mapped path, and the viewer labels this distinction. The route can include shared roads or stairs and has no live closure or accessibility data.
 
 Remote review on 2026-11-04 compared gate locations against the university plan. The university identifies Gate 1 on Pracha Uthit Road and Gate 3 on Phutthabucha Road. Coordinates below are WGS84 latitude and longitude from the mapped nodes. Gate-side markers represent graph connection points where available. [University campus plan](https://bgm.kmutt.ac.th/MapNavi/MAPNAVI.html), [SIT travel directions](https://event.sit.kmutt.ac.th/en/help), [Gate 3 notice](https://bgm.kmutt.ac.th/news.php?p=47)
 

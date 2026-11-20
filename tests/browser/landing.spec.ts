@@ -18,7 +18,15 @@ test('renders the story, credits and real destinations without JavaScript', asyn
     );
     await expect(
       page.getByRole('link', { name: 'เปิดแผนที่บางมด' }),
-    ).toHaveAttribute('href', '/research/kmutt-bangmod#from=N7&to=S3');
+    ).toHaveAttribute('href', '/map#from=N7&to=S3');
+    const credit = page.getByRole('link', {
+      name: 'ที่มาข้อมูลแผนที่และโมเดล',
+    });
+    const notice = '/research/kmutt-bangmod/NOTICE.txt';
+    await expect(credit).toHaveAttribute('href', notice);
+    expect((await page.request.get(new URL(notice, baseURL).href)).ok()).toBe(
+      true,
+    );
     await expect(
       page.getByRole('article', { name: 'ร่มพับสีน้ำเงิน' }),
     ).toContainText('หน้าอาคาร S3');
@@ -128,6 +136,9 @@ test('uses scroll to follow the umbrella, build the report, and draw its walking
   await expect(line).toHaveCSS('stroke-dashoffset', '1px');
   await locateMap(-95);
   await expect(line).toHaveCSS('stroke-dashoffset', '0px');
+  await expect(
+    page.locator('[data-route-story] [data-scene-image]'),
+  ).toHaveAttribute('data-scene-image', 'ready');
   await expect(
     page.getByRole('img', { name: /ส่งร่มพับสีน้ำเงินคืน/ }),
   ).toBeVisible();

@@ -361,6 +361,12 @@ export function CampusViewer() {
             }
           />
         )}
+        <p className={styles.attribution}>
+          <a href="https://www.openstreetmap.org/copyright" lang="en">
+            © OpenStreetMap
+          </a>
+          <a href="/research/kmutt-bangmod#sources">แหล่งข้อมูล</a>
+        </p>
       </section>
       <aside className={styles.navigation} aria-label="การเดินในวิทยาเขต">
         {!walking && showLocationRequest ? (

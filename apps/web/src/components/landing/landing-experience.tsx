@@ -10,13 +10,14 @@ import { SceneImage } from './scene-image';
 import { StoryRoute } from './story-route';
 import styles from './landing.module.css';
 
-const campus = '/research/kmutt-bangmod';
+const campusMapPath = '/map';
+const campusAssets = '/research/kmutt-bangmod';
 const walk = { from: 'N7', to: 'S3' } as const;
 const foundAt = `หน้าอาคาร ${walk.to}`;
 const exampleRoute = findWalk(walk.from, walk.to);
 const walkLink = exampleRoute
-  ? `${campus}#${new URLSearchParams(walk)}`
-  : campus;
+  ? `${campusMapPath}#${new URLSearchParams(walk)}`
+  : campusMapPath;
 const contributors = ['ParkPawapon', 'milky-way-miw', 'Ch3323'] as const;
 
 export function LandingExperience() {
@@ -117,7 +118,7 @@ export function LandingExperience() {
           <SceneImage
             className={styles.campusArt}
             depth={90}
-            src={`${campus}/bangmod-campus.webp`}
+            src={`${campusAssets}/bangmod-campus.webp`}
             alt=""
             fill
             sizes="100vw"
@@ -135,7 +136,7 @@ export function LandingExperience() {
             </a>
           </div>
           {exampleRoute && <StoryRoute route={exampleRoute} />}
-          <a className={styles.mapCredit} href={`${campus}/NOTICE.txt`}>
+          <a className={styles.mapCredit} href={`${campusAssets}/NOTICE.txt`}>
             ที่มาข้อมูลแผนที่และโมเดล
           </a>
         </section>
