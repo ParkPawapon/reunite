@@ -1,4 +1,7 @@
-import type { ReportType } from '@/modules/item-reports/presentation/reports-client';
+import type {
+  CreateReportInput,
+  ReportType,
+} from '@/modules/item-reports/presentation/reports-client';
 import { DESCRIPTION_LIMIT, tabCopy, type ReportDraft } from './report-draft';
 
 export const TITLE_LIMIT = 255;
@@ -16,14 +19,7 @@ export const FIELD_ORDER: FieldName[] = [
   'time',
   'description',
 ];
-export type ReportPayload = {
-  type: ReportType;
-  title: string;
-  categoryId: number;
-  locationId: number;
-  eventDatetime: string;
-  description?: string;
-};
+export type ReportPayload = CreateReportInput;
 export type ValidationResult =
   { ok: true; payload: ReportPayload } | { ok: false; errors: FieldErrors };
 

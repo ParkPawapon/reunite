@@ -25,6 +25,7 @@ import {
 import { PhotoField } from './photo-field';
 import { usePhotoDrafts } from './use-photo-drafts';
 import { useReportOptions } from './use-report-options';
+import { useReportSubmit } from './use-report-submit';
 import styles from './report-submission.module.css';
 
 type Option = ReportOption;
@@ -122,6 +123,8 @@ export function ReportSubmission() {
     FOUND: {},
   });
   const photoDrafts = usePhotoDrafts();
+  const submitter = useReportSubmit();
+  const sent = submitter.states[type];
   const draft = drafts[type];
   const errors = allErrors[type];
   const copy = tabCopy[type];
@@ -148,7 +151,10 @@ export function ReportSubmission() {
   const submit = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
     const result = validateReport(type, draft);
-    if (result.ok) return;
+    if (result.ok) {
+      void submitter.submit(type, result.payload);
+      return;
+    }
     setAllErrors((current) => ({ ...current, [type]: result.errors }));
     for (const name of FIELD_ORDER) {
       if (!result.errors[name]) continue;
@@ -359,10 +365,26 @@ export function ReportSubmission() {
               />
             </div>
           </div>
+          {sent.status === 'failed' ? (
+            <div role="alert" className={styles.notice}>
+              <p>{sent.message}</p>
+            </div>
+          ) : null}
+          {sent.status === 'created' ? (
+            <div role="status" className={styles.notice}>
+              <p>แจ้งรายการแล้ว (เลขที่ {sent.reportId})</p>
+            </div>
+          ) : null}
           <div className={styles.footer}>
             <p className={styles.hint}>* จำเป็นต้องกรอก</p>
-            <Button type="submit" variant="contained" className={styles.submit}>
-              {copy.submit}
+            <Button
+              type="submit"
+              variant="contained"
+              className={styles.submit}
+              disabled={submitter.anyPending || sent.status === 'created'}
+              aria-busy={sent.status === 'pending'}
+            >
+              {sent.status === 'pending' ? 'กำลังส่ง…' : copy.submit}
             </Button>
           </div>
         </form>

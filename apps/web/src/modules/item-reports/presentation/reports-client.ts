@@ -128,6 +128,35 @@ export async function loadReportDetail(reportId: number, signal: AbortSignal) {
   ]);
   return describe(row, lookup);
 }
+export type CreateReportInput = {
+  type: ReportType;
+  title: string;
+  categoryId: number;
+  locationId: number;
+  eventDatetime: string;
+  description?: string;
+};
+const createdSchema = z.object({ data: z.object({ reportId: id }) });
+// Status 0 means the report may exist but its answer could not be read.
+export async function createReport(
+  input: CreateReportInput,
+  signal: AbortSignal,
+) {
+  const response = await fetch('/api/v1/item-reports', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    cache: 'no-store',
+    body: JSON.stringify(input),
+    signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+  });
+  if (!response.ok) throw new ReportRequestError(response.status);
+  const parsed = createdSchema.safeParse(
+    await response.json().catch(() => null),
+  );
+  if (!parsed.success) throw new ReportRequestError(0);
+  return parsed.data.data.reportId;
+}
 export function reportImageHref(value: string | null): string | null {
   if (!value || /[\u0000-\u0020\\]/.test(value) || value.startsWith('//'))
     return null;
