@@ -19,7 +19,7 @@ export function DashboardWelcome() {
           <br />
           แล้วไปต่อในมุมที่คุ้นเคย
         </p>
-        <a className={styles.primary} href="/research/kmutt-bangmod">
+        <a className={styles.primary} href="/map">
           เปิดแผนที่บางมด <ShellIcon name="arrow" />
         </a>
       </div>

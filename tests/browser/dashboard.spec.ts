@@ -496,9 +496,9 @@ test('uses real session data, responsive navigation, truthful report loading and
       page
         .getByRole('dialog', { name: 'เมนูนำทาง' })
         .getByRole('link', { name: 'แผนที่บางมด', exact: true }),
-    ).toHaveAttribute('href', '/research/kmutt-bangmod');
+    ).toHaveAttribute('href', '/map');
     await page.keyboard.press('Escape');
-    const map = await page.request.get('/research/kmutt-bangmod');
+    const map = await page.request.get('/map');
     expect(map.headers()['permissions-policy']).toContain('geolocation=(self)');
     await page
       .getByRole('button', { name: 'บัญชีของคุณ', exact: true })

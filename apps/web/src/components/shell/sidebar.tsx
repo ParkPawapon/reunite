@@ -77,7 +77,7 @@ export function Sidebar({
           <span>โปรไฟล์ของฉัน</span>
         </Link>
         <a
-          href="/research/kmutt-bangmod"
+          href="/map"
           aria-current={page === 'campus' ? 'page' : undefined}
           aria-label="แผนที่บางมด"
           title="แผนที่บางมด"

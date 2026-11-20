@@ -3,7 +3,38 @@ import { expect, test, type Page } from '@playwright/test';
 import anchors from '../../apps/web/src/app/research/kmutt-bangmod/anchors.generated.json' with { type: 'json' };
 import type { MapPoint } from '../../apps/web/src/app/research/kmutt-bangmod/walking';
 
-const sharedWalk = '/research/kmutt-bangmod#from=N7&to=S3';
+const sharedWalk = '/map#from=N7&to=S3';
+
+test('separates research downloads from the public map and keeps shared map links working', async ({
+  page,
+}) => {
+  const research = '/research/kmutt-bangmod';
+  const response = await page.goto(research);
+  expect(response?.headers()['permissions-policy']).toContain('geolocation=()');
+  const downloads = page.getByRole('navigation', {
+    name: 'ดาวน์โหลดไฟล์สำหรับการศึกษา',
+  });
+  await expect(
+    downloads.getByRole('link', { name: 'ฐานอาคาร GeoJSON' }),
+  ).toHaveAttribute('href', `${research}/kmutt-bangmod.geojson`);
+  await expect(
+    page.getByRole('region', { name: 'แผนที่วิทยาเขต' }),
+  ).toHaveCount(0);
+  await page.getByRole('link', { name: 'เปิดแผนที่บางมด' }).click();
+  await expect(page).toHaveURL(/\/map$/);
+  await expect(downloads).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'แหล่งข้อมูล' })).toHaveAttribute(
+    'href',
+    `${research}#sources`,
+  );
+
+  await page.goto(`${research}#from=N7&to=S3`);
+  await expect(page).toHaveURL(/\/map#from=N7&to=S3$/);
+  await expect(page.getByText('ประมาณ 360 ม.', { exact: true })).toBeVisible();
+  await page.goto(`${research}#place=N10`);
+  await expect(page).toHaveURL(/\/map#place=N10$/);
+  await expect(page.getByRole('region', { name: 'สำนักหอสมุด' })).toBeVisible();
+});
 // Reviewed map-grid points on the N7 → S3 route and at the N10 approach.
 const start: MapPoint = [124.84, -160.61];
 const middle: MapPoint = [165.91, 53.22];
@@ -328,7 +359,7 @@ test('shows the selected place inside the map and starts planning from its direc
   page,
 }, info) => {
   await page.setViewportSize({ width: 1440, height: 960 });
-  await page.goto('/research/kmutt-bangmod');
+  await page.goto('/map');
   const browse = page.getByRole('complementary', { name: 'การเดินในวิทยาเขต' });
   const map = page.getByRole('region', { name: 'แผนที่วิทยาเขต' });
   const search = browse.getByRole('searchbox', {
@@ -351,7 +382,7 @@ test('shows the selected place inside the map and starts planning from its direc
   await expect(search).toBeFocused();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/research/kmutt-bangmod#place=N10');
+  await page.goto('/map#place=N10');
   await expect(popup).toBeVisible();
   const box = await popup.boundingBox();
   expect(box?.y).toBeGreaterThan(80);

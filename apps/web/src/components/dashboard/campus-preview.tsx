@@ -8,7 +8,7 @@ import styles from './dashboard.module.css';
 export function CampusPreview() {
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   return (
-    <a href="/research/kmutt-bangmod" className={styles.mapCard}>
+    <a href="/map" className={styles.mapCard}>
       <div
         className={styles.preview}
         data-campus-preview={state}

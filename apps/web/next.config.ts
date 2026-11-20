@@ -34,7 +34,7 @@ const config: NextConfig = {
         ],
       },
       {
-        source: '/research/kmutt-bangmod',
+        source: '/map',
         headers: [
           {
             key: 'Permissions-Policy',

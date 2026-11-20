@@ -154,7 +154,7 @@ test('shows the real map download state and replaces it on success or failure', 
     await downloadGate;
     await route.continue();
   });
-  await page.goto('/research/kmutt-bangmod#place=N16');
+  await page.goto('/map#place=N16');
   await expect(page.locator('[data-render-state=plan]')).toBeVisible();
   await expect(page.locator('[data-loading-screen]')).toHaveCount(0);
   const map = page.getByRole('region', { name: 'แผนที่วิทยาเขต' });

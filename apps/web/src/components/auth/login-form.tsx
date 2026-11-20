@@ -284,7 +284,7 @@ export function LoginForm() {
           {pending ? 'กำลังตรวจสอบบัญชี กรุณารอสักครู่' : ''}
         </span>
       </form>
-      <a className={styles.mapLink} href="/research/kmutt-bangmod">
+      <a className={styles.mapLink} href="/map">
         <svg
           width="18"
           height="18"
