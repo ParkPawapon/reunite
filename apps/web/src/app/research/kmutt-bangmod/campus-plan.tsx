@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useLayoutEffect,
   useRef,
   useState,
   type PointerEvent,
@@ -22,22 +23,24 @@ import { mapLabels } from './map-labels';
 import styles from './viewer.module.css';
 import type { MapPoint, WalkRoute } from './walking';
 
-function routeViewBox(route: WalkRoute) {
+function routeViewBox(route: WalkRoute, destination?: MapPoint) {
   const points = route.segments.flatMap(({ from, to }) => [from, to]);
+  if (points.length === 0 && destination) points.push(destination);
+  if (points.length === 0) return campusViewBox.split(' ').map(Number);
   const x = points.map(([east]) => east);
   const z = points.map(([, south]) => south);
   const left = Math.min(...x);
   const top = Math.min(...z);
   const right = Math.max(...x);
   const bottom = Math.max(...z);
-  const width = Math.max(105, right - left + 72);
-  const height = Math.max(105, bottom - top + 72);
+  const width = Math.max(105, right - left + 138);
+  const height = Math.max(105, bottom - top + 138);
   return [
     (left + right - width) / 2,
     (top + bottom - height) / 2,
     width,
     height,
-  ].join(' ');
+  ];
 }
 
 function routePaths(segments: readonly WalkRoute['segments'][number][]) {
@@ -55,9 +58,19 @@ function routePaths(segments: readonly WalkRoute['segments'][number][]) {
   return paths;
 }
 
-function followView([x, z]: MapPoint) {
-  return [x - 95, z - 95, 190, 190].join(' ');
+function fittedView(bounds: readonly number[], aspect: number, upper = false) {
+  const [x = 0, y = 0, width = 1, height = 1] = bounds;
+  const nextWidth = Math.max(width, height * aspect);
+  const nextHeight = nextWidth / aspect;
+  return [
+    x + (width - nextWidth) / 2,
+    y + height / 2 - nextHeight * (upper ? 0.2 : 0.5),
+    nextWidth,
+    nextHeight,
+  ].join(' ');
 }
+
+export type FollowAction = { enabled: boolean; onClick: () => void };
 
 export function CampusPlan({
   place,
@@ -68,6 +81,8 @@ export function CampusPlan({
   onPan,
   progress,
   navigating,
+  arrived = false,
+  followAction,
 }: {
   place?: Place;
   route: WalkRoute | null;
@@ -76,9 +91,12 @@ export function CampusPlan({
   onPan: () => void;
   progress: WalkProgress | null;
   navigating: boolean;
+  arrived?: boolean;
+  followAction?: FollowAction;
   onSelect: (id: string) => void;
 }) {
-  const [routeFocus, setRouteFocus] = useState(false);
+  const [routeFocus, setRouteFocus] = useState(true);
+  const [size, setSize] = useState({ width: 800, height: 800, mobile: false });
   const [manualView, setManualView] = useState<string>();
   const drag = useRef<{
     id: number;
@@ -87,10 +105,43 @@ export function CampusPlan({
     box: DOMRect;
     moved: boolean;
   } | null>(null);
+  const upper = navigating && size.mobile;
+  const aspect = size.width / size.height;
+  const destination = route ? placesById.get(route.to.id) : undefined;
+  const destinationPoint: MapPoint | undefined =
+    route?.segments.at(-1)?.to ??
+    (destination ? [destination.world[0], destination.world[2]] : undefined);
   const viewBox =
-    manualView ?? (route && routeFocus ? routeViewBox(route) : campusViewBox);
+    manualView ??
+    fittedView(
+      route && routeFocus
+        ? routeViewBox(route, destinationPoint)
+        : campusViewBox.split(' ').map(Number),
+      aspect,
+      upper && routeFocus,
+    );
   const mapElement = useRef<SVGSVGElement>(null);
   const marker = useRef<SVGGElement>(null);
+  const scaleLine = useRef<HTMLSpanElement>(null);
+  const scaleText = useRef<HTMLSpanElement>(null);
+  const arrivalPoint = arrived ? destinationPoint : undefined;
+  useLayoutEffect(() => {
+    const element = mapElement.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry || !entry.contentRect.width || !entry.contentRect.height)
+        return;
+      const { width, height } = entry.contentRect;
+      setSize({
+        width,
+        height,
+        mobile: window.matchMedia('(max-width: 999px)').matches,
+      });
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
   const drawPosition = useCallback(
     (fix: LiveFix | null) => {
       if (fix)
@@ -98,15 +149,59 @@ export function CampusPlan({
           'transform',
           'translate(' + fix.point.join(' ') + ')',
         );
-      if (!following || fix)
-        mapElement.current?.setAttribute(
-          'viewBox',
-          following && fix ? followView(fix.point) : viewBox,
-        );
+      const element = mapElement.current;
+      if (!element) return;
+      const point = fix?.point ?? arrivalPoint;
+      const followHeight = upper ? 350 : 190;
+      const followWidth = followHeight * Math.min(aspect, 1);
+      if (!following || point) {
+        const nextView =
+          following && point
+            ? fittedView(
+                [
+                  point[0] - followWidth / 2,
+                  point[1] - followHeight / 2,
+                  followWidth,
+                  followHeight,
+                ],
+                aspect,
+                upper,
+              )
+            : viewBox;
+        element.setAttribute('viewBox', nextView);
+      }
+      const pixelsPerMetre = size.width / element.viewBox.baseVal.width;
+      const metres =
+        [100, 50, 25, 10, 5].find((step) => step * pixelsPerMetre <= 210) ?? 2;
+      if (scaleLine.current)
+        scaleLine.current.style.width = metres * pixelsPerMetre + 'px';
+      if (scaleText.current) scaleText.current.textContent = metres + ' ม.';
+      element.style.setProperty(
+        '--map-label-scale',
+        String(1 / pixelsPerMetre),
+      );
     },
-    [following, viewBox],
+    [arrivalPoint, aspect, following, size.width, upper, viewBox],
   );
   useSmoothPosition(liveFix, drawPosition);
+
+  function zoom(factor: number) {
+    const box = mapElement.current?.viewBox.baseVal;
+    if (!box) return;
+    const { x, y, width, height } = box;
+    const nextHeight = Math.min(1400, Math.max(70, height * factor));
+    const nextWidth = (width * nextHeight) / height;
+    const anchor = upper ? 0.2 : 0.5;
+    onPan();
+    setManualView(
+      [
+        x + (width - nextWidth) / 2,
+        y + (height - nextHeight) * anchor,
+        nextWidth,
+        nextHeight,
+      ].join(' '),
+    );
+  }
 
   function startPan(event: PointerEvent<SVGSVGElement>) {
     if (!event.isPrimary || event.button !== 0) return;
@@ -145,17 +240,6 @@ export function CampusPlan({
   function finishPan(event: PointerEvent<SVGSVGElement>) {
     if (drag.current?.id === event.pointerId) drag.current = null;
   }
-  const overviewLabel =
-    route && !following && !manualView && !routeFocus
-      ? 'ขยายเส้นทาง'
-      : 'ดูทั้งวิทยาเขต';
-
-  function changeOverview() {
-    setRouteFocus(overviewLabel === 'ขยายเส้นทาง');
-    setManualView(undefined);
-    onPan();
-  }
-
   function panWithKeyboard(event: KeyboardEvent<SVGSVGElement>) {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
       return;
@@ -164,6 +248,11 @@ export function CampusPlan({
       setRouteFocus(false);
       setManualView(undefined);
       onPan();
+      return;
+    }
+    if (event.key === '+' || event.key === '-' || event.key === '=') {
+      event.preventDefault();
+      zoom(event.key === '-' ? 1.25 : 0.8);
       return;
     }
     const { x, y, width, height } = event.currentTarget.viewBox.baseVal;
@@ -203,7 +292,7 @@ export function CampusPlan({
           styles.walkStart,
           -10,
         ],
-        [route.segments.at(-1)?.to, route.to.id, 'ถึง', styles.walkEnd, 22],
+        [destinationPoint, route.to.id, 'ถึง', styles.walkEnd, 22],
       ] as const)
     : [];
   return (
@@ -267,26 +356,35 @@ export function CampusPlan({
           );
         })}
         <g className={styles.planRoutes} aria-hidden="true">
+          <path d={campusRoutes.road} className={styles.planRoadEdge} />
           <path d={campusRoutes.road} className={styles.planRoad} />
+          <path d={campusRoutes.walk} className={styles.planWalkEdge} />
           <path d={campusRoutes.walk} className={styles.planWalk} />
         </g>
         <g className={styles.planLabels} aria-hidden="true">
-          {mapLabels.map(({ id, code, caption, world }) =>
+          {mapLabels.map(({ id, code, world }) =>
             id === place?.id ||
             id === route?.from.id ||
             id === route?.to.id ||
-            id === 'S2-seminar' ||
-            (code === 'S4' && id !== 'S4-11-floors') ? null : (
-              <text
+            code.startsWith('ประตู') ||
+            ['S2-seminar', 'N13', 'N18', 'S1', 'S11'].includes(id) ? null : (
+              <g
                 key={id}
-                x={world[0]}
-                y={world[2]}
-                data-area={!caption}
-                textAnchor="middle"
-                dominantBaseline="central"
+                transform={'translate(' + world[0] + ' ' + world[2] + ')'}
               >
-                {code}
-              </text>
+                <g className={styles.planLabel}>
+                  <rect
+                    x={-Math.max(28, code.length * 7) / 2}
+                    y={-10}
+                    width={Math.max(28, code.length * 7)}
+                    height={20}
+                    rx={5}
+                  />
+                  <text textAnchor="middle" dominantBaseline="central">
+                    {code}
+                  </text>
+                </g>
+              </g>
             ),
           )}
         </g>
@@ -343,18 +441,43 @@ export function CampusPlan({
           </g>
         )}
       </svg>
-      <div className={styles.planFocus}>
-        <Tooltip title={overviewLabel}>
-          <IconButton
-            className={styles.iconControl}
-            aria-label={overviewLabel}
-            onClick={changeOverview}
-          >
-            <ShellIcon name="map" />
+      <div className={styles.planFocus} aria-label="ควบคุมแผนที่" role="group">
+        <Tooltip title="ซูมเข้า">
+          <IconButton aria-label="ซูมเข้า" onClick={() => zoom(0.8)}>
+            <ShellIcon name="plus" />
           </IconButton>
         </Tooltip>
+        <Tooltip title="ซูมออก">
+          <IconButton aria-label="ซูมออก" onClick={() => zoom(1.25)}>
+            <ShellIcon name="minus" />
+          </IconButton>
+        </Tooltip>
+        {followAction && (
+          <Tooltip title="ตามตำแหน่งฉัน">
+            <span>
+              <IconButton
+                aria-label="ตามตำแหน่งฉัน"
+                aria-pressed={following}
+                disabled={!followAction.enabled}
+                onClick={followAction.onClick}
+              >
+                <ShellIcon name="target" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
+        <span role="img" aria-label="ทิศเหนือ" className={styles.compass}>
+          N
+        </span>
       </div>
-      <p id="campus-map-instructions">
+      <div className={styles.mapScale} aria-hidden="true">
+        <div>
+          <span ref={scaleLine} />
+          <span ref={scaleText}>100 ม.</span>
+        </div>
+        <small>© OpenStreetMap · Overture Maps</small>
+      </div>
+      <p id="campus-map-instructions" className={styles.srOnly}>
         ↑ เหนือ · แตะอาคารเพื่อปักหมุด
         <span className={styles.srOnly}>
           {' '}

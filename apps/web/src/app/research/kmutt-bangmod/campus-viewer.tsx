@@ -8,24 +8,24 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import {
-  detailedWebModelUrl,
-  heightBasis,
-  modelUrl,
-  satelliteUrl,
-} from './catalog';
+import { ShellIcon } from '@/components/shell/shell-icon';
+import { detailedWebModelUrl, modelUrl, satelliteUrl } from './catalog';
 import { CampusModel } from './campus-model';
 import { CampusPlan } from './campus-plan';
+import { CampusPlacePopup } from './campus-place-popup';
+import { PlaceSearch } from './place-search';
 import { LocationControls } from './location-controls';
-import {
-  findPlaces,
-  placeFragment,
-  placesById,
-  placeSatelliteUrl,
-} from './places';
-import { WalkPlanner } from './walk-planner';
+import { placesById } from './places';
+import { OriginPicker, WalkPlanner } from './walk-planner';
+import { useLivePosition } from './use-live-position';
 import { useWalkNavigation } from './use-walk-navigation';
-import { findWalk } from './walking';
+import {
+  findWalk,
+  findWalkFromPosition,
+  walkingEndpoints,
+  walkingMinutes,
+  type WalkRoute,
+} from './walking';
 import styles from './viewer.module.css';
 
 const modes = [
@@ -33,7 +33,6 @@ const modes = [
   { id: 'light', label: '3D แบบเบา', asset: modelUrl },
   { id: 'detail', label: '3D แบบละเอียด', asset: detailedWebModelUrl },
 ] as const;
-const number = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 1 });
 
 function subscribeToPlace(change: () => void) {
   window.addEventListener('hashchange', change);
@@ -44,21 +43,16 @@ function currentHash() {
   return window.location.hash.slice(1);
 }
 
-function selectPlace(id: string) {
-  const parameters = new URLSearchParams(currentHash());
-  parameters.set('place', id);
-  window.location.hash = parameters.toString();
-}
-
 function selectWalk(from: string, to: string) {
   const parameters = new URLSearchParams(currentHash());
-  if (from && to) {
-    parameters.set('from', from);
-    parameters.set('to', to);
-  } else {
-    parameters.delete('from');
-    parameters.delete('to');
+  for (const [name, value] of [
+    ['from', from],
+    ['to', to],
+  ] as const) {
+    if (value) parameters.set(name, value);
+    else parameters.delete(name);
   }
+  parameters.delete('place');
   window.location.hash = parameters.toString();
 }
 
@@ -75,51 +69,191 @@ function readPlan(hash: string) {
 
 export function CampusViewer() {
   const [mode, setMode] = useState<(typeof modes)[number]>(modes[0]);
-  const [query, setQuery] = useState('');
   const [follow, setFollow] = useState(false);
-  const [copyStatus, setCopyStatus] = useState<{
-    id: string;
-    fallbackUrl?: string;
-  }>();
+  const [showLocationRequest, setShowLocationRequest] = useState(false);
+  const [locationRoute, setLocationRoute] = useState<WalkRoute | null>(null);
+  const [failedLocationHash, setFailedLocationHash] = useState<string | null>(
+    null,
+  );
+  const mapLocation = useLivePosition();
   const hash = useSyncExternalStore(subscribeToPlace, currentHash, () => '');
+  const locationUnavailable = failedLocationHash === hash;
   const { from, to, selected } = useMemo(() => readPlan(hash), [hash]);
-  const route = useMemo(() => findWalk(from, to), [from, to]);
+  const route = useMemo(
+    () =>
+      from === 'live-origin' && locationRoute?.to.id === to
+        ? locationRoute
+        : findWalk(from, to),
+    [from, to, locationRoute],
+  );
   const navigation = useWalkNavigation(route);
   const { current, liveFix, arrived } = navigation;
   const walking = current !== null;
-  const mapSection = useRef<HTMLElement>(null);
+  const mapFix =
+    mapLocation.state.status === 'live' ? mapLocation.state.fix : null;
   const startButton = useRef<HTMLButtonElement>(null);
+  const searchField = useRef<HTMLInputElement>(null);
+  const focusSearch = useRef(false);
   const navigationHeading = useRef<HTMLHeadingElement>(null);
   const focusNavigation = useRef(false);
   useLayoutEffect(() => {
     if (!focusNavigation.current) return;
-    (walking ? navigationHeading.current : startButton.current)?.focus({
-      preventScroll: walking,
-    });
-    if (walking && window.matchMedia('(max-width: 56rem)').matches) {
-      mapSection.current?.scrollIntoView({
-        block: 'start',
-        behavior: 'instant',
-      });
-    }
+    const target = walking ? navigationHeading.current : startButton.current;
+    target?.focus({ preventScroll: walking });
+    if (walking) window.scrollTo({ top: 0, behavior: 'instant' });
     focusNavigation.current = false;
   }, [walking]);
-  const activeRoute = current?.route ?? route;
+  const activeRoute = locationUnavailable ? null : (current?.route ?? route);
   const progress = current?.progress ?? null;
-  const following = walking && follow;
+  const metres = walking
+    ? progress && 'remaining' in progress
+      ? progress.remaining
+      : null
+    : (activeRoute?.metres ?? null);
+  const followAction = walking
+    ? { enabled: !arrived && liveFix !== null, onClick: () => setFollow(true) }
+    : {
+        enabled: true,
+        onClick: () => {
+          setFollow(true);
+          if (!mapFix) {
+            if (selected) dismissPlace();
+            openLocationRequest();
+          }
+        },
+      };
+  const following = follow && (walking || mapFix !== null);
   const pauseFollow = useCallback(() => setFollow(false), []);
   const place = selected ? placesById.get(selected) : undefined;
-  const building = place?.building;
-  const matches = findPlaces(query);
-  const sources = new Map(
-    building?.footprintSources.map((source) => [
-      source.id ?? source.url,
-      source,
-    ]),
-  );
+  const noRoute =
+    route === null &&
+    from !== to &&
+    Object.hasOwn(walkingEndpoints, from) &&
+    Object.hasOwn(walkingEndpoints, to);
+  const choosingOrigin =
+    !route && !noRoute && Object.hasOwn(walkingEndpoints, to);
+  const priorFocus = useRef<HTMLElement | SVGElement | null>(null);
+  const returnFocus = useRef(false);
+  const originHeading = useRef<HTMLHeadingElement>(null);
+  const focusOrigin = useRef(false);
+  const focusPreview = useRef(false);
+
+  useLayoutEffect(() => {
+    if (noRoute) {
+      focusPreview.current = false;
+      searchField.current?.focus({ preventScroll: true });
+    }
+  }, [noRoute]);
+
+  useLayoutEffect(() => {
+    if (
+      focusSearch.current &&
+      !choosingOrigin &&
+      !route &&
+      !walking &&
+      !showLocationRequest
+    ) {
+      searchField.current?.focus({ preventScroll: true });
+      focusSearch.current = false;
+    }
+    if (!place && returnFocus.current) {
+      priorFocus.current?.focus({ preventScroll: true });
+      returnFocus.current = false;
+    }
+    if (
+      choosingOrigin &&
+      !place &&
+      !showLocationRequest &&
+      focusOrigin.current
+    ) {
+      originHeading.current?.focus({ preventScroll: true });
+      focusOrigin.current = false;
+    }
+    if (route && !walking && !showLocationRequest && focusPreview.current) {
+      startButton.current?.focus({ preventScroll: true });
+      focusPreview.current = false;
+    }
+  }, [place, choosingOrigin, route, to, from, walking, showLocationRequest]);
+
+  const selectPlace = useCallback((id: string) => {
+    setShowLocationRequest(false);
+    const active = document.activeElement;
+    if (active instanceof HTMLElement || active instanceof SVGElement)
+      priorFocus.current = active;
+    const parameters = new URLSearchParams(currentHash());
+    parameters.set('place', id);
+    window.location.hash = parameters.toString();
+  }, []);
+
+  function dismissPlace() {
+    returnFocus.current = true;
+    const parameters = new URLSearchParams(currentHash());
+    parameters.delete('place');
+    window.location.hash = parameters.toString();
+  }
+
+  function chooseOrigin(id: string) {
+    mapLocation.stop();
+    setFailedLocationHash(null);
+    focusPreview.current = true;
+    selectWalk(id, to);
+  }
+
+  function selectMapPlace(id: string) {
+    if (
+      !showLocationRequest &&
+      (choosingOrigin ||
+        (locationUnavailable && Object.hasOwn(walkingEndpoints, to)))
+    ) {
+      if (id !== to && Object.hasOwn(walkingEndpoints, id)) chooseOrigin(id);
+      return;
+    }
+    selectPlace(id);
+  }
+
+  function openLocationRequest() {
+    setFailedLocationHash(null);
+    setShowLocationRequest(true);
+  }
+
+  function useLocation() {
+    const requestedHash = currentHash();
+    function showLocationWarning() {
+      if (currentHash() !== requestedHash) return;
+      mapLocation.stop();
+      setFailedLocationHash(requestedHash);
+      setShowLocationRequest(false);
+    }
+    mapLocation.stop();
+    mapLocation.start((sample) => {
+      if (currentHash() !== requestedHash || !sample) return;
+      if (sample.status !== 'live') {
+        showLocationWarning();
+        return;
+      }
+      if (choosingOrigin) {
+        const plan = findWalkFromPosition(
+          sample.fix.point,
+          sample.fix.accuracy,
+          to,
+        );
+        if (!plan) {
+          showLocationWarning();
+          return;
+        }
+        mapLocation.stop();
+        setLocationRoute(plan);
+        focusPreview.current = true;
+        selectWalk(plan.from.id, to);
+      }
+      setShowLocationRequest(false);
+    }, showLocationWarning);
+  }
 
   function startWalk() {
     focusNavigation.current = true;
+    setShowLocationRequest(false);
+    mapLocation.stop();
     setMode(modes[0]);
     setFollow(true);
     navigation.start();
@@ -130,81 +264,171 @@ export function CampusViewer() {
     navigation.end();
   }
 
-  async function copyLink(id: string) {
-    const url = new URL(placeFragment(id), window.location.href).href;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopyStatus({ id });
-    } catch {
-      setCopyStatus({ id, fallbackUrl: url });
-    }
-  }
-
   return (
-    <div className={styles.viewer} data-walking={walking}>
+    <div
+      className={styles.viewer}
+      data-walking={walking}
+      data-place-selected={Boolean(place)}
+    >
       <section
-        ref={mapSection}
         aria-label="แผนที่วิทยาเขต"
         className={styles.map}
+        data-mode={mode.id}
       >
-        <div className={styles.controls} role="group" aria-label="รูปแบบแผนที่">
-          {modes.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={mode.id === option.id}
-              onClick={() => setMode(option)}
-            >
-              {option.label}
-            </button>
-          ))}
-          <a href={satelliteUrl} target="_blank" rel="noreferrer">
-            ภาพดาวเทียม Google Maps ↗
-          </a>
-        </div>
+        <details className={styles.mapModes}>
+          <summary aria-label="รูปแบบแผนที่">
+            <ShellIcon name="layers" />
+            <span>รูปแบบแผนที่</span>
+          </summary>
+          <div
+            className={styles.controls}
+            role="group"
+            aria-label="ตัวเลือกรูปแบบแผนที่"
+          >
+            {modes.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={mode.id === option.id}
+                onClick={(event) => {
+                  setMode(option);
+                  const details = event.currentTarget.closest('details');
+                  if (details) {
+                    details.open = false;
+                    details.querySelector('summary')?.focus();
+                  }
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+            <a href={satelliteUrl} target="_blank" rel="noreferrer">
+              ภาพดาวเทียม Google Maps ↗
+            </a>
+          </div>
+        </details>
         {mode.asset ? (
           <CampusModel
             key={mode.id}
             assetUrl={mode.asset}
             place={place}
             route={activeRoute}
-            liveFix={liveFix}
+            liveFix={walking ? liveFix : mapFix}
             following={following}
             progress={progress}
             navigating={walking}
             onPan={pauseFollow}
-            onSelect={selectPlace}
+            followAction={followAction}
+            onSelect={selectMapPlace}
             onBack={() => setMode(modes[0])}
           />
         ) : (
           <div className={styles.viewport} data-render-state="plan">
             <CampusPlan
+              key={from + ':' + to}
               place={place}
               route={activeRoute}
-              liveFix={liveFix}
+              liveFix={walking ? liveFix : mapFix}
               following={following}
               progress={progress}
               navigating={walking}
+              arrived={arrived}
               onPan={pauseFollow}
-              onSelect={selectPlace}
+              followAction={followAction}
+              onSelect={selectMapPlace}
             />
           </div>
         )}
+        {metres !== null && !arrived && (
+          <p className={styles.mapEstimate}>
+            <ShellIcon name="user" /> {Math.ceil(walkingMinutes(metres))} นาที ·
+            ประมาณ {walking ? Math.ceil(metres) : Math.round(metres / 10) * 10}{' '}
+            เมตร
+          </p>
+        )}
+        {place && (
+          <CampusPlacePopup
+            key={place.id}
+            place={place}
+            onDismiss={dismissPlace}
+            onDirections={
+              !walking && Object.hasOwn(walkingEndpoints, place.id)
+                ? () => {
+                    focusOrigin.current = true;
+                    selectWalk('', place.id);
+                  }
+                : undefined
+            }
+          />
+        )}
       </section>
       <aside className={styles.navigation} aria-label="การเดินในวิทยาเขต">
-        {!walking && (
+        {!walking && showLocationRequest ? (
+          <section
+            className={styles.locationRequest}
+            aria-labelledby="campus-location-request"
+          >
+            <h1 id="campus-location-request" className={styles.destination}>
+              เริ่มจากตำแหน่งของคุณ
+            </h1>
+            <p className={styles.walkNote}>
+              {choosingOrigin
+                ? 'ใช้ตำแหน่งเฉพาะตอนดูเส้นทางเดิน'
+                : 'ใช้ตำแหน่งเฉพาะตอนดูแผนที่และเส้นทางเดิน'}
+            </p>
+            {['requesting', 'searching'].includes(mapLocation.state.status) && (
+              <p role="status" className={styles.walkNote}>
+                กำลังรอตำแหน่งล่าสุด…
+              </p>
+            )}
+            <button
+              className={styles.primaryAction}
+              type="button"
+              onClick={useLocation}
+            >
+              ใช้ตำแหน่งของฉัน
+            </button>
+            <button
+              className={styles.secondaryAction}
+              type="button"
+              onClick={() => {
+                mapLocation.stop();
+                setShowLocationRequest(false);
+                if (choosingOrigin) focusOrigin.current = true;
+                else focusSearch.current = true;
+              }}
+            >
+              เลือกอาคารต้นทาง
+            </button>
+          </section>
+        ) : (
+          !walking &&
+          (locationUnavailable || (!choosingOrigin && !route)) && (
+            <PlaceSearch
+              selected={place?.id}
+              onSelect={locationUnavailable ? selectMapPlace : selectPlace}
+              searchRef={searchField}
+              noRoute={noRoute}
+              locationUnavailable={locationUnavailable}
+            />
+          )
+        )}
+        {!walking &&
+          !showLocationRequest &&
+          !locationUnavailable &&
+          choosingOrigin && (
+            <OriginPicker
+              destination={to}
+              headingRef={originHeading}
+              onSelect={chooseOrigin}
+              onUseLocation={openLocationRequest}
+            />
+          )}
+        {!walking && !showLocationRequest && !locationUnavailable && route && (
           <WalkPlanner
-            from={from}
-            to={to}
+            startRef={startButton}
+            onStart={startWalk}
             route={route}
-            onWalk={(origin, destination) => {
-              endWalk();
-              selectWalk(origin, destination);
-            }}
-            onClear={() => {
-              endWalk();
-              selectWalk('', '');
-            }}
           />
         )}
         {walking && (
@@ -224,179 +448,21 @@ export function CampusViewer() {
               navigation.start();
             }}
             onEnd={endWalk}
-            following={following}
+            onChooseOrigin={() => {
+              navigation.end();
+              focusOrigin.current = true;
+              selectWalk('', to);
+            }}
+            onFinish={() => {
+              focusSearch.current = true;
+              navigation.end();
+              selectWalk('', '');
+            }}
             progress={progress}
-            onFollow={() => setFollow(true)}
+            route={current.route}
           />
         )}
-        {!walking && route && (
-          <div className={styles.controls}>
-            <button
-              type="button"
-              className={styles.startWalk}
-              ref={startButton}
-              onClick={startWalk}
-            >
-              เริ่มเดิน
-            </button>
-          </div>
-        )}
       </aside>
-      <section className={styles.catalog} aria-labelledby="campus-buildings">
-        <h2 id="campus-buildings">ค้นหาอาคาร พื้นที่ และประตูวิทยาเขต</h2>
-        <form
-          role="search"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const [match] = matches;
-            if (match && matches.length === 1) selectPlace(match.id);
-          }}
-        >
-          <label className={styles.search}>
-            รหัสอาคาร ชื่อพื้นที่ หรือประตู
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="เช่น N16, FIBO, ประตู 1"
-            />
-          </label>
-        </form>
-        <ul className={styles.results} aria-label="ผลการค้นหา">
-          {matches.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                aria-pressed={item.id === place?.id}
-                onClick={() => selectPlace(item.id)}
-              >
-                <strong>
-                  {item.building?.code ??
-                    (item.kind === 'gate' ? 'ประตู' : 'พื้นที่')}
-                </strong>
-                <span>{item.nameTh}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        {matches.length === 0 && (
-          <p role="status">ไม่พบอาคารหรือพื้นที่กลางแจ้งที่ตรงกับคำค้น</p>
-        )}
-      </section>
-      <section
-        className={styles.details}
-        aria-label="ข้อมูลตำแหน่งที่เลือก"
-        aria-live="polite"
-      >
-        {place ? (
-          <>
-            <h3>{place.label}</h3>
-            {building && <p lang="en">{building.nameEn}</p>}
-            <p className={styles.hint}>
-              {building
-                ? 'หมุดอยู่ในขอบเขตฐานอาคารโดยประมาณ'
-                : place.kind === 'gate'
-                  ? 'ตำแหน่งประตูเทียบจากผังมหาวิทยาลัยและ OpenStreetMap · ตรวจการเปิดใช้งานหน้างาน'
-                  : 'หมุดอยู่ในขอบเขตพื้นที่จากแผนที่เปิด'}
-            </p>
-            <div className={styles.placeActions}>
-              <button
-                type="button"
-                className={styles.textButton}
-                onClick={() => void copyLink(place.id)}
-              >
-                คัดลอกลิงก์ตำแหน่ง
-              </button>
-              <a
-                href={placeSatelliteUrl(place)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                เปิดภาพดาวเทียมที่ตำแหน่งนี้
-              </a>
-            </div>
-            {copyStatus?.id === place.id &&
-              (copyStatus.fallbackUrl ? (
-                <label className={styles.search}>
-                  ลิงก์สำหรับคัดลอก
-                  <input
-                    readOnly
-                    value={copyStatus.fallbackUrl}
-                    onFocus={(event) => event.currentTarget.select()}
-                  />
-                </label>
-              ) : (
-                <p role="status">คัดลอกลิงก์แล้ว</p>
-              ))}
-            {building && (
-              <dl>
-                <dt>ความสูงในโมเดล</dt>
-                <dd>
-                  {number.format(building.heightM)} ม. ·{' '}
-                  {heightBasis[building.heightBasis]}
-                </dd>
-                <dt>พื้นที่ฐานในโมเดล</dt>
-                <dd>
-                  {number.format(building.footprintAreaM2)} ตร.ม. ·{' '}
-                  {building.footprintBasis === 'mapped'
-                    ? 'จากข้อมูลแผนที่เปิด'
-                    : 'ร่างโดยประมาณจากผังมหาวิทยาลัย'}
-                </dd>
-                {building.floorCount != null && (
-                  <>
-                    <dt>จำนวนชั้นที่อ้างอิง</dt>
-                    <dd>
-                      {building.heightBasis === 'at-least-levels'
-                        ? 'อย่างน้อย '
-                        : ''}
-                      {building.floorCount} ชั้น
-                    </dd>
-                  </>
-                )}
-              </dl>
-            )}
-            <ul className={styles.sources}>
-              {building && (
-                <li>
-                  <a
-                    href={`https://bgm.kmutt.ac.th/MapNavi/${building.code}.html`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    ภาพอาคารอ้างอิงจาก มจธ.
-                  </a>
-                </li>
-              )}
-              {[...sources].map(([key, source]) => (
-                <li key={key}>
-                  <a href={source.url}>
-                    แหล่งข้อมูลฐานอาคาร
-                    {source.id
-                      ? ` · ${source.kind === 'osm' ? source.id : source.upstream}`
-                      : ''}
-                  </a>
-                </li>
-              ))}
-              {!building && (
-                <li>
-                  <a href={place.source}>
-                    {place.kind === 'gate'
-                      ? 'พิกัดประตูใน OpenStreetMap'
-                      : 'แหล่งข้อมูลขอบเขตพื้นที่'}
-                  </a>
-                </li>
-              )}
-              {building?.heightSource && (
-                <li>
-                  <a href={building.heightSource}>หลักฐานจำนวนชั้น</a>
-                </li>
-              )}
-            </ul>
-          </>
-        ) : (
-          <p>เลือกอาคารหรือพื้นที่เพื่อปักหมุด ดูแหล่งข้อมูล และแชร์ตำแหน่ง</p>
-        )}
-      </section>
     </div>
   );
 }

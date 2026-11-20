@@ -18,6 +18,9 @@ export function useWalkNavigation(plan: WalkRoute | null) {
     current && !arrived && gps.state.status === 'live' ? gps.state.fix : null;
 
   useEffect(() => () => stop(), [plan, stop]);
+  useEffect(() => {
+    if (arrived) stop();
+  }, [arrived, stop]);
 
   const request = current?.request;
   useEffect(() => {

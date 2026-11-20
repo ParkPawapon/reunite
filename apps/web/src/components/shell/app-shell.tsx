@@ -18,7 +18,7 @@ export function AppShell({
   user?: ShellUser;
   children: ReactNode;
   loading?: boolean;
-  page?: 'dashboard' | 'profile';
+  page?: 'dashboard' | 'profile' | 'campus';
 }) {
   const desktop = useMediaQuery('(min-width: 1000px)');
   const [compact, setCompact] = useState(false);
@@ -31,6 +31,7 @@ export function AppShell({
       <div
         className={styles.shell}
         data-shell
+        data-page={page === 'campus' ? page : undefined}
         data-compact={compact}
         data-shell-motion={running ? 'running' : 'still'}
         data-reduced-motion={reducedMotion}
@@ -70,7 +71,14 @@ export function AppShell({
         </Drawer>
         <div className={styles.workspace}>
           <Topbar
-            title={page === 'profile' ? 'โปรไฟล์' : 'หน้าหลัก'}
+            title={
+              page === 'campus'
+                ? 'แผนที่บางมด'
+                : page === 'profile'
+                  ? 'โปรไฟล์'
+                  : 'หน้าหลัก'
+            }
+            publicPage={page === 'campus'}
             user={user}
             menuExpanded={desktop ? !compact : drawer}
             menuId={desktop ? 'desktop-navigation' : 'mobile-navigation'}
@@ -104,7 +112,7 @@ export function AppShell({
           >
             {children}
           </main>
-          <Footer />
+          {page !== 'campus' && <Footer />}
         </div>
       </div>
     </ShellMotionProvider>

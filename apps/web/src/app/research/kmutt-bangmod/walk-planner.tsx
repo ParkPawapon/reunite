@@ -1,192 +1,174 @@
-import { useState } from 'react';
-import { findPlaces, places, placesById } from './places';
+import type { Ref } from 'react';
+import { ShellIcon } from '@/components/shell/shell-icon';
+import { mapPlaceName, places, placesById } from './places';
 import { walkingEndpoints, walkingMinutes, type WalkRoute } from './walking';
 import styles from './viewer.module.css';
 
-const choices = places.filter((place) =>
-  Object.hasOwn(walkingEndpoints, place.id),
-);
-const number = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 });
-const segmentDistance = new Intl.NumberFormat('th-TH', {
-  maximumFractionDigits: 1,
-});
-const basis: Record<string, string> = {
-  approach: 'จุดบนทางเดินใกล้อาคารหรือพื้นที่',
-  'mapped-entrance': 'ทางเข้าอาคารตามแผนที่',
-  'mapped-gate': 'จุดประตูวิทยาเขตตามแผนที่',
-};
-const routeKinds = [
-  ['walk', 'ทางเดิน'],
-  ['road', 'ถนนใช้ร่วมกับรถ'],
-  ['steps', 'บันได'],
-] as const;
+const origins = places
+  .filter((place) => Object.hasOwn(walkingEndpoints, place.id))
+  .sort((a, b) => Number(b.id === 'N7') - Number(a.id === 'N7'));
 
-export function WalkPlanner({
-  from,
-  to,
-  route,
-  onWalk,
-  onClear,
+export function OriginPicker({
+  destination,
+  headingRef,
+  onSelect,
+  onUseLocation,
 }: {
-  from: string;
-  to: string;
-  route: WalkRoute | null;
-  onWalk: (from: string, to: string) => void;
-  onClear: () => void;
+  destination: string;
+  headingRef: Ref<HTMLHeadingElement>;
+  onSelect: (id: string) => void;
+  onUseLocation: () => void;
 }) {
-  const totals = { walk: 0, road: 0, steps: 0 };
-  for (const segment of route?.segments ?? [])
-    totals[segment.kind] += segment.metres;
   return (
-    <section className={styles.planner} aria-labelledby="campus-walk">
-      <h2 id="campus-walk">วางแผนเดินในวิทยาเขต</h2>
-      <form
-        key={`${from}:${to}`}
-        onSubmit={(event) => {
-          event.preventDefault();
-          const values = new FormData(event.currentTarget);
-          onWalk(String(values.get('from')), String(values.get('to')));
-        }}
+    <section className={styles.planner} aria-labelledby="campus-origin">
+      <h1 id="campus-origin" ref={headingRef} tabIndex={-1}>
+        เลือกต้นทาง
+      </h1>
+      <p className={styles.walkIntro}>คุณเริ่มเดินจากตรงไหน</p>
+      <button
+        type="button"
+        className={styles.originLocation}
+        onClick={onUseLocation}
       >
-        <label>
-          ต้นทาง{' '}
-          <select name="from" defaultValue={from} required>
-            <option value="">เลือกต้นทาง</option>
-            {choices.map((place) => (
-              <option value={place.id} key={place.id}>
-                {place.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <DestinationField initial={to} />
-        <div className={styles.controls}>
-          <button type="submit">แสดงเส้นทางเดิน</button>
-          <button type="button" onClick={() => onWalk('N7', 'S3')}>
-            ลอง N7 → S3
-          </button>
-          {(from || to) && (
-            <button type="button" onClick={onClear}>
-              ล้างเส้นทาง
-            </button>
-          )}
-        </div>
-      </form>
-      <div aria-live="polite">
-        {route ? (
-          <>
-            <p className={styles.routeSummary}>
-              <strong>{number.format(route.metres)} ม.</strong> · ประมาณ{' '}
-              {Math.max(1, Math.ceil(walkingMinutes(route.metres)))} นาที
-            </p>
-            <ul
-              className={styles.routeLegend}
-              aria-label="ระยะทางตามประเภททางเดิน"
-            >
-              {routeKinds.map(
-                ([kind, label]) =>
-                  totals[kind] > 0 && (
-                    <li key={kind} data-kind={kind}>
-                      {label} {segmentDistance.format(totals[kind])} ม.
-                    </li>
-                  ),
-              )}
-            </ul>
-            <p>
-              <strong>เริ่ม</strong> {placesById.get(from)?.label} ·{' '}
-              <a
-                href={`https://www.openstreetmap.org/node/${route.from.sourceNode}`}
-              >
-                {basis[route.from.basis]}
-              </a>
-              {route.from.basis === 'approach' && (
-                <>
-                  {' '}
-                  · ห่างขอบพื้นที่ประมาณ{' '}
-                  {segmentDistance.format(route.from.gapMetres)} ม.
-                </>
-              )}
-            </p>
-            <p>
-              <strong>ถึง</strong> {placesById.get(to)?.label} ·{' '}
-              <a
-                href={`https://www.openstreetmap.org/node/${route.to.sourceNode}`}
-              >
-                {basis[route.to.basis]}
-              </a>
-              {route.to.basis === 'approach' && (
-                <>
-                  {' '}
-                  · ห่างขอบพื้นที่ประมาณ{' '}
-                  {segmentDistance.format(route.to.gapMetres)} ม.
-                </>
-              )}
-            </p>
-            <p className={styles.hint}>ตรวจป้ายและสภาพทางหน้างาน</p>
-          </>
-        ) : from && to ? (
-          <p role="status">
-            {from === to
-              ? 'เลือกต้นทางและปลายทางคนละจุด'
-              : 'ยังไม่มีทางเดินที่เชื่อมสองจุดนี้ในชุดข้อมูล'}
-          </p>
-        ) : (
-          <p className={styles.hint}>
-            ใช้แนวทางเดินและถนนที่ทำแผนที่ไว้
-            ระยะถึงจุดใกล้อาคารหรือทางเข้าที่มีข้อมูล
-          </p>
-        )}
-      </div>
+        ใช้ตำแหน่งของฉัน
+      </button>
+      <ul className={styles.results} aria-label="เลือกอาคารต้นทาง">
+        {origins
+          .filter((place) => place.id !== destination)
+          .map((place) => {
+            const code =
+              place.building?.code ??
+              (place.kind === 'gate' ? 'ประตู' : 'พื้นที่');
+            return (
+              <li key={place.id}>
+                <button type="button" onClick={() => onSelect(place.id)}>
+                  <strong>{code}</strong>
+                  <span>
+                    {mapPlaceName(place)}
+                    <small>
+                      {place.building && place.building.code + ' · '}บางมด
+                    </small>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+      </ul>
     </section>
   );
 }
 
-function DestinationField({ initial }: { initial: string }) {
-  const [query, setQuery] = useState('');
-  const [destination, setDestination] = useState(initial);
-  const matches = query
-    ? findPlaces(query).filter((place) =>
-        Object.hasOwn(walkingEndpoints, place.id),
-      )
-    : choices;
+function WalkEndpoint({ label, value }: { label: string; value: string }) {
   return (
-    <>
-      <label>
-        ค้นหาปลายทาง
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => {
-            const value = event.target.value;
-            setQuery(value);
-            const found = value.trim()
-              ? findPlaces(value).filter((place) =>
-                  Object.hasOwn(walkingEndpoints, place.id),
-                )
-              : [];
-            setDestination(found.length === 1 ? (found[0]?.id ?? '') : '');
-          }}
-          placeholder="ชื่อหรือรหัสอาคาร"
-        />
-      </label>
-      <label>
-        ปลายทาง
-        <select
-          name="to"
-          value={destination}
-          onChange={(event) => setDestination(event.target.value)}
-          required
+    <div className={styles.walkEndpoint}>
+      <ShellIcon name="pin" />
+      <div>
+        <dt>{label}</dt>
+        <dd>{value}</dd>
+      </div>
+    </div>
+  );
+}
+
+export function WalkPlanner({
+  route,
+  startRef,
+  onStart,
+}: {
+  route: WalkRoute;
+  startRef: Ref<HTMLButtonElement>;
+  onStart: () => void;
+}) {
+  const origin = placesById.get(route.from.id);
+  const destination = placesById.get(route.to.id);
+  const originCode = route.liveOrigin
+    ? 'ตำแหน่งของฉัน'
+    : (origin?.building?.code ?? origin?.nameTh ?? route.from.id);
+  const destinationCode =
+    destination?.building?.code ?? destination?.nameTh ?? route.to.id;
+  return (
+    <section className={styles.planner} aria-labelledby="campus-walk">
+      <h1 id="campus-walk">แผนที่บางมด</h1>
+      <p className={styles.walkIntro}>เลือกจุดหมาย แล้วเดินไปด้วยกัน</p>
+      <div className={styles.routePreview}>
+        <dl>
+          <WalkEndpoint
+            label="จาก"
+            value={
+              origin?.building
+                ? originCode + ' · ' + mapPlaceName(origin)
+                : originCode
+            }
+          />
+          <WalkEndpoint
+            label="ไป"
+            value={
+              destination?.building
+                ? destinationCode + ' · ' + mapPlaceName(destination)
+                : destinationCode
+            }
+          />
+        </dl>
+        <p className={styles.tripEstimate}>
+          <strong>{Math.ceil(walkingMinutes(route.metres))}</strong>
+          <span>นาที · เดิน</span>
+          <small>ประมาณ {Math.round(route.metres / 10) * 10} ม.</small>
+        </p>
+        <p className={styles.walkNote}>เส้นทางตามทางเดินในมหาวิทยาลัย</p>
+        <button
+          className={styles.primaryAction}
+          type="button"
+          ref={startRef}
+          onClick={onStart}
         >
-          <option value="">
-            {matches.length ? 'เลือกปลายทาง' : 'ไม่พบปลายทาง'}
-          </option>
-          {matches.map((place) => (
-            <option key={place.id} value={place.id}>
-              {place.label}
-            </option>
-          ))}
-        </select>
-      </label>
-    </>
+          เริ่มเดิน
+        </button>
+      </div>
+      <div className={styles.previewSteps}>
+        <WalkSteps route={route} />
+      </div>
+      <p className={styles.mobileWalkNotice}>
+        ตำแหน่งทางเข้าบางจุดยังต้องสำรวจ
+      </p>
+    </section>
+  );
+}
+
+export function WalkSteps({ route }: { route: WalkRoute }) {
+  const start = placesById.get(route.from.id);
+  const destination = placesById.get(route.to.id);
+  return (
+    <div className={styles.walkSteps}>
+      <h2>เส้นทางเดิน</h2>
+      <ol>
+        <li>
+          <ShellIcon name="pin" />
+          <div>
+            <strong>
+              {route.liveOrigin
+                ? 'เริ่มจากตำแหน่งบนแผนที่'
+                : 'เริ่มใกล้ ' +
+                  (start?.building?.code ?? start?.nameTh ?? route.from.id)}
+            </strong>
+            <p>ไปตามเส้นทางสีส้ม</p>
+          </div>
+        </li>
+        <li>
+          <ShellIcon name="pin" />
+          <div>
+            <strong>
+              ถึงบริเวณ{' '}
+              {destination?.building?.code ??
+                destination?.nameTh ??
+                route.to.id}
+            </strong>
+            <p>ตรวจป้ายและทางเข้าหน้างานอีกครั้ง</p>
+          </div>
+        </li>
+      </ol>
+      <p className={styles.walkNotice}>
+        <ShellIcon name="alert" /> ตำแหน่งทางเข้าบางจุดยังต้องสำรวจ
+      </p>
+    </div>
   );
 }

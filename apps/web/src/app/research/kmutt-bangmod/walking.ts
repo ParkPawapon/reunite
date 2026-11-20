@@ -45,7 +45,8 @@ export type WalkSegment = {
   way: number;
 };
 export type WalkRoute = {
-  from: Endpoint & { id: string };
+  from:
+    (Endpoint & { id: string }) | { id: 'live-origin'; basis: 'live-position' };
   to: Endpoint & { id: string };
   segments: WalkSegment[];
   metres: number;
@@ -289,8 +290,37 @@ export function findWalk(fromId: string, toId: string): WalkRoute | null {
 
 export function findWalkFromEdge(
   plan: WalkRoute,
-  { path, point, fraction }: EdgeMatch,
+  match: EdgeMatch,
   graph = campusGraph,
+): WalkRoute | null {
+  return walkFromEdge(plan.from, plan.to, match, graph);
+}
+
+export function findWalkFromPosition(
+  point: MapPoint,
+  accuracy: number,
+  toId: string,
+): WalkRoute | null {
+  const to = Object.hasOwn(walkingEndpoints, toId)
+    ? walkingEndpoints[toId]
+    : undefined;
+  if (!to) return null;
+  const edge = matchWalkingEdge(point, accuracy);
+  return edge.status === 'matched'
+    ? walkFromEdge(
+        { id: 'live-origin', basis: 'live-position' },
+        { ...to, id: toId },
+        edge.match,
+        campusGraph,
+      )
+    : null;
+}
+
+function walkFromEdge(
+  from: WalkRoute['from'],
+  to: WalkRoute['to'],
+  { path, point, fraction }: EdgeMatch,
+  graph: typeof campusGraph,
 ): WalkRoute | null {
   const departures = path.departures.flatMap(({ start, edge }): Departure[] => {
     const end = graph.positions[edge.to];
@@ -320,10 +350,10 @@ export function findWalkFromEdge(
       cost: 0,
       partial: { ...reference, to: point, metres: 0 },
     });
-  const segments = solveWalk(graph, departures, plan.to.node);
+  const segments = solveWalk(graph, departures, to.node);
   return (
     segments && {
-      ...buildRoute(plan.from, plan.to, segments),
+      ...buildRoute(from, to, segments),
       liveOrigin: true,
     }
   );
