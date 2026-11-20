@@ -1,3 +1,188 @@
 .root {
   min-width: 0;
 }
+.pageHeader {
+  margin-bottom: 1.5rem;
+}
+.pageHeader h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.5;
+}
+.intro {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+}
+.tabs {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 0;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem;
+  background: var(--color-orange-50);
+  border-radius: 0.875rem;
+}
+.tabs :global(.MuiTabs-indicator) {
+  display: none;
+}
+.tabs :global(.MuiTab-root) {
+  min-height: 48px;
+  min-width: 188px;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: none;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.root[data-motion='still'] .tabs :global(.MuiTab-root) {
+  transition: none;
+}
+.tabs :global(.MuiTab-root:hover:not(.Mui-selected)) {
+  color: var(--color-orange-800);
+}
+.tabs :global(.Mui-selected) {
+  background: var(--color-surface);
+  border-color: var(--color-orange-200);
+  color: var(--color-action-primary);
+  font-weight: 600;
+}
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  padding: 2rem;
+}
+.grid {
+  --field-placeholder: color-mix(
+    in srgb,
+    var(--color-text-muted) 70%,
+    var(--color-surface)
+  );
+  display: grid;
+  grid-template-columns: minmax(0, 651fr) minmax(0, 381fr);
+  gap: 1.25rem 1rem;
+}
+.fullRow {
+  grid-column: 1 / -1;
+}
+.grid :global(.MuiInputLabel-root.MuiInputLabel-shrink) {
+  position: static;
+  transform: none;
+  max-width: 100%;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+.grid :global(.MuiOutlinedInput-root) {
+  min-height: 52px;
+  border-radius: 0.625rem;
+  background: var(--color-surface);
+  font-size: 0.875rem;
+}
+.grid :global(.MuiOutlinedInput-root.MuiInputBase-multiline) {
+  padding: 0;
+}
+.grid :global(.MuiOutlinedInput-input) {
+  padding: 1rem 0.875rem;
+}
+.grid :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: var(--color-border);
+}
+.grid :global(.MuiInputBase-input)::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+.grid :global(.MuiFormHelperText-root) {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.placeholder {
+  color: var(--field-placeholder);
+}
+.dateField input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.dateField input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.emptyDate input:not(:focus)::-webkit-datetime-edit {
+  display: none;
+}
+.emptyDate input:not(:focus)::before {
+  content: attr(data-placeholder);
+  flex: 1;
+  color: var(--field-placeholder);
+}
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+.hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.submit {
+  min-height: 44px;
+  padding: 0.5rem 1.75rem;
+  border-radius: 0.625rem;
+  box-shadow: none;
+  white-space: nowrap;
+  transition:
+    background 0.16s ease,
+    transform 0.12s ease;
+}
+.submit:hover {
+  box-shadow: none;
+}
+.submit:active {
+  transform: scale(0.98);
+}
+.root[data-motion='still'] .submit:active {
+  transform: none;
+}
+@media (max-width: 767px) {
+  .tabs {
+    width: 100%;
+  }
+  .tabs :global(.MuiTabs-list) {
+    width: 100%;
+  }
+  .tabs :global(.MuiTab-root) {
+    flex: 1;
+    min-width: 0;
+  }
+  .card {
+    padding: 1rem;
+  }
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
