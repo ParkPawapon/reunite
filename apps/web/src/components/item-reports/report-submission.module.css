@@ -135,6 +135,10 @@
 .grid :global(.MuiOutlinedInput-notchedOutline) {
   border-color: var(--color-border);
 }
+.grid
+  :global(.MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline) {
+  border-color: var(--color-danger);
+}
 .grid :global(.MuiInputBase-input)::placeholder {
   color: var(--field-placeholder);
   opacity: 1;
@@ -143,6 +147,9 @@
   margin: 0.5rem 0 0;
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+.grid :global(.MuiFormHelperText-root.Mui-error) {
+  color: var(--color-danger);
 }
 .placeholder {
   color: var(--field-placeholder);
@@ -162,8 +169,11 @@
   opacity: 0;
   cursor: pointer;
 }
+/* Hide the empty d/m/y parts without removing them, so the field stays focusable. */
 .emptyDate input:not(:focus)::-webkit-datetime-edit {
-  display: none;
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
 }
 .emptyDate input:not(:focus)::before {
   content: attr(data-placeholder);

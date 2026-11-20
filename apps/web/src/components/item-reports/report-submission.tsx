@@ -17,6 +17,11 @@ import {
   tabCopy,
   type ReportDraft,
 } from './report-draft';
+import {
+  FIELD_ORDER,
+  validateReport,
+  type FieldErrors,
+} from './report-validation';
 import { useReportOptions } from './use-report-options';
 import styles from './report-submission.module.css';
 
@@ -47,12 +52,16 @@ function ChoiceSkeleton({ animate }: { animate: boolean }) {
   );
 }
 function Choice({
+  id,
   label,
   placeholder,
   value,
   options,
+  error,
   onChange,
 }: {
+  id: string;
+  error?: string;
   label: string;
   placeholder: string;
   value: string;
@@ -64,7 +73,10 @@ function Choice({
       select
       required
       fullWidth
+      id={id}
       label={label}
+      error={Boolean(error)}
+      helperText={error}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       slotProps={{
@@ -103,7 +115,12 @@ export function ReportSubmission() {
     LOST: emptyDraft,
     FOUND: emptyDraft,
   });
+  const [allErrors, setAllErrors] = useState<Record<ReportType, FieldErrors>>({
+    LOST: {},
+    FOUND: {},
+  });
   const draft = drafts[type];
+  const errors = allErrors[type];
   const copy = tabCopy[type];
   const { state, retry } = useReportOptions();
   const categories = state.status === 'ready' ? state.categories : [];
@@ -111,11 +128,38 @@ export function ReportSubmission() {
   const noOptions =
     state.status === 'ready' && (!categories.length || !locations.length);
   const when = draft.date && draft.time ? `${draft.date}T${draft.time}` : '';
-  const patch = (fields: Partial<ReportDraft>) =>
+  const fieldId = (name: string) => `${id}-${name}`;
+  const patch = (fields: Partial<ReportDraft>) => {
     setDrafts((current) => ({
       ...current,
       [type]: { ...current[type], ...fields },
     }));
+    // An error goes away as soon as the user edits that field.
+    setAllErrors((current) => {
+      const next = { ...current[type] };
+      for (const key of Object.keys(fields) as (keyof ReportDraft)[])
+        delete next[key];
+      return { ...current, [type]: next };
+    });
+  };
+  const submit = (event: React.SyntheticEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const result = validateReport(type, draft);
+    if (result.ok) return;
+    setAllErrors((current) => ({ ...current, [type]: result.errors }));
+    for (const name of FIELD_ORDER) {
+      if (!result.errors[name]) continue;
+      const target = document.getElementById(fieldId(name));
+      if (target) {
+        target.focus();
+        break;
+      }
+    }
+  };
+  const whenError =
+    errors.date && errors.time
+      ? 'กรุณาเลือกวันและเวลา'
+      : (errors.date ?? errors.time);
   return (
     <div
       className={styles.root}
@@ -155,11 +199,7 @@ export function ReportSubmission() {
         id={`${id}-panel`}
         aria-labelledby={`${id}-tab-${type}`}
       >
-        <form
-          className={styles.card}
-          noValidate
-          onSubmit={(event) => event.preventDefault()}
-        >
+        <form className={styles.card} noValidate onSubmit={submit}>
           {state.status === 'loading' ? (
             <p className={styles.srOnly} role="status">
               กำลังโหลดหมวดหมู่และสถานที่
@@ -195,8 +235,11 @@ export function ReportSubmission() {
             <TextField
               required
               fullWidth
+              id={fieldId('title')}
               label="ชื่อสิ่งของ"
               placeholder={copy.titlePlaceholder}
+              error={Boolean(errors.title)}
+              helperText={errors.title}
               value={draft.title}
               onChange={(event) => patch({ title: event.target.value })}
               slotProps={baseSlots}
@@ -205,6 +248,8 @@ export function ReportSubmission() {
               <ChoiceSkeleton animate={motion} />
             ) : (
               <Choice
+                id={fieldId('categoryId')}
+                error={errors.categoryId}
                 label="หมวดหมู่"
                 placeholder="เลือกหมวดหมู่"
                 value={draft.categoryId}
@@ -216,6 +261,8 @@ export function ReportSubmission() {
               <ChoiceSkeleton animate={motion} />
             ) : (
               <Choice
+                id={fieldId('locationId')}
+                error={errors.locationId}
                 label={copy.place}
                 placeholder={copy.placePlaceholder}
                 value={draft.locationId}
@@ -228,7 +275,10 @@ export function ReportSubmission() {
                 required
                 fullWidth
                 type="datetime-local"
+                id={fieldId('date')}
                 label={copy.when}
+                error={Boolean(whenError)}
+                helperText={whenError}
                 className={dateClass(when)}
                 value={when}
                 onChange={(event) => {
@@ -246,7 +296,10 @@ export function ReportSubmission() {
                   required
                   fullWidth
                   type="date"
+                  id={fieldId('date')}
                   label={copy.date}
+                  error={Boolean(errors.date)}
+                  helperText={errors.date}
                   className={dateClass(draft.date)}
                   value={draft.date}
                   onChange={(event) => patch({ date: event.target.value })}
@@ -259,7 +312,10 @@ export function ReportSubmission() {
                   required
                   fullWidth
                   type="time"
+                  id={fieldId('time')}
                   label="เวลา"
+                  error={Boolean(errors.time)}
+                  helperText={errors.time}
                   className={dateClass(draft.time)}
                   value={draft.time}
                   onChange={(event) => patch({ time: event.target.value })}
@@ -275,9 +331,14 @@ export function ReportSubmission() {
               fullWidth
               multiline
               minRows={4}
+              id={fieldId('description')}
+              error={Boolean(errors.description)}
               label="ลักษณะสิ่งของ (ไม่บังคับ)"
               placeholder="เช่น สี ยี่ห้อ หรือรอยตำหนิ"
-              helperText={`ไม่เกิน ${DESCRIPTION_LIMIT.toLocaleString('en-US')} ตัวอักษร`}
+              helperText={
+                errors.description ??
+                `ไม่เกิน ${DESCRIPTION_LIMIT.toLocaleString('en-US')} ตัวอักษร`
+              }
               value={draft.description}
               onChange={(event) => patch({ description: event.target.value })}
               slotProps={{
