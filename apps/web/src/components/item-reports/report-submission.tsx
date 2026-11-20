@@ -152,7 +152,11 @@ export function ReportSubmission() {
     event.preventDefault();
     const result = validateReport(type, draft);
     if (result.ok) {
-      void submitter.submit(type, result.payload);
+      void submitter.submit(
+        type,
+        result.payload,
+        photoDrafts.photos[type]?.file ?? null,
+      );
       return;
     }
     setAllErrors((current) => ({ ...current, [type]: result.errors }));
@@ -370,6 +374,44 @@ export function ReportSubmission() {
               <p>{sent.message}</p>
             </div>
           ) : null}
+          {sent.status === 'photoFailed' ? (
+            <div role="alert" className={styles.notice}>
+              <p>
+                แจ้งรายการแล้ว แต่แนบรูปไม่สำเร็จ
+                <br />
+                {sent.reason}
+              </p>
+              <Button
+                type="button"
+                variant="outlined"
+                className={styles.retry}
+                color="primary"
+                disabled={submitter.anyPending}
+                onClick={() =>
+                  void submitter.retryPhoto(
+                    type,
+                    photoDrafts.photos[type]?.file ?? null,
+                  )
+                }
+                startIcon={<ShellIcon name="refresh" width={16} height={16} />}
+              >
+                ลองแนบรูปอีกครั้ง
+              </Button>
+            </div>
+          ) : null}
+          {sent.status === 'uncertain' ? (
+            <div role="alert" className={styles.notice}>
+              <p>
+                ยังไม่ทราบว่าส่งรายการสำเร็จหรือไม่ เพราะการเชื่อมต่อขัดข้อง
+                กรุณาตรวจสอบที่หน้าหลักก่อนส่งซ้ำ เพื่อไม่ให้ได้รายการซ้ำ
+              </p>
+            </div>
+          ) : null}
+          {sent.status === 'pending' && sent.phase === 'uploading' ? (
+            <p className={styles.srOnly} role="status">
+              กำลังแนบรูป…
+            </p>
+          ) : null}
           {sent.status === 'created' ? (
             <div role="status" className={styles.notice}>
               <p>แจ้งรายการแล้ว (เลขที่ {sent.reportId})</p>
@@ -381,7 +423,11 @@ export function ReportSubmission() {
               type="submit"
               variant="contained"
               className={styles.submit}
-              disabled={submitter.anyPending || sent.status === 'created'}
+              disabled={
+                submitter.anyPending ||
+                sent.status === 'created' ||
+                sent.status === 'photoFailed'
+              }
               aria-busy={sent.status === 'pending'}
             >
               {sent.status === 'pending' ? 'กำลังส่ง…' : copy.submit}

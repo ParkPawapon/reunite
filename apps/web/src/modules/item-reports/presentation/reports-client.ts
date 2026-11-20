@@ -157,6 +157,21 @@ export async function createReport(
   if (!parsed.success) throw new ReportRequestError(0);
   return parsed.data.data.reportId;
 }
+export async function uploadReportImage(
+  reportId: number,
+  file: File,
+  signal: AbortSignal,
+) {
+  const response = await fetch(`/api/v1/item-reports/${reportId}/image`, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    credentials: 'same-origin',
+    cache: 'no-store',
+    body: file,
+    signal: AbortSignal.any([signal, AbortSignal.timeout(30_000)]),
+  });
+  if (!response.ok) throw new ReportRequestError(response.status);
+}
 export function reportImageHref(value: string | null): string | null {
   if (!value || /[\u0000-\u0020\\]/.test(value) || value.startsWith('//'))
     return null;
