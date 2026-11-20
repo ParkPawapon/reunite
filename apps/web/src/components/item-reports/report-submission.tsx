@@ -22,6 +22,8 @@ import {
   validateReport,
   type FieldErrors,
 } from './report-validation';
+import { PhotoField } from './photo-field';
+import { usePhotoDrafts } from './use-photo-drafts';
 import { useReportOptions } from './use-report-options';
 import styles from './report-submission.module.css';
 
@@ -119,6 +121,7 @@ export function ReportSubmission() {
     LOST: {},
     FOUND: {},
   });
+  const photoDrafts = usePhotoDrafts();
   const draft = drafts[type];
   const errors = allErrors[type];
   const copy = tabCopy[type];
@@ -346,6 +349,14 @@ export function ReportSubmission() {
                 htmlInput: { maxLength: DESCRIPTION_LIMIT },
               }}
             />
+            <div className={styles.fullRow}>
+              <PhotoField
+                id={fieldId('photo')}
+                photo={photoDrafts.photos[type]}
+                error={photoDrafts.errors[type]}
+                onPick={(files) => photoDrafts.pick(type, files)}
+              />
+            </div>
           </div>
           <div className={styles.footer}>
             <p className={styles.hint}>* จำเป็นต้องกรอก</p>

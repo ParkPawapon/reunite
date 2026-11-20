@@ -1,0 +1,90 @@
+.root {
+  min-width: 0;
+}
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.625rem;
+  background: var(--color-surface);
+  cursor: pointer;
+}
+.box[data-dragging='true'] {
+  background: var(--color-orange-50);
+  border-color: var(--color-focus);
+  box-shadow: inset 0 0 0 1px var(--color-focus);
+}
+.box[data-error='true'] {
+  border-color: var(--color-danger);
+}
+/* Visually hidden but still reachable by keyboard and screen readers. */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  opacity: 0;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 0.625rem;
+  background: var(--color-orange-50);
+  color: var(--color-action-primary);
+}
+.thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.copy {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+.copy strong {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.copy span {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+.mobileOnly {
+  display: none;
+}
+@media (max-width: 767px) {
+  .desktopOnly {
+    display: none;
+  }
+  .mobileOnly {
+    display: inline;
+  }
+}
+.hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.error {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-danger);
+}
