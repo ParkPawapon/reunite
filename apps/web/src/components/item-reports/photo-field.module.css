@@ -18,6 +18,22 @@
   border-radius: 0.625rem;
   background: var(--color-surface);
   cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.12s ease;
+}
+/* Only the empty box reacts to hover; once a photo is attached just the buttons do. */
+.box[data-attached='false']:hover {
+  background: var(--color-orange-50);
+  transform: translateY(-1px);
+}
+.box[data-attached='false']:active {
+  transform: translateY(0) scale(0.995);
+}
+.box:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 .box[data-dragging='true'] {
   background: var(--color-orange-50);
@@ -89,6 +105,22 @@
   border-radius: 0.75rem;
   background: var(--color-surface);
   color: var(--color-orange-800);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.12s ease;
+}
+.iconButton:hover {
+  background: var(--color-orange-50);
+  border-color: var(--color-orange-200);
+  transform: translateY(-1px);
+}
+.iconButton:active {
+  transform: translateY(0) scale(0.96);
+}
+.iconButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 .dialogPaper {
   display: flex;
@@ -174,4 +206,18 @@
   margin: 0.25rem 0 0;
   font-size: 0.75rem;
   color: var(--color-danger);
+}
+@media (prefers-reduced-motion: reduce) {
+  .iconButton {
+    transition: none;
+  }
+  .iconButton:hover,
+  .iconButton:active,
+  .box[data-attached='false']:hover,
+  .box[data-attached='false']:active {
+    transform: none;
+  }
+  .box {
+    transition: none;
+  }
 }

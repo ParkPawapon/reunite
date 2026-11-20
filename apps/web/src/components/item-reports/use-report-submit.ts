@@ -7,15 +7,28 @@ import {
   type ReportType,
 } from '@/modules/item-reports/presentation/reports-client';
 
+// What the success message repeats back to the user.
+export type SubmitSummary = {
+  title: string;
+  eventDatetime: string;
+  withPhoto: boolean;
+};
 export type SubmitState =
   | { status: 'idle' }
   | { status: 'pending'; phase: 'creating' | 'uploading' }
-  | { status: 'created'; reportId: number }
+  | { status: 'created'; reportId: number; summary: SubmitSummary }
   // The report exists; only the photo is missing. Retry must never POST again.
-  | { status: 'photoFailed'; reportId: number; reason: string }
+  | {
+      status: 'photoFailed';
+      reportId: number;
+      reason: string;
+      expired: boolean;
+      summary: SubmitSummary;
+    }
   // The request left but its answer never arrived, so the report may exist.
   | { status: 'uncertain' }
-  | { status: 'failed'; message: string };
+  // `expired` lets the page offer a way to sign in again without losing the form.
+  | { status: 'failed'; message: string; expired: boolean };
 
 const idle: SubmitState = { status: 'idle' };
 const SESSION_EXPIRED =
@@ -28,21 +41,25 @@ function createFailure(error: unknown): SubmitState {
   const status = statusOf(error);
   // No HTTP answer at all (or an unreadable 201) means we cannot know the result.
   if (status === null || status === 0) return { status: 'uncertain' };
-  if (status === 401) return { status: 'failed', message: SESSION_EXPIRED };
+  if (status === 401)
+    return { status: 'failed', message: SESSION_EXPIRED, expired: true };
   if (status === 413)
     return {
       status: 'failed',
       message:
         'ข้อมูลยาวเกินกว่าที่ส่งได้ กรุณาตัดข้อความลักษณะสิ่งของให้สั้นลง',
+      expired: false,
     };
   if (status === 422)
     return {
       status: 'failed',
       message: 'ข้อมูลบางช่องยังไม่ถูกต้อง กรุณาตรวจสอบแล้วลองอีกครั้ง',
+      expired: false,
     };
   return {
     status: 'failed',
     message: 'ส่งรายการไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาลองอีกครั้ง',
+    expired: false,
   };
 }
 function photoReason(error: unknown) {
@@ -71,18 +88,21 @@ export function useReportSubmit() {
     type: ReportType,
     reportId: number,
     photo: File,
+    summary: SubmitSummary,
     signal: AbortSignal,
   ) => {
     set(type, { status: 'pending', phase: 'uploading' });
     try {
       await uploadReportImage(reportId, photo, signal);
-      set(type, { status: 'created', reportId });
+      set(type, { status: 'created', reportId, summary });
     } catch (error) {
       if (signal.aborted) return;
       set(type, {
         status: 'photoFailed',
         reportId,
         reason: photoReason(error),
+        expired: statusOf(error) === 401,
+        summary,
       });
     }
   };
@@ -103,8 +123,13 @@ export function useReportSubmit() {
     set(type, { status: 'pending', phase: 'creating' });
     try {
       const reportId = await createReport(input, signal);
-      if (photo) await attachPhoto(type, reportId, photo, signal);
-      else set(type, { status: 'created', reportId });
+      const summary = {
+        title: input.title,
+        eventDatetime: input.eventDatetime,
+        withPhoto: Boolean(photo),
+      };
+      if (photo) await attachPhoto(type, reportId, photo, summary, signal);
+      else set(type, { status: 'created', reportId, summary });
     } catch (error) {
       if (!signal.aborted) set(type, createFailure(error));
     } finally {
@@ -116,12 +141,22 @@ export function useReportSubmit() {
     if (busy.current || current.status !== 'photoFailed') return;
     // The user removed the photo after the failure: the report is complete as is.
     if (!photo) {
-      set(type, { status: 'created', reportId: current.reportId });
+      set(type, {
+        status: 'created',
+        reportId: current.reportId,
+        summary: { ...current.summary, withPhoto: false },
+      });
       return;
     }
     const signal = start();
     try {
-      await attachPhoto(type, current.reportId, photo, signal);
+      await attachPhoto(
+        type,
+        current.reportId,
+        photo,
+        { ...current.summary, withPhoto: true },
+        signal,
+      );
     } finally {
       busy.current = false;
     }

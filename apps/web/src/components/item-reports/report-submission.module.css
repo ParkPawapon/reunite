@@ -42,13 +42,25 @@
   text-transform: none;
   transition:
     background 0.12s ease,
-    color 0.12s ease;
+    color 0.12s ease,
+    transform 0.12s ease;
 }
 .root[data-motion='still'] .tabs :global(.MuiTab-root) {
   transition: none;
+  transform: none;
 }
 .tabs :global(.MuiTab-root:hover:not(.Mui-selected)) {
+  background: var(--color-orange-100);
   color: var(--color-orange-800);
+  transform: translateY(-1px);
+}
+.tabs :global(.MuiTab-root:active:not(.Mui-selected)) {
+  background: var(--color-orange-200);
+  transform: translateY(0) scale(0.98);
+}
+.tabs :global(.MuiTab-root.Mui-focusVisible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 .tabs :global(.Mui-selected) {
   background: var(--color-surface);
@@ -106,6 +118,19 @@
   flex-shrink: 0;
   border-radius: 0.625rem;
   background: var(--color-surface);
+  transition:
+    background 0.12s ease,
+    transform 0.12s ease;
+}
+.retry:hover {
+  transform: translateY(-1px);
+}
+.retry:active {
+  transform: translateY(0) scale(0.98);
+}
+.root[data-motion='still'] .retry:hover,
+.root[data-motion='still'] .retry:active {
+  transform: none;
 }
 .fullRow {
   grid-column: 1 / -1;
@@ -170,15 +195,32 @@
   cursor: pointer;
 }
 /* Hide the empty d/m/y parts without removing them, so the field stays focusable. */
-.emptyDate input:not(:focus)::-webkit-datetime-edit {
+.emptyDate input:not(:focus)::-webkit-datetime-edit,
+.filledDate input:not(:focus)::-webkit-datetime-edit {
+  flex: none;
   width: 0;
   opacity: 0;
   overflow: hidden;
 }
+.emptyDate input:not(:focus)::before,
+.filledDate input:not(:focus)::before {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  left: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 .emptyDate input:not(:focus)::before {
   content: attr(data-placeholder);
-  flex: 1;
   color: var(--field-placeholder);
+}
+/* Show the Thai format (16 พ.ย. 2569 · 10:30 น.) until the user edits the field. */
+.filledDate input:not(:focus)::before {
+  content: attr(data-formatted);
 }
 .footer {
   display: flex;
@@ -206,10 +248,16 @@
 }
 .submit:hover {
   box-shadow: none;
+  transform: translateY(-1px);
+}
+.submit:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 .submit:active {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
+.root[data-motion='still'] .submit:hover,
 .root[data-motion='still'] .submit:active {
   transform: none;
 }

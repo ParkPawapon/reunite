@@ -23,7 +23,13 @@ import {
   type FieldErrors,
 } from './report-validation';
 import { PhotoField } from './photo-field';
+import {
+  formatEventDate,
+  formatEventDatetime,
+  formatEventTime,
+} from './report-format';
 import { usePhotoDrafts } from './use-photo-drafts';
+import { SubmitFeedback } from './submit-feedback';
 import { useReportOptions } from './use-report-options';
 import { useReportSubmit } from './use-report-submit';
 import styles from './report-submission.module.css';
@@ -36,7 +42,7 @@ const baseSlots = {
   input: { notched: false, label: '' },
 } as const;
 const dateClass = (value: string) =>
-  value ? styles.dateField : `${styles.dateField} ${styles.emptyDate}`;
+  `${styles.dateField} ${value ? styles.filledDate : styles.emptyDate}`;
 
 function SelectChevron({ className }: { className?: string }) {
   return <ShellIcon name="chevron" className={className} />;
@@ -300,7 +306,12 @@ export function ReportSubmission() {
                 }}
                 slotProps={{
                   ...baseSlots,
-                  htmlInput: { 'data-placeholder': 'เลือกวันและเวลา' },
+                  htmlInput: {
+                    'data-placeholder': 'เลือกวันและเวลา',
+                    'data-formatted': when
+                      ? formatEventDatetime(`${when}:00`)
+                      : undefined,
+                  },
                 }}
               />
             ) : (
@@ -318,7 +329,12 @@ export function ReportSubmission() {
                   onChange={(event) => patch({ date: event.target.value })}
                   slotProps={{
                     ...baseSlots,
-                    htmlInput: { 'data-placeholder': 'เลือกวันที่' },
+                    htmlInput: {
+                      'data-placeholder': 'เลือกวันที่',
+                      'data-formatted': draft.date
+                        ? formatEventDate(draft.date)
+                        : undefined,
+                    },
                   }}
                 />
                 <TextField
@@ -334,7 +350,12 @@ export function ReportSubmission() {
                   onChange={(event) => patch({ time: event.target.value })}
                   slotProps={{
                     ...baseSlots,
-                    htmlInput: { 'data-placeholder': 'เลือกเวลา' },
+                    htmlInput: {
+                      'data-placeholder': 'เลือกเวลา',
+                      'data-formatted': draft.time
+                        ? formatEventTime(draft.time)
+                        : undefined,
+                    },
                   }}
                 />
               </>
@@ -369,54 +390,16 @@ export function ReportSubmission() {
               />
             </div>
           </div>
-          {sent.status === 'failed' ? (
-            <div role="alert" className={styles.notice}>
-              <p>{sent.message}</p>
-            </div>
-          ) : null}
-          {sent.status === 'photoFailed' ? (
-            <div role="alert" className={styles.notice}>
-              <p>
-                แจ้งรายการแล้ว แต่แนบรูปไม่สำเร็จ
-                <br />
-                {sent.reason}
-              </p>
-              <Button
-                type="button"
-                variant="outlined"
-                className={styles.retry}
-                color="primary"
-                disabled={submitter.anyPending}
-                onClick={() =>
-                  void submitter.retryPhoto(
-                    type,
-                    photoDrafts.photos[type]?.file ?? null,
-                  )
-                }
-                startIcon={<ShellIcon name="refresh" width={16} height={16} />}
-              >
-                ลองแนบรูปอีกครั้ง
-              </Button>
-            </div>
-          ) : null}
-          {sent.status === 'uncertain' ? (
-            <div role="alert" className={styles.notice}>
-              <p>
-                ยังไม่ทราบว่าส่งรายการสำเร็จหรือไม่ เพราะการเชื่อมต่อขัดข้อง
-                กรุณาตรวจสอบที่หน้าหลักก่อนส่งซ้ำ เพื่อไม่ให้ได้รายการซ้ำ
-              </p>
-            </div>
-          ) : null}
-          {sent.status === 'pending' && sent.phase === 'uploading' ? (
-            <p className={styles.srOnly} role="status">
-              กำลังแนบรูป…
-            </p>
-          ) : null}
-          {sent.status === 'created' ? (
-            <div role="status" className={styles.notice}>
-              <p>แจ้งรายการแล้ว (เลขที่ {sent.reportId})</p>
-            </div>
-          ) : null}
+          <SubmitFeedback
+            state={sent}
+            busy={submitter.anyPending}
+            onRetryPhoto={() =>
+              void submitter.retryPhoto(
+                type,
+                photoDrafts.photos[type]?.file ?? null,
+              )
+            }
+          />
           <div className={styles.footer}>
             <p className={styles.hint}>* จำเป็นต้องกรอก</p>
             <Button

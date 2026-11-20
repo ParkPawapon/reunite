@@ -43,6 +43,7 @@ export function PhotoField({
       </span>
       <div
         className={styles.box}
+        data-attached={Boolean(photo)}
         data-dragging={dragging}
         data-error={Boolean(error)}
         onDragEnter={(event) => {
