@@ -37,14 +37,17 @@ export function useLivePosition() {
 
   function start(
     onSample?: (sample: ReturnType<typeof readLiveFix> | null) => void,
+    onFailure?: () => void,
   ) {
     if (watch.current !== null) return;
     if (!window.isSecureContext) {
       setState({ status: 'insecure' });
+      onFailure?.();
       return;
     }
     if (!navigator.geolocation) {
       setState({ status: 'unsupported' });
+      onFailure?.();
       return;
     }
     setState({ status: navigator.permissions ? 'requesting' : 'searching' });
@@ -63,7 +66,6 @@ export function useLivePosition() {
           latestTimestamp = position.timestamp;
         }
         setState(sample);
-        onSample?.(sample);
         if (sample.status === 'live') {
           timer.current = window.setTimeout(
             () => {
@@ -73,6 +75,7 @@ export function useLivePosition() {
             liveFixAgeMs - Math.max(0, now - position.timestamp),
           );
         }
+        onSample?.(sample);
       },
       ({ code }) => {
         if (watch.current !== id) return;
@@ -84,6 +87,7 @@ export function useLivePosition() {
         } else {
           setState({ status: 'unavailable' });
         }
+        onFailure?.();
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 12_000 },
     );

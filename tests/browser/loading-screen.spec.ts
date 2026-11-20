@@ -157,9 +157,15 @@ test('shows the real map download state and replaces it on success or failure', 
   await page.goto('/research/kmutt-bangmod#place=N16');
   await expect(page.locator('[data-render-state=plan]')).toBeVisible();
   await expect(page.locator('[data-loading-screen]')).toHaveCount(0);
-  await page
-    .getByRole('button', { name: '3D แบบละเอียด', exact: true })
-    .click();
+  const map = page.getByRole('region', { name: 'แผนที่วิทยาเขต' });
+  const mapModes = map.getByLabel('รูปแบบแผนที่', { exact: true });
+  const detail = map.getByRole('button', {
+    name: '3D แบบละเอียด',
+    exact: true,
+  });
+  await expect(mapModes).toBeVisible();
+  await mapModes.press('Enter');
+  await detail.press('Enter');
   await expect(page.locator('[data-loading-screen]')).toBeVisible();
   await expect(
     page.getByRole('status').filter({ hasText: 'กำลังโหลด…' }),
@@ -169,14 +175,12 @@ test('shows the real map download state and replaces it on success or failure', 
     timeout: 60_000,
   });
   await expect(page.locator('[data-loading-screen]')).toHaveCount(0);
-  await page
-    .getByRole('button', { name: 'แผนที่ 2 มิติ', exact: true })
-    .click();
+  await mapModes.press('Enter');
+  await map.getByRole('button', { name: 'แผนที่ 2 มิติ', exact: true }).click();
   await page.unroute('**/kmutt-bangmod-web.glb');
   await page.route('**/kmutt-bangmod-web.glb', (route) => route.abort());
-  await page
-    .getByRole('button', { name: '3D แบบละเอียด', exact: true })
-    .click();
+  await mapModes.press('Enter');
+  await detail.click();
   await expect(page.locator('[data-render-state=unavailable]')).toBeVisible();
   await expect(page.locator('[data-loading-screen]')).toHaveCount(0);
   await expect(

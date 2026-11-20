@@ -72,6 +72,17 @@ export const places: readonly Place[] = map.features
   });
 export const placesById = new Map(places.map((place) => [place.id, place]));
 
+const mapPlaceNames = new Map([
+  ['N16', 'อาคารการเรียนรู้พหุวิทยาการ (LX)'],
+  ['N10', 'สำนักหอสมุด'],
+  ['N7', 'ปฏิบัติการพื้นฐานทางวิทยาศาสตร์'],
+  ['S3', 'สถาบันนวัตกรรมการเรียนรู้'],
+]);
+
+export function mapPlaceName(place: Place) {
+  return mapPlaceNames.get(place.id) ?? place.nameTh;
+}
+
 export function placeFragment(id: string) {
   return `#${new URLSearchParams({ place: id })}`;
 }

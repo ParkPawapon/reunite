@@ -3,8 +3,10 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import type { WalkProgress } from './live-position';
+import { placesById } from './places';
 import type { useLivePosition } from './use-live-position';
-import { walkingMinutes } from './walking';
+import { WalkSteps } from './walk-planner';
+import { walkingMinutes, type WalkRoute } from './walking';
 import styles from './viewer.module.css';
 
 const messages = {
@@ -36,8 +38,9 @@ export function LocationControls({
   arrived,
   rerouting,
   recovery,
-  following,
-  onFollow,
+  route,
+  onChooseOrigin,
+  onFinish,
   onRetry,
   onEnd,
 }: {
@@ -48,13 +51,27 @@ export function LocationControls({
   arrived: boolean;
   rerouting: boolean;
   recovery: boolean;
-  following: boolean;
-  onFollow: () => void;
+  route: WalkRoute;
+  onChooseOrigin: () => void;
+  onFinish: () => void;
   onRetry: () => void;
   onEnd: () => void;
 }) {
   const { status } = gps.state;
   const matched = progress && 'remaining' in progress ? progress : null;
+  const awaitingFix = status === 'requesting' || status === 'searching';
+  const remaining = matched?.remaining ?? (awaitingFix ? route.metres : null);
+  const distance =
+    remaining === null
+      ? null
+      : number.format(
+          matched ? Math.ceil(remaining) : Math.round(remaining / 10) * 10,
+        );
+  const origin = placesById.get(route.from.id);
+  const originName =
+    route.from.basis === 'live-position'
+      ? 'ตำแหน่งของฉัน'
+      : (origin?.building?.code ?? origin?.nameTh ?? route.from.id);
   const explanation =
     !rerouting && !recovery && progress && !('remaining' in progress)
       ? progressMessages[progress.status]
@@ -70,59 +87,82 @@ export function LocationControls({
     (status === 'denied' || status === 'unavailable' || status === 'off');
 
   return (
-    <div className={styles.locationPanel}>
+    <div className={arrived ? styles.arrivalPanel : styles.activeNavigation}>
+      {arrived && (
+        <span className={styles.arrivalBadge}>
+          <ShellIcon name="check" />
+        </span>
+      )}
       <h2 className={styles.destination} tabIndex={-1} ref={headingRef}>
-        <ShellIcon name="pin" /> {destination}
-      </h2>
-      <p role="status" className={arrived ? styles.arrival : undefined}>
         {arrived ? (
-          <>
-            <ShellIcon name="check" /> {'ถึงบริเวณ ' + destination + ' แล้ว'}
-          </>
-        ) : rerouting ? (
-          'กำลังหาเส้นทางใหม่…'
-        ) : recovery ? (
-          'หาเส้นทางจากตำแหน่งนี้ไม่ได้ เลือกต้นทางใหม่เพื่อลองอีกครั้ง'
+          <span role="status">ถึงบริเวณ {destination} แล้ว</span>
         ) : (
-          messages[status]
+          'เดินไป ' + destination
         )}
-      </p>
-      {!arrived && (
+      </h2>
+      {arrived ? (
+        <p className={styles.walkNote}>ตรวจป้ายอาคารและทางเข้าหน้างาน</p>
+      ) : (
         <>
-          <p>ระยะทางที่เหลือ</p>
-          <p className={styles.remaining}>
+          <p className={styles.walkNote}>ตามเส้นทางสีส้มไปยังจุดหมาย</p>
+          <p
+            className={styles.remainingEstimate}
+            role="group"
+            aria-label={
+              remaining === null
+                ? 'ยังไม่ทราบระยะทางและเวลาที่เหลือ'
+                : 'ระยะทางและเวลาที่เหลือ'
+            }
+          >
             <strong>
-              {matched
-                ? number.format(Math.ceil(matched.remaining)) + ' ม.'
+              {remaining !== null
+                ? number.format(Math.ceil(walkingMinutes(remaining)))
                 : '—'}
             </strong>
-            <span>
-              {matched
-                ? 'ประมาณ ' +
-                  number.format(Math.ceil(walkingMinutes(matched.remaining))) +
-                  ' นาที'
-                : '—'}
+            <span className={styles.desktopDistance}>
+              นาที · {distance === null ? '—' : distance + ' ม.'}
+            </span>
+            <span className={styles.mobileDistance}>
+              นาที · {distance === null ? '—' : 'ประมาณ ' + distance + ' เมตร'}
             </span>
           </p>
-          {explanation && <p>{explanation}</p>}
+          <div className={styles.navigationEndpoints}>
+            <p>ต้นทาง {originName}</p>
+            <p>ปลายทาง {destination}</p>
+          </div>
+          <p className={styles.navigationNote}>
+            <span>ใช้ตำแหน่ง GPS ระหว่างนำทาง</span>
+            <span>ระยะและเวลาเป็นค่าประมาณ</span>
+          </p>
+          <p className={styles.gpsMessage} role="status">
+            {rerouting
+              ? 'กำลังหาเส้นทางใหม่…'
+              : recovery
+                ? 'หาเส้นทางจากตำแหน่งนี้ไม่ได้ เลือกต้นทางใหม่เพื่อลองอีกครั้ง'
+                : messages[status]}
+          </p>
+          {explanation && <p className={styles.walkNote}>{explanation}</p>}
         </>
       )}
-      <div className={styles.controls} aria-label="ควบคุมการเดิน" role="group">
-        {!arrived && (
-          <Tooltip title="ตามตำแหน่งฉัน">
-            <span>
-              <IconButton
-                className={styles.iconControl}
-                aria-label="ตามตำแหน่งฉัน"
-                aria-pressed={following}
-                disabled={status !== 'live'}
-                onClick={onFollow}
-              >
-                <ShellIcon name="target" />
-              </IconButton>
-            </span>
-          </Tooltip>
-        )}
+      {arrived ? (
+        <button
+          type="button"
+          className={styles.primaryAction}
+          onClick={onFinish}
+        >
+          จบการเดิน
+        </button>
+      ) : (
+        <details className={styles.nextSteps}>
+          <summary className={styles.primaryAction}>ดูขั้นตอนถัดไป</summary>
+          <WalkSteps route={route} />
+        </details>
+      )}
+      <div
+        className={styles.walkActions}
+        aria-label="ควบคุมการเดิน"
+        role="group"
+      >
         {retry && (
           <Tooltip title="ลองรับตำแหน่งอีกครั้ง">
             <IconButton
@@ -135,13 +175,23 @@ export function LocationControls({
           </Tooltip>
         )}
         {changeOrigin && (
-          <button type="button" onClick={onEnd}>
+          <button
+            type="button"
+            className={styles.secondaryAction}
+            onClick={onChooseOrigin}
+          >
             เลือกต้นทางใหม่
           </button>
         )}
-        <button type="button" onClick={onEnd}>
-          <ShellIcon name="close" /> จบการเดิน
-        </button>
+        {!arrived && (
+          <button
+            type="button"
+            className={styles.secondaryAction}
+            onClick={onEnd}
+          >
+            หยุดนำทาง
+          </button>
+        )}
       </div>
     </div>
   );

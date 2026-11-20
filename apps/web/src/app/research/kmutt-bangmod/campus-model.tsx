@@ -1,9 +1,12 @@
 'use client';
 
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import { ShellIcon } from '@/components/shell/shell-icon';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildings } from './catalog';
 import { CampusLoading } from './campus-loading';
-import { CampusPlan } from './campus-plan';
+import { CampusPlan, type FollowAction } from './campus-plan';
 import { useSmoothPosition } from './use-smooth-position';
 import type { LiveFix, WalkProgress } from './live-position';
 import { mapLabels } from './map-labels';
@@ -31,6 +34,7 @@ export function CampusModel({
   following,
   onSelect,
   onPan,
+  followAction,
   progress,
   navigating,
   onBack,
@@ -41,6 +45,7 @@ export function CampusModel({
   liveFix: LiveFix | null;
   following: boolean;
   onPan: () => void;
+  followAction?: FollowAction;
   progress: WalkProgress | null;
   navigating: boolean;
   onSelect: (id: string) => void;
@@ -142,6 +147,21 @@ export function CampusModel({
     <>
       {ready && (
         <div className={styles.controls} aria-label="ควบคุมมุมกล้อง 3 มิติ">
+          {followAction && (
+            <Tooltip title="ตามตำแหน่งฉัน">
+              <span>
+                <IconButton
+                  className={styles.iconControl}
+                  aria-label="ตามตำแหน่งฉัน"
+                  aria-pressed={following}
+                  disabled={!followAction.enabled}
+                  onClick={followAction.onClick}
+                >
+                  <ShellIcon name="target" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -307,6 +327,7 @@ export function CampusModel({
             following={following}
             onSelect={onSelect}
             onPan={onPan}
+            followAction={followAction}
             progress={progress}
             navigating={navigating}
           />

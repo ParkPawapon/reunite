@@ -26,6 +26,7 @@ export function Topbar({
   menuLabel,
   reducedMotion,
   title = 'ภาพรวม',
+  publicPage = false,
 }: {
   user?: ShellUser;
   menuExpanded: boolean;
@@ -36,6 +37,7 @@ export function Topbar({
   menuLabel: string;
   reducedMotion: boolean;
   title?: string;
+  publicPage?: boolean;
 }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [pending, setPending] = useState(false);
@@ -91,23 +93,25 @@ export function Topbar({
           enabled={Boolean(user)}
           reducedMotion={reducedMotion}
         />
-        <button
-          type="button"
-          className={styles.motionButton}
-          onClick={onPause}
-          aria-label={paused ? 'เล่นภาพเคลื่อนไหว' : 'หยุดภาพเคลื่อนไหว'}
-          aria-pressed={paused || reducedMotion}
-          disabled={reducedMotion}
-          title={
-            reducedMotion ? 'อุปกรณ์เปิดการลดภาพเคลื่อนไหวอยู่' : undefined
-          }
-        >
-          <ShellIcon
-            name={paused || reducedMotion ? 'play' : 'pause'}
-            width={16}
-            height={16}
-          />
-        </button>
+        {!publicPage && (
+          <button
+            type="button"
+            className={styles.motionButton}
+            onClick={onPause}
+            aria-label={paused ? 'เล่นภาพเคลื่อนไหว' : 'หยุดภาพเคลื่อนไหว'}
+            aria-pressed={paused || reducedMotion}
+            disabled={reducedMotion}
+            title={
+              reducedMotion ? 'อุปกรณ์เปิดการลดภาพเคลื่อนไหวอยู่' : undefined
+            }
+          >
+            <ShellIcon
+              name={paused || reducedMotion ? 'play' : 'pause'}
+              width={16}
+              height={16}
+            />
+          </button>
+        )}
         {user ? (
           <button
             id="account-button"
@@ -129,6 +133,15 @@ export function Topbar({
               className={styles.chevron}
             />
           </button>
+        ) : publicPage ? (
+          <Link
+            href="/login"
+            prefetch={false}
+            className={styles.guestAccount}
+            aria-label="เข้าสู่ระบบ"
+          >
+            <ShellIcon name="user" /> <span>เข้าสู่ระบบ</span>
+          </Link>
         ) : (
           <div className={styles.accountPlaceholder} aria-hidden="true">
             <Skeleton

@@ -12,7 +12,7 @@ export function Sidebar({
   compact?: boolean;
   onNavigate?: () => void;
   onClose?: () => void;
-  page?: 'dashboard' | 'profile';
+  page?: 'dashboard' | 'profile' | 'campus';
 }) {
   return (
     <div className={styles.sidebarContent} data-compact={compact}>
@@ -78,6 +78,7 @@ export function Sidebar({
         </Link>
         <a
           href="/research/kmutt-bangmod"
+          aria-current={page === 'campus' ? 'page' : undefined}
           aria-label="แผนที่บางมด"
           title="แผนที่บางมด"
           onClick={onNavigate}
