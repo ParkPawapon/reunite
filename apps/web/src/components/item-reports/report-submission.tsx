@@ -355,6 +355,7 @@ export function ReportSubmission() {
                 photo={photoDrafts.photos[type]}
                 error={photoDrafts.errors[type]}
                 onPick={(files) => photoDrafts.pick(type, files)}
+                onRemove={() => photoDrafts.remove(type)}
               />
             </div>
           </div>

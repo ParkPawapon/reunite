@@ -40,5 +40,12 @@ export function usePhotoDrafts() {
     latest.current = { ...latest.current, [type]: next };
     setPhotos((current) => ({ ...current, [type]: next }));
   };
-  return { photos, errors, pick };
+  const remove = (type: ReportType) => {
+    const previous = latest.current[type];
+    if (previous) URL.revokeObjectURL(previous.url);
+    latest.current = { ...latest.current, [type]: null };
+    setPhotos((current) => ({ ...current, [type]: null }));
+    setErrors((current) => ({ ...current, [type]: null }));
+  };
+  return { photos, errors, pick, remove };
 }

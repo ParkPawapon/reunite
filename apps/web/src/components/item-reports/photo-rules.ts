@@ -26,3 +26,10 @@ export function formatSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+const TYPE_LABELS: Record<string, string> = {
+  'image/jpeg': 'JPG',
+  'image/png': 'PNG',
+  'image/webp': 'WebP',
+};
+export const photoTypeLabel = (mime: string) => TYPE_LABELS[mime] ?? 'รูป';

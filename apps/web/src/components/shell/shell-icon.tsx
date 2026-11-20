@@ -26,6 +26,8 @@ const paths = {
   pause: 'M9 5v14m6-14v14',
   play: 'm8 5 11 7-11 7V5Z',
   chevron: 'm7 10 5 5 5-5',
+  eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  trash: 'M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3',
 } as const;
 
 export function ShellIcon({
