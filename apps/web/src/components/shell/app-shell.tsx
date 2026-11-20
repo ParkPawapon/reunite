@@ -18,7 +18,7 @@ export function AppShell({
   user?: ShellUser;
   children: ReactNode;
   loading?: boolean;
-  page?: 'dashboard' | 'profile' | 'campus';
+  page?: 'dashboard' | 'profile' | 'campus' | 'report-new';
 }) {
   const desktop = useMediaQuery('(min-width: 1000px)');
   const [compact, setCompact] = useState(false);
@@ -76,7 +76,9 @@ export function AppShell({
                 ? 'แผนที่บางมด'
                 : page === 'profile'
                   ? 'โปรไฟล์'
-                  : 'หน้าหลัก'
+                  : page === 'report-new'
+                    ? 'แจ้งสิ่งของ'
+                    : 'หน้าหลัก'
             }
             publicPage={page === 'campus'}
             user={user}
@@ -101,7 +103,11 @@ export function AppShell({
           />
           {loading && (
             <p role="status" className={styles.srOnly}>
-              {page === 'profile' ? 'กำลังโหลดโปรไฟล์…' : 'กำลังโหลดหน้าหลัก…'}
+              {page === 'profile'
+                ? 'กำลังโหลดโปรไฟล์…'
+                : page === 'report-new'
+                  ? 'กำลังโหลดหน้าแจ้งสิ่งของ…'
+                  : 'กำลังโหลดหน้าหลัก…'}
             </p>
           )}
           <main
