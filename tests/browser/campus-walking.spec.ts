@@ -2,10 +2,71 @@ import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import anchors from '../../apps/web/src/app/research/kmutt-bangmod/anchors.generated.json' with { type: 'json' };
 import type { MapPoint } from '../../apps/web/src/app/research/kmutt-bangmod/walking';
+import {
+  authenticateBrowserMapAccount,
+  browserMapAccount,
+} from './test-account';
 
 const sharedWalk = '/map#from=N7&to=S3';
 
-test('separates research downloads from the public map and keeps shared map links working', async ({
+test.skip(
+  !!process.env.PLAYWRIGHT_BASE_URL,
+  'Requires the managed disposable account for the protected map',
+);
+
+test('requires a valid session, restores a shared route after sign-in and rejects the revoked session', async ({
+  page,
+  context,
+}) => {
+  const anonymous = await page.request.get('/map', { maxRedirects: 0 });
+  expect(anonymous.status()).toBe(307);
+  expect(anonymous.headers().location).toBe('/login?next=map');
+  expect(await anonymous.text()).not.toContain('data-render-state');
+  const forged = await page.request.get('/map', {
+    headers: { cookie: `browser_test_session=${'a'.repeat(43)}` },
+    maxRedirects: 0,
+  });
+  expect(forged.status()).toBe(307);
+  expect(forged.headers().location).toBe('/login?next=map');
+
+  await page.goto('/maps#from=N7&to=S3');
+  await expect(page).toHaveURL(/\/login\?next=map#from=N7&to=S3$/);
+  await expect(
+    page.getByRole('region', { name: 'แผนที่วิทยาเขต' }),
+  ).toHaveCount(0);
+  await page.getByLabel('อีเมล', { exact: true }).fill(browserMapAccount.email);
+  await page
+    .getByLabel('รหัสผ่าน', { exact: true })
+    .fill(browserMapAccount.password);
+  await page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }).click();
+  await expect(page).toHaveURL(/\/map#from=N7&to=S3$/);
+  await expect(page.getByText('ประมาณ 360 ม.', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'บัญชีของคุณ', exact: true }),
+  ).toContainText(browserMapAccount.name);
+  const authorized = await page.request.get('/map');
+  expect(authorized.status()).toBe(200);
+  expect(authorized.headers()['cache-control']).toContain('no-store');
+  expect(authorized.headers()['permissions-policy']).toContain(
+    'geolocation=(self)',
+  );
+
+  const session = (await context.cookies()).find(
+    ({ name }) => name === 'browser_test_session',
+  );
+  if (!session) throw new Error('Missing authenticated session cookie');
+  await page.getByRole('button', { name: 'บัญชีของคุณ', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'ออกจากระบบ', exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await context.addCookies([session]);
+  await page.goto('/map#place=N10');
+  await expect(page).toHaveURL(/\/login\?next=map#place=N10$/);
+  await expect(
+    page.getByRole('region', { name: 'แผนที่วิทยาเขต' }),
+  ).toHaveCount(0);
+});
+
+test('separates public research downloads from the protected map and keeps shared map links working', async ({
   page,
 }) => {
   const research = '/research/kmutt-bangmod';
@@ -20,6 +81,7 @@ test('separates research downloads from the public map and keeps shared map link
   await expect(
     page.getByRole('region', { name: 'แผนที่วิทยาเขต' }),
   ).toHaveCount(0);
+  await authenticateBrowserMapAccount(page.request);
   await page.getByRole('link', { name: 'เปิดแผนที่บางมด' }).click();
   await expect(page).toHaveURL(/\/map$/);
   await expect(downloads).toHaveCount(0);
@@ -133,6 +195,7 @@ test('opens a shared walk on desktop and keeps denial recoverable without losing
   page,
 }, info) => {
   await page.setViewportSize({ width: 1440, height: 960 });
+  await authenticateBrowserMapAccount(page.request);
   await page.goto(sharedWalk);
   const map = page.getByRole('region', { name: 'แผนที่วิทยาเขต' });
   const sidebar = page.getByRole('complementary', {
@@ -204,6 +267,7 @@ test('follows a simulated N7 to S3 walk on mobile and detects arrival once', asy
 }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  await authenticateBrowserMapAccount(page.request);
   await page.goto(sharedWalk);
   const sidebar = page.getByRole('complementary', {
     name: 'การเดินในวิทยาเขต',
@@ -294,6 +358,7 @@ test('follows a simulated N7 to S3 walk on mobile and detects arrival once', asy
 test('reroutes after distinct fixes and stops tracking on pagehide', async ({
   page,
 }) => {
+  await authenticateBrowserMapAccount(page.request);
   await page.goto(sharedWalk);
   const sidebar = page.getByRole('complementary', {
     name: 'การเดินในวิทยาเขต',
@@ -326,6 +391,7 @@ test('interpolates between two fixes and expires the marker without another GPS 
   page,
 }) => {
   await page.clock.install();
+  await authenticateBrowserMapAccount(page.request);
   await page.goto(sharedWalk);
   const sidebar = page.getByRole('complementary', {
     name: 'การเดินในวิทยาเขต',
@@ -359,6 +425,7 @@ test('shows the selected place inside the map and starts planning from its direc
   page,
 }, info) => {
   await page.setViewportSize({ width: 1440, height: 960 });
+  await authenticateBrowserMapAccount(page.request);
   await page.goto('/map');
   const browse = page.getByRole('complementary', { name: 'การเดินในวิทยาเขต' });
   const map = page.getByRole('region', { name: 'แผนที่วิทยาเขต' });

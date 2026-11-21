@@ -458,9 +458,9 @@ test('logs in through the real API and receives an HttpOnly session in the isola
     'Real auth fixture requires the managed isolated test server',
   );
   await openLogin(page);
-  await expect(
-    page.getByRole('link', { name: 'ดูแผนที่บางมด' }),
-  ).toHaveAttribute('href', '/map');
+  await expect(page.getByRole('link', { name: 'ดูแผนที่บางมด' })).toHaveCount(
+    0,
+  );
   await page.getByLabel('อีเมล').fill(browserAccount.email);
   await page
     .getByLabel('รหัสผ่าน', { exact: true })

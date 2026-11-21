@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateBrowserMapAccount } from './test-account';
 
 async function openPreview(page: import('@playwright/test').Page) {
   await page.goto('/research/loading-screen');
@@ -143,6 +144,10 @@ test('keeps a useful static server-rendered screen without JavaScript', async ({
 test('shows the real map download state and replaces it on success or failure', async ({
   page,
 }) => {
+  test.skip(
+    !!process.env.PLAYWRIGHT_BASE_URL,
+    'Requires the managed disposable account for the protected map',
+  );
   test.setTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -154,6 +159,7 @@ test('shows the real map download state and replaces it on success or failure', 
     await downloadGate;
     await route.continue();
   });
+  await authenticateBrowserMapAccount(page.request);
   await page.goto('/map#place=N16');
   await expect(page.locator('[data-render-state=plan]')).toBeVisible();
   await expect(page.locator('[data-loading-screen]')).toHaveCount(0);

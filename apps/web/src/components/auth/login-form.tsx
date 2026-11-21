@@ -104,8 +104,10 @@ export function LoginForm() {
       const result = await submitLogin(parsed.data, controller.signal);
       if (controller.signal.aborted) throw new Error('Request timed out');
       if (result.ok) {
-        // Start a new document with the new session on the protected landing page.
-        window.location.replace('/dashboard');
+        // Accept only the map intent. Its fragment carries the selected place or walk.
+        const { search, hash } = window.location;
+        const next = new URLSearchParams(search).get('next');
+        window.location.replace(next === 'map' ? `/map${hash}` : '/dashboard');
         return;
       }
       setFailure(result.message);
@@ -284,24 +286,6 @@ export function LoginForm() {
           {pending ? 'กำลังตรวจสอบบัญชี กรุณารอสักครู่' : ''}
         </span>
       </form>
-      <a className={styles.mapLink} href="/map">
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path
-            d="m9 4-6 3v14l6-3 6 3 6-3V4l-6 3-6-3Zm0 0v14m6-11v14"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span>ดูแผนที่บางมด</span>
-        <Arrow />
-      </a>
     </div>
   );
 }

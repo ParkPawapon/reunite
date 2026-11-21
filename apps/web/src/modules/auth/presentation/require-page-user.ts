@@ -6,7 +6,7 @@ import { serverConfig } from '@/config/server';
 import { services } from '@/lib/composition';
 import { readSessionToken } from '@/lib/security/session';
 
-export async function requirePageUser() {
+export async function requirePageUser(loginPath = '/login') {
   // Enter request-time rendering before reading deployment-only configuration.
   const requestHeaders = await headers();
   const config = serverConfig();
@@ -16,11 +16,11 @@ export async function requirePageUser() {
     }),
     config.SESSION_COOKIE_NAME,
   );
-  if (!token) redirect('/login');
+  if (!token) redirect(loginPath);
   try {
     return await services().auth.requireUser(token);
   } catch (error) {
-    if (error instanceof AppError && error.status === 401) redirect('/login');
+    if (error instanceof AppError && error.status === 401) redirect(loginPath);
     throw error;
   }
 }
