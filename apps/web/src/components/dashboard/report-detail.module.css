@@ -267,6 +267,69 @@
 .saved {
   color: var(--color-success);
 }
+.management {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+.manageActions,
+.catalogFields {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.manageForm,
+.manageFields {
+  display: grid;
+  gap: 0.9rem;
+}
+.manageForm h3,
+.manageForm p {
+  margin: 0;
+}
+.manageForm h3 {
+  font-size: 1rem;
+}
+.manageForm p,
+.management > p {
+  font-size: 0.875rem;
+}
+.manageFields {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.manageFields label {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+.catalogFields label {
+  flex: 1 1 12rem;
+}
+.manageFields :is(input, select, textarea) {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: 0.625rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 1rem;
+}
+.manageFields textarea {
+  resize: vertical;
+}
+.manageFields :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+.formError {
+  color: var(--color-danger);
+}
 .footer {
   flex: none;
   display: flex;

@@ -256,6 +256,7 @@ export function ReportSubmission() {
               fullWidth
               id={fieldId('title')}
               label="ชื่อสิ่งของ"
+              disabled={state.status === 'loading'}
               placeholder={copy.titlePlaceholder}
               error={Boolean(errors.title)}
               helperText={errors.title}

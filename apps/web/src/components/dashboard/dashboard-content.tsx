@@ -1,12 +1,14 @@
 'use client';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
+import { REPORT_TITLE_LIMIT } from '@/modules/item-reports/domain/report';
 import {
   loadReportPage,
   REPORT_PAGE_SIZE,
+  ReportRequestError,
   type ReportRow,
   type ReportType,
 } from '@/modules/item-reports/presentation/reports-client';
@@ -20,14 +22,24 @@ type PageState = {
   rows: ReportRow[];
   hasNext: boolean;
 };
-export function DashboardContent({ name }: { name: string }) {
+export function DashboardContent({
+  name,
+  owned = false,
+}: {
+  name?: string;
+  owned?: boolean;
+}) {
   const id = useId();
   const motion = useShellMotion();
   const [view, setView] = useState<{
     type: ReportType;
     page: number;
     revision: number;
-  }>({ type: 'LOST', page: 0, revision: 0 });
+    q: string;
+  }>({ type: 'LOST', page: 0, revision: 0, q: '' });
+  const [search, setSearch] = useState('');
+  const searchField = useRef<HTMLInputElement>(null);
+  const updated = useRef(false);
   const [state, setState] = useState<PageState>({
     key: '',
     kind: 'loading',
@@ -35,7 +47,7 @@ export function DashboardContent({ name }: { name: string }) {
     hasNext: false,
   });
   const [selected, setSelected] = useState<number | null>(null);
-  const key = `${view.type}:${view.page}:${view.revision}`;
+  const key = `${view.type}:${view.page}:${view.revision}:${view.q}`;
   const current = state.key === key;
   const loading = !current || state.kind === 'loading';
   const failed = current && state.kind === 'error';
@@ -47,20 +59,33 @@ export function DashboardContent({ name }: { name: string }) {
       view.type,
       view.page * REPORT_PAGE_SIZE,
       controller.signal,
+      { q: view.q, owned },
     )
       .then((result) => {
         if (active) setState({ key, kind: 'ready', ...result });
       })
-      .catch(() => {
-        if (active) setState({ key, kind: 'error', rows: [], hasNext: false });
+      .catch((error: unknown) => {
+        if (!active) return;
+        if (error instanceof ReportRequestError && error.status === 401) {
+          window.location.replace('/login');
+          return;
+        }
+        setState({ key, kind: 'error', rows: [], hasNext: false });
       });
     return () => {
       active = false;
       controller.abort();
     };
-  }, [key, view.type, view.page]);
+  }, [key, owned, view.type, view.page, view.q]);
   const refresh = () =>
     setView((value) => ({ ...value, revision: value.revision + 1 }));
+  const runSearch = (q: string) =>
+    setView((value) => ({
+      ...value,
+      q: q.trim(),
+      page: 0,
+      revision: value.revision + 1,
+    }));
   const lost = view.type === 'LOST';
   const label = lost ? 'ของหาย' : 'ของที่พบ';
   return (
@@ -71,11 +96,17 @@ export function DashboardContent({ name }: { name: string }) {
     >
       <header className={styles.pageHeader}>
         <div>
-          <p className={styles.greeting}>
-            สวัสดี, <span>{name}</span>
+          {!owned && (
+            <p className={styles.greeting}>
+              สวัสดี, <span>{name}</span>
+            </p>
+          )}
+          <h1>{owned ? 'รายการของฉัน' : 'ช่วยกันหา พากลับคืน'}</h1>
+          <p className={styles.intro}>
+            {owned
+              ? 'ดูสถานะและจัดการประกาศที่คุณแจ้งไว้'
+              : 'ของหายที่เจ้าของตามหา และของที่มีคนพบ'}
           </p>
-          <h1>ช่วยกันหา พากลับคืน</h1>
-          <p className={styles.intro}>ของหายที่เจ้าของตามหา และของที่มีคนพบ</p>
         </div>
         <button
           type="button"
@@ -92,8 +123,8 @@ export function DashboardContent({ name }: { name: string }) {
         <div className={styles.tabsBar}>
           <Tabs
             value={view.type}
-            onChange={(_, value: ReportType) =>
-              setView({ type: value, page: 0, revision: 0 })
+            onChange={(_, type: ReportType) =>
+              setView((value) => ({ ...value, type, page: 0 }))
             }
             aria-label="ประเภทรายการ"
             selectionFollowsFocus
@@ -119,6 +150,48 @@ export function DashboardContent({ name }: { name: string }) {
           </Tabs>
           <span className={styles.order}>แจ้งล่าสุดก่อน</span>
         </div>
+        <form
+          role="search"
+          className={styles.search}
+          onSubmit={(event) => {
+            event.preventDefault();
+            runSearch(search);
+          }}
+        >
+          <label className={styles.srOnly} htmlFor={`${id}-search`}>
+            ค้นหาชื่อสิ่งของ
+          </label>
+          <div className={styles.searchInput}>
+            <ShellIcon name="search" width={17} height={17} />
+            <input
+              id={`${id}-search`}
+              ref={searchField}
+              type="search"
+              maxLength={REPORT_TITLE_LIMIT}
+              placeholder="ค้นหาชื่อสิ่งของ"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            {(search || view.q) && (
+              <button
+                type="button"
+                className={styles.clearSearch}
+                aria-label="ล้างการค้นหา"
+                title="ล้างการค้นหา"
+                onClick={() => {
+                  setSearch('');
+                  runSearch('');
+                  searchField.current?.focus();
+                }}
+              >
+                <ShellIcon name="close" width={16} height={16} />
+              </button>
+            )}
+          </div>
+          <button type="submit" className={styles.searchButton}>
+            ค้นหา
+          </button>
+        </form>
         <div
           role="tabpanel"
           id={`${id}-panel`}
@@ -126,7 +199,15 @@ export function DashboardContent({ name }: { name: string }) {
           aria-busy={loading}
         >
           <div className={styles.context}>
-            <p>{lost ? 'เจ้าของแจ้งตามหา' : 'มีคนพบและแจ้งไว้'}</p>
+            <p>
+              {view.q
+                ? `ผลการค้นหา “${view.q}”`
+                : owned
+                  ? `${label}ที่คุณแจ้ง`
+                  : lost
+                    ? 'เจ้าของแจ้งตามหา'
+                    : 'มีคนพบและแจ้งไว้'}
+            </p>
             <span>
               {loading
                 ? 'กำลังโหลดรายการ…'
@@ -162,6 +243,7 @@ export function DashboardContent({ name }: { name: string }) {
               rows={rows}
               type={view.type}
               loading={loading}
+              searched={Boolean(view.q)}
               onOpen={setSelected}
             />
           )}
@@ -222,7 +304,25 @@ export function DashboardContent({ name }: { name: string }) {
         <ReportDetail
           key={selected}
           reportId={selected}
-          onClose={() => setSelected(null)}
+          onManaged={
+            owned
+              ? () => {
+                  updated.current = true;
+                }
+              : undefined
+          }
+          onClose={() => {
+            setSelected(null);
+            if (updated.current) {
+              updated.current = false;
+              setView((value) => ({
+                ...value,
+                page: 0,
+                revision: value.revision + 1,
+              }));
+              requestAnimationFrame(() => searchField.current?.focus());
+            }
+          }}
         />
       )}
     </div>

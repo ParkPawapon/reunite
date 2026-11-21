@@ -323,12 +323,28 @@ test('keeps each tab separate and creates a found report from its own tab', asyn
   expect(await reportsCreated(lostTitle)).toHaveLength(0);
 });
 
-test('works on a phone with separate date and time fields', async ({
+test('keeps the title field disabled during mobile loading and submits its value once ready', async ({
   page,
 }) => {
   const title = `${prefix}มือถือ`;
   await page.setViewportSize({ width: 390, height: 844 });
-  await openForm(page);
+  let releaseCatalog = () => {};
+  const catalog = new Promise<void>((resolve) => {
+    releaseCatalog = resolve;
+  });
+  await page.route('**/api/v1/categories?*', async (route) => {
+    await catalog;
+    await route.continue();
+  });
+  const titleInput = page.getByLabel(/ชื่อสิ่งของ/);
+  try {
+    await page.goto('/reports/new', { waitUntil: 'domcontentloaded' });
+    await expect(titleInput).toBeVisible();
+    await expect(titleInput).toBeDisabled();
+  } finally {
+    releaseCatalog();
+  }
+  await expect(titleInput).toBeEditable();
   await fillForm(page, title, true);
   await submitLost(page).click();
   await expect(

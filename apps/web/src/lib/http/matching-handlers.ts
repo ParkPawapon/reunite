@@ -1,6 +1,10 @@
 import 'server-only';
 import { z } from 'zod';
-import { services, type createServices } from '@/lib/composition';
+import {
+  createMatchReturnService,
+  services,
+  type createServices,
+} from '@/lib/composition';
 import { serverConfig } from '@/config/server';
 import {
   matchingConfig,
@@ -10,18 +14,41 @@ import { readSessionToken } from '@/lib/security/session';
 import { assertSameOrigin } from '@/lib/security/origin';
 import { MAX_REPORT_IMAGE_BYTES } from '@/modules/item-reports/domain/report-image-policy';
 import { normalizeReportImage } from '@/modules/item-reports/infrastructure/report-image';
-import { api, idSchema, parse, queryInput, success } from './api';
+import { api, idSchema, jsonBody, parse, queryInput, success } from './api';
 import { binaryBody } from './binary-body';
 import type { RouteContext } from './handlers';
 
+const revision = z.string().regex(/^[1-9][0-9]{0,18}$/);
+const confirmReturn = z.strictObject({
+  lostRevision: revision,
+  foundRevision: revision,
+});
+
 export function createMatchingHandlers(
   resolve: () => ReturnType<typeof createServices> = services,
+  resolveMatchReturn = createMatchReturnService,
 ) {
   const user = (request: Request) =>
     resolve().auth.requireUser(
       readSessionToken(request, serverConfig().SESSION_COOKIE_NAME),
     );
   return {
+    getReturn: (request: Request, context: RouteContext) =>
+      api(request, async () => {
+        const identity = await user(request);
+        const id = parse(idSchema, (await context.params).id);
+        return success(await resolveMatchReturn().get(id, identity.userId));
+      }),
+    confirmReturn: (request: Request, context: RouteContext) =>
+      api(request, async () => {
+        assertSameOrigin(request, serverConfig().APP_BASE_URL);
+        const identity = await user(request);
+        const id = parse(idSchema, (await context.params).id);
+        const input = parse(confirmReturn, await jsonBody(request));
+        return success(
+          await resolveMatchReturn().confirm(id, identity.userId, input),
+        );
+      }),
     imageAccess: (request: Request, context: RouteContext) =>
       api(request, async () => {
         const identity = await user(request);

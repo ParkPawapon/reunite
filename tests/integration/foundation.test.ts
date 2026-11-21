@@ -108,6 +108,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       '0006',
       '0007',
       '0008',
+      '0009',
     ]);
     expect(await migrate(pool)).toEqual([]);
     expect(

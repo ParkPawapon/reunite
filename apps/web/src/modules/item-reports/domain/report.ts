@@ -1,5 +1,7 @@
 import type { Page, ReportType, ReportStatus } from '@campus/shared';
 
+export const REPORT_TITLE_LIMIT = 255;
+
 export type ReportInput = {
   categoryId: number;
   locationId: number;
@@ -24,8 +26,11 @@ export type Report = Omit<ReportInput, 'description' | 'image'> & {
   createdAt: string;
   updatedAt: string;
 };
-export type ReportFilter = Page & {
+export type ReportBrowse = Page & {
   type?: ReportType;
+  q?: string;
+};
+export type ReportFilter = ReportBrowse & {
   status?: ReportStatus;
   categoryId?: number;
   locationId?: number;
@@ -44,5 +49,5 @@ export interface ReportRepository {
     userId: number,
     status: 'RESOLVED' | 'CLOSED',
   ): Promise<Report | null>;
-  listOwned(userId: number, page: Page): Promise<Report[]>;
+  listOwned(userId: number, filter: ReportBrowse): Promise<Report[]>;
 }

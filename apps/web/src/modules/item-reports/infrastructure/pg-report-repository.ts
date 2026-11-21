@@ -1,11 +1,11 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
-import type { Page } from '@campus/shared';
 import type {
   Report,
   ReportRepository,
   ReportInput,
   ReportFilter,
+  ReportBrowse,
   ReportPatch,
 } from '../domain/report';
 
@@ -50,6 +50,7 @@ export class PgReportRepository implements ReportRepository {
       AND ($2::varchar IS NULL OR status = $2)
       AND ($3::integer IS NULL OR category_id = $3)
       AND ($4::integer IS NULL OR location_id = $4)
+      AND ($7::text IS NULL OR strpos(lower(title), lower($7::text)) > 0)
       ORDER BY report_id DESC LIMIT $5 OFFSET $6`,
       [
         filter.type ?? null,
@@ -58,6 +59,7 @@ export class PgReportRepository implements ReportRepository {
         filter.locationId ?? null,
         filter.limit,
         filter.offset,
+        filter.q || null,
       ],
     );
     return rows.map(map);
@@ -137,16 +139,22 @@ export class PgReportRepository implements ReportRepository {
     );
     return row ? map(row) : null;
   }
-  async listOwned(userId: number, page: Page): Promise<Report[]> {
+  async listOwned(userId: number, filter: ReportBrowse): Promise<Report[]> {
     const rows = await query<Row>(
       this.db,
-      `SELECT report_id, user_id, category_id, location_id, type, title,
-        description, image, event_datetime, status, created_at, updated_at
-      FROM item_reports
+      `SELECT ${columns} FROM item_reports
       WHERE user_id = $1
+      AND ($4::varchar IS NULL OR type = $4)
+      AND ($5::text IS NULL OR strpos(lower(title), lower($5::text)) > 0)
       ORDER BY report_id DESC
       LIMIT $2 OFFSET $3`,
-      [userId, page.limit, page.offset],
+      [
+        userId,
+        filter.limit,
+        filter.offset,
+        filter.type ?? null,
+        filter.q || null,
+      ],
     );
     return rows.map(map);
   }

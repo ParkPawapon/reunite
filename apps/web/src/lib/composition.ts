@@ -1,4 +1,5 @@
 import 'server-only';
+import type { Pool } from 'pg';
 import { getPool, type Sql } from '@campus/database';
 import { AuthService } from '@/modules/auth/application/auth-service';
 import { PgAuthRepository } from '@/modules/auth/infrastructure/pg-auth-repository';
@@ -16,6 +17,8 @@ import { PgNotificationRepository } from '@/modules/notifications/infrastructure
 import { AppError } from '@campus/shared';
 import { MatchingService } from '@/modules/matching/application/matching-service';
 import { PgMatchReader } from '@/modules/matching/infrastructure/pg-match-reader';
+import { MatchReturnService } from '@/modules/matching/application/match-return-service';
+import { PgMatchReturnRepository } from '@/modules/matching/infrastructure/pg-match-return-repository';
 import { ReportImageService } from '@/modules/item-reports/application/report-image-service';
 import { PgReportImageRepository } from '@/modules/item-reports/infrastructure/pg-report-image-repository';
 
@@ -50,3 +53,6 @@ export function createServices(db: Sql) {
   };
 }
 export const services = () => createServices(getPool());
+
+export const createMatchReturnService = (pool: Pool = getPool()) =>
+  new MatchReturnService(new PgMatchReturnRepository(pool));

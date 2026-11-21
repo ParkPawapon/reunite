@@ -1,6 +1,7 @@
 import type { SVGProps } from 'react';
 
 const paths = {
+  search: 'M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-2.3 5.7L21 21',
   box: 'M3 7l9-4 9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4m-9 4v10M7 5l10 4',
   refresh: 'M20 11a8 8 0 1 0-2 6M20 4v7h-7',
   check: 'm5 12 4 4L19 6',

@@ -52,7 +52,7 @@ See [MATCHING.md](MATCHING.md) for the exact match DTO, privacy, provider contra
 | POST `/item-reports`             | session              | Create report as current user, `OPEN`; 201                                             |
 | PATCH `/item-reports/:id`        | owner session        | Safe field update; other owners/missing reports return 404                             |
 | PATCH `/item-reports/:id/status` | owner session        | Report status lifecycle transition (`RESOLVED`, `CLOSED`); non-owner returns 404       |
-| GET `/item-reports/me`           | session              | Paginated own reports, newest first, for managing own items (BE011)                    |
+| GET `/item-reports/me`           | session              | Paginated own reports, newest first, with optional `type` and `q` filters              |
 | GET `/item-reports/:id/claims`   | report-owner session | Paginated claims submitted on owned report; non-owner returns 404 (BE012)              |
 | GET `/claims`                    | session              | Own claims only, paginated by descending claim ID                                      |
 | GET `/claims/:id`                | claimant session     | Own claim/evidence or non-disclosing 404                                               |
@@ -84,6 +84,8 @@ Report creation:
 IDs in JSON must be positive 32-bit integers. Catalog IDs must already exist. `title` is trimmed, required, max 255; description is nullable/optional, max 10000; image is nullable/optional, max 500, HTTP(S) without credentials or an absolute single-slash application path. No image fetching or file uploading occurs. Date/time must be valid ISO 8601 with timezone. `type`: `LOST` or `FOUND`. Output: `{reportId,categoryId,locationId,type,title,description,image,eventDatetime,status,createdAt,updatedAt}`. Dates serialize as UTC, e.g. `2026-11-04T05:30:00.000Z`. createdAt is submission metadata, distinct from the eventDatetime incident instant; pre-0004 reports use the migration instant because historical submission time is unknown. Public output omits reporter IDs/profiles.
 
 PATCH accepts only `title`, `description`, `image`, `categoryId`, `locationId`, with at least one field. Nullable fields can be explicitly cleared with `null`. Ownership, type, status, event date/time, createdAt and updatedAt cannot be supplied or rewritten by clients. PostgreSQL maintains updatedAt on successful UPDATE statements.
+
+Both report lists accept `q` for a case-insensitive literal substring of the report title. It is trimmed and limited to 255 characters. A blank value is equivalent to omitting it, and characters such as `%` and `_` are literal. Search and the other filters apply before pagination. The signed-in **รายการของฉัน** page at `/reports/mine` uses the owner-scoped list and existing report edit and close endpoints.
 
 Claim creation: `{ "reportId": 1, "evidence": "Private identifying details" }`. Evidence is required after trimming, max 10000. Output to the authenticated claimant: `{claimId,reportId,userId,evidence,status,claimDate,updatedAt}`. Clients cannot supply identity, status, claimDate or updatedAt. Only existing report FK eligibility is enforced; no undocumented LOST/FOUND, self-claim, duplicate-request, lifecycle or approval rule is assumed. Those decisions must be made before public release.
 

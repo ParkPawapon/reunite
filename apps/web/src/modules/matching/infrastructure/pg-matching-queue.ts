@@ -155,9 +155,9 @@ export class PgMatchingQueue implements MatchingQueue {
       if (result.assessment.decision === 'possible_match' && !row.notified) {
         await query(
           db,
-          `INSERT INTO notifications(user_id,kind)
-          SELECT user_id,'MATCH_SUGGESTED' FROM item_reports WHERE report_id=ANY($1::integer[])`,
-          [[row.lost_report_id, row.found_report_id]],
+          `INSERT INTO notifications(user_id,kind,match_id)
+          SELECT user_id,'MATCH_SUGGESTED',$2 FROM item_reports WHERE report_id=ANY($1::integer[])`,
+          [[row.lost_report_id, row.found_report_id], job.matchId],
         );
         await query(
           db,

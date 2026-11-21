@@ -31,11 +31,13 @@ export function ReportTable({
   rows,
   type,
   loading = false,
+  searched = false,
   onOpen,
 }: {
   rows: ReportRow[];
   type: ReportType;
   loading?: boolean;
+  searched?: boolean;
   onOpen?: (id: number) => void;
 }) {
   const motion = useShellMotion();
@@ -136,11 +138,17 @@ export function ReportTable({
             <ShellIcon name="box" width={25} height={25} />
           </span>
           <h2>
-            {type === 'LOST'
-              ? 'ยังไม่มีรายการของหาย'
-              : 'ยังไม่มีรายการของที่พบ'}
+            {searched
+              ? 'ไม่พบสิ่งของที่ค้นหา'
+              : type === 'LOST'
+                ? 'ยังไม่มีรายการของหาย'
+                : 'ยังไม่มีรายการของที่พบ'}
           </h2>
-          <p>เมื่อมีการแจ้ง รายการจะแสดงที่นี่</p>
+          <p>
+            {searched
+              ? 'ลองใช้คำค้นสั้นลง หรือสลับประเภทสิ่งของ'
+              : 'เมื่อมีการแจ้ง รายการจะแสดงที่นี่'}
+          </p>
         </div>
       )}
     </>
