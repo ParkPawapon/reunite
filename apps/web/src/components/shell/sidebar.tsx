@@ -12,7 +12,7 @@ export function Sidebar({
   compact?: boolean;
   onNavigate?: () => void;
   onClose?: () => void;
-  page?: 'dashboard' | 'profile' | 'campus';
+  page?: 'dashboard' | 'profile' | 'campus' | 'report-new';
 }) {
   return (
     <div className={styles.sidebarContent} data-compact={compact}>
@@ -64,6 +64,17 @@ export function Sidebar({
             width={16}
             height={16}
           />
+        </Link>
+        <Link
+          href="/reports/new"
+          prefetch={false}
+          aria-current={page === 'report-new' ? 'page' : undefined}
+          aria-label="แจ้งสิ่งของ"
+          title="แจ้งสิ่งของ"
+          onClick={onNavigate}
+        >
+          <ShellIcon name="plus" />
+          <span>แจ้งสิ่งของ</span>
         </Link>
         <Link
           href="/profile"
