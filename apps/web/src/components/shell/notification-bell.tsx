@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Popover from '@mui/material/Popover';
 import Skeleton from '@mui/material/Skeleton';
+import Snackbar from '@mui/material/Snackbar';
 import { z } from 'zod';
 import {
   accountRequest,
@@ -10,13 +11,21 @@ import {
 } from '@/modules/users/presentation/profile-client';
 import { useShellMotion } from './shell-motion';
 import { ShellIcon } from './shell-icon';
+import { MatchReturnExperience } from '@/components/matching/match-return-experience';
 import styles from './notifications.module.css';
 
 const pageSchema = z.object({
   items: z.array(
     z.object({
       notificationId: z.number().int().positive(),
-      kind: z.enum(['PROFILE_UPDATED', 'AVATAR_UPDATED', 'MATCH_SUGGESTED']),
+      kind: z.enum([
+        'PROFILE_UPDATED',
+        'AVATAR_UPDATED',
+        'MATCH_SUGGESTED',
+        'MATCH_PARTNER_CONFIRMED',
+        'MATCH_RETURNED',
+      ]),
+      matchId: z.number().int().positive().optional(),
       createdAt: z.iso.datetime(),
       readAt: z.iso.datetime().nullable(),
     }),
@@ -27,9 +36,19 @@ const pageSchema = z.object({
 type Page = z.infer<typeof pageSchema>;
 const content = {
   MATCH_SUGGESTED: {
-    title: 'มีสิ่งของที่อาจตรงกัน',
-    description: 'ตรวจสอบรายละเอียดกับรายการที่คุณแจ้งไว้',
+    title: 'ของสองชิ้นนี้อาจตรงกัน',
+    description: 'เปิดดูรูปและสถานที่ของทั้งสองประกาศ',
     icon: 'box',
+  },
+  MATCH_PARTNER_CONFIRMED: {
+    title: 'อีกฝ่ายยืนยันการคืนของแล้ว',
+    description: 'เปิดรายการเพื่อดูสถานะการคืนของ',
+    icon: 'check',
+  },
+  MATCH_RETURNED: {
+    title: 'คืนของสำเร็จ',
+    description: 'ทั้งสองฝ่ายยืนยันแล้ว',
+    icon: 'check',
   },
   PROFILE_UPDATED: {
     title: 'บันทึกโปรไฟล์แล้ว',
@@ -63,6 +82,11 @@ export function NotificationBell({
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState('');
   const [reading, setReading] = useState(false);
+  const [suggestion, setSuggestion] = useState<number | null>(null);
+  const [activeMatch, setActiveMatch] = useState<number | null>(null);
+  const queuedMatch = useRef<number | null>(null);
+  const bell = useRef<HTMLButtonElement>(null);
+  const newest = useRef<number | null>(null);
   const request = useRef<AbortController | null>(null);
   const readRequest = useRef<AbortController | null>(null);
   const heading = useRef<HTMLHeadingElement | null>(null);
@@ -81,13 +105,27 @@ export function NotificationBell({
           pageSchema,
           { signal: controller.signal },
         );
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
+          if (!before) {
+            const previous = newest.current;
+            newest.current = result.items[0]?.notificationId ?? 0;
+            const match = result.items.find(
+              (item) =>
+                previous !== null &&
+                item.notificationId > previous &&
+                item.kind === 'MATCH_SUGGESTED' &&
+                !item.readAt &&
+                item.matchId,
+            );
+            if (match?.matchId) setSuggestion(match.matchId);
+          }
           setData((previous) => ({
             ...result,
             items: before
               ? [...(previous?.items ?? []), ...result.items]
               : result.items,
           }));
+        }
       } catch (error) {
         if (!controller.signal.aborted)
           setFailure(
@@ -161,11 +199,22 @@ export function NotificationBell({
       }
     }
   }
+  function openMatch(matchId: number) {
+    setSuggestion(null);
+    if (anchor) {
+      queuedMatch.current = matchId;
+      setAnchor(null);
+    } else {
+      setActiveMatch(matchId);
+    }
+  }
+
   return (
     <>
       <button
         type="button"
         id="notification-button"
+        ref={bell}
         className={styles.bell}
         disabled={!enabled}
         aria-label={`การแจ้งเตือน${data?.unreadCount ? ` ยังไม่อ่าน ${data.unreadCount} รายการ` : ''}`}
@@ -192,6 +241,14 @@ export function NotificationBell({
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         transitionDuration={reducedMotion ? 0 : 180}
         slotProps={{
+          transition: {
+            onExited: () => {
+              const next = queuedMatch.current;
+              if (next === null) return;
+              queuedMatch.current = null;
+              setActiveMatch(next);
+            },
+          },
           paper: {
             id: 'notification-panel',
             role: 'dialog',
@@ -300,16 +357,29 @@ export function NotificationBell({
                       <ShellIcon name={content[item.kind].icon} />
                     </span>
                     <div>
-                      <a
-                        href={
-                          item.kind === 'MATCH_SUGGESTED'
-                            ? '/dashboard'
-                            : '/profile'
-                        }
-                        onClick={() => setAnchor(null)}
-                      >
-                        {content[item.kind].title}
-                      </a>
+                      {item.matchId ? (
+                        <button
+                          type="button"
+                          className={styles.matchAction}
+                          aria-haspopup="dialog"
+                          onClick={() => {
+                            if (item.matchId) openMatch(item.matchId);
+                          }}
+                        >
+                          {content[item.kind].title}
+                        </button>
+                      ) : (
+                        <a
+                          href={
+                            item.kind === 'MATCH_SUGGESTED'
+                              ? '/matches'
+                              : '/profile'
+                          }
+                          onClick={() => setAnchor(null)}
+                        >
+                          {content[item.kind].title}
+                        </a>
+                      )}
                       <p>{content[item.kind].description}</p>
                       <time dateTime={item.createdAt}>
                         {time(item.createdAt)}
@@ -340,6 +410,37 @@ export function NotificationBell({
           <p className={styles.note}>การอัปเดตบัญชีของคุณ · แสดงเวลาไทย</p>
         </section>
       </Popover>
+      <Snackbar
+        open={suggestion !== null && !anchor && activeMatch === null}
+        autoHideDuration={8000}
+        onClose={() => setSuggestion(null)}
+        transitionDuration={running ? 200 : 0}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        message={content.MATCH_SUGGESTED.title}
+        action={
+          suggestion === null ? undefined : (
+            <button
+              type="button"
+              className={styles.toastAction}
+              aria-haspopup="dialog"
+              onClick={() => openMatch(suggestion)}
+            >
+              ดูคู่สิ่งของ
+            </button>
+          )
+        }
+      />
+      {activeMatch !== null && (
+        <MatchReturnExperience
+          key={activeMatch}
+          matchId={activeMatch}
+          onDismiss={() => {
+            setActiveMatch(null);
+            bell.current?.focus({ preventScroll: true });
+            void load();
+          }}
+        />
+      )}
     </>
   );
 }

@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import sharp from 'sharp';
 import { migrate } from '../../packages/database/src/migrations';
 import { withTransaction } from '@campus/database';
-import { createServices } from '@/lib/composition';
+import { createMatchReturnService, createServices } from '@/lib/composition';
 import { createMatchingHandlers } from '@/lib/http/matching-handlers';
 import { hashSessionToken } from '@/lib/security/session';
 import { PgMatchingQueue } from '@/modules/matching/infrastructure/pg-matching-queue';
@@ -20,7 +20,10 @@ import { isolatedDatabase } from './database-fixture';
 const fixture = isolatedDatabase(),
   pool = fixture.pool;
 const queue = new PgMatchingQueue(pool);
-const handlers = createMatchingHandlers(() => createServices(pool));
+const handlers = createMatchingHandlers(
+  () => createServices(pool),
+  () => createMatchReturnService(pool),
+);
 let cookie = '';
 const assessment: MatchAssessment = {
   decision: 'possible_match',
@@ -61,6 +64,14 @@ const request = (
     headers: { cookie: session, origin, 'content-type': type },
     ...(body ? { body: new Uint8Array(body) } : {}),
   });
+async function sessionFor(userId: number) {
+  const token = randomBytes(32).toString('base64url');
+  await pool.query(
+    "INSERT INTO auth_sessions(token_hash,user_id,expires_at) VALUES($1,$2,CURRENT_TIMESTAMP+INTERVAL '1 day')",
+    [hashSessionToken(token), userId],
+  );
+  return `lost_found_session=${token}`;
+}
 async function report(userId = 1, type = 'LOST', status = 'OPEN') {
   const row = (
     await pool.query<{ report_id: number }>(
@@ -113,12 +124,7 @@ beforeEach(async () => {
   await pool.query(
     "INSERT INTO locations(location_name) VALUES('สถานที่ทดสอบ')",
   );
-  const token = randomBytes(32).toString('base64url');
-  cookie = `lost_found_session=${token}`;
-  await pool.query(
-    "INSERT INTO auth_sessions(token_hash,user_id,expires_at) VALUES($1,1,CURRENT_TIMESTAMP+INTERVAL '1 day')",
-    [hashSessionToken(token)],
-  );
+  cookie = await sessionFor(1);
 });
 
 it('atomically queues only open, opposite-type reports from different accounts; a rollback leaves no job', async () => {
@@ -214,6 +220,149 @@ it('stores actual provider results, notifies both participants exactly once, and
   expect((await response.json()).data.serviceStatus).toBe('disabled');
   expect(response.headers.get('cache-control')).toBe('no-store');
   expect((await handlers.list(request('GET', ''))).status).toBe(401);
+});
+
+it('requires the two exact participants to confirm independently and resolves both reports once', async () => {
+  const { lost, found } = await pair();
+  const job = await queue.claim(1000000, 100000);
+  if (!job) throw new Error('Missing job');
+  await queue.complete(job, result);
+  const whoFound = await sessionFor(2);
+  const outsider = await sessionFor(3);
+  const route = context(job.matchId);
+  const info = await handlers.getReturn(request(), route);
+  const { data } = await info.json();
+  expect(data).toMatchObject({
+    role: 'LOST',
+    lost: { reportId: lost },
+    found: { reportId: found },
+    returnedAt: null,
+  });
+  expect(info.headers.get('cache-control')).toBe('no-store');
+  expect(
+    (await handlers.getReturn(request('GET', outsider), route)).status,
+  ).toBe(404);
+  expect((await handlers.getReturn(request('GET', ''), route)).status).toBe(
+    401,
+  );
+  const revision = new TextEncoder().encode(
+    JSON.stringify({
+      lostRevision: data.lostRevision,
+      foundRevision: data.foundRevision,
+    }),
+  );
+  const confirm = (session: string, origin = 'http://localhost:3000') =>
+    handlers.confirmReturn(
+      request('PUT', session, revision, origin, 'application/json'),
+      route,
+    );
+  expect((await confirm(outsider)).status).toBe(404);
+  expect((await confirm(cookie, 'https://example.test')).status).toBe(403);
+  const first = await confirm(cookie);
+  expect(first.status).toBe(200);
+  const firstState = (await first.json()).data;
+  expect(firstState.lostConfirmedAt).toBeTruthy();
+  expect(firstState.foundConfirmedAt).toBeNull();
+  expect(firstState.returnedAt).toBeNull();
+  expect(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS count FROM item_reports WHERE status='OPEN'",
+      )
+    ).rows[0].count,
+  ).toBe(2);
+  const retries = await Promise.all([
+    confirm(whoFound),
+    confirm(whoFound),
+    confirm(cookie),
+  ]);
+  for (const response of retries) expect(response.status).toBe(200);
+  const final = await handlers.getReturn(request('GET', whoFound), route);
+  expect((await final.json()).data).toMatchObject({
+    role: 'FOUND',
+    returnedAt: expect.any(String),
+  });
+  expect(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS count FROM item_reports WHERE status='RESOLVED'",
+      )
+    ).rows[0].count,
+  ).toBe(2);
+  expect(
+    (
+      await pool.query(
+        'SELECT user_id,kind FROM notifications WHERE match_id=$1 ORDER BY notification_id',
+        [job.matchId],
+      )
+    ).rows,
+  ).toMatchObject([
+    { kind: 'MATCH_SUGGESTED' },
+    { kind: 'MATCH_SUGGESTED' },
+    { kind: 'MATCH_PARTNER_CONFIRMED', user_id: 2 },
+    { kind: 'MATCH_RETURNED' },
+    { kind: 'MATCH_RETURNED' },
+  ]);
+});
+
+it('clears a pending confirmation when either report changes and refuses a stale retry', async () => {
+  const { lost } = await pair();
+  const job = await queue.claim(1000000, 100000);
+  if (!job) throw new Error('Missing initial job');
+  await queue.complete(job, result);
+  const handoff = createMatchReturnService(pool);
+  const before = await handoff.get(job.matchId, 1);
+  await handoff.confirm(job.matchId, 1, before);
+  await createServices(pool).reports.update(lost, 1, {
+    title: 'แก้ชื่อสิ่งของ',
+  });
+  await expect(handoff.get(job.matchId, 1)).rejects.toMatchObject({
+    status: 404,
+  });
+  await expect(handoff.confirm(job.matchId, 2, before)).rejects.toMatchObject({
+    code: 'MATCH_CHANGED',
+  });
+  const refreshed = await queue.claim(1000000, 100000);
+  if (!refreshed) throw new Error('Missing refreshed job');
+  await queue.complete(refreshed, result);
+  const current = await handoff.get(refreshed.matchId, 1);
+  expect(current.lostRevision).not.toBe(before.lostRevision);
+  expect(current.lostConfirmedAt).toBeNull();
+  await expect(
+    handoff.confirm(refreshed.matchId, 2, before),
+  ).rejects.toMatchObject({ status: 409 });
+});
+
+it('resolves only one pair when two returns compete for the same report', async () => {
+  await pair();
+  await report(3, 'FOUND');
+  const first = await queue.claim(1000000, 100000);
+  const second = await queue.claim(1000000, 100000);
+  if (!first || !second) throw new Error('Missing competing jobs');
+  await queue.complete(first, result);
+  await queue.complete(second, result);
+  const handoff = createMatchReturnService(pool);
+  const left = await handoff.get(first.matchId, 2);
+  const right = await handoff.get(second.matchId, 3);
+  await Promise.all([
+    handoff.confirm(left.matchId, 2, left),
+    handoff.confirm(right.matchId, 3, right),
+  ]);
+  const results = await Promise.allSettled([
+    handoff.confirm(left.matchId, 1, left),
+    handoff.confirm(right.matchId, 1, right),
+  ]);
+  const [accepted] = results.filter((result) => result.status === 'fulfilled');
+  const [rejected] = results.filter((result) => result.status === 'rejected');
+  expect(accepted?.value.returnedAt).toBeTruthy();
+  expect(rejected?.reason).toMatchObject({ status: 409 });
+  expect(
+    (
+      await pool.query(
+        "SELECT count(*)::int FROM item_reports WHERE status='RESOLVED'",
+      )
+    ).rows[0].count,
+  ).toBe(2);
 });
 it('invalidates an in-flight result after a real edit, preserves reserved cost, and ignores no-op updates', async () => {
   const { lost } = await pair();

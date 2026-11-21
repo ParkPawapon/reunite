@@ -10,7 +10,7 @@ The November 16 request authorizes external processing of report text and item p
 - `report_matches` is the only added table: ten physical tables in total. It stores one durable job/result per report pair, both content revisions, leases, attempts and cumulative cost reservations. No ORM, Redis or second HTTP backend is added.
 - The Next.js Node startup hook runs one sequential worker per process. PostgreSQL leases and `SKIP LOCKED` coordinate multiple processes; a two-minute lease exceeds the one-minute provider timeout. A failed/expired attempt can retry up to three times with a new reservation. Terminal errors remain inspectable by an operator in `error_code`; raw provider responses are not logged.
 - Report edits invalidate old leases/results and requeue current content. Completion checks both revisions and OPEN status. Same-user, closed/resolved and stale matches are excluded. Match notifications commit atomically with a successful result and are emitted at most once per pair; later edits can invalidate a previously announced suggestion.
-- The user subsequently requested removal of the dashboard's entire matching panel on November 16. That component and its matching polling are removed. Matching results remain available through the authenticated API; there is currently no dedicated frontend results view. The bell still polls notifications every ten seconds while visible. This is **near realtime polling**, not a push/SSE guarantee; queue length, provider latency, retries and budget can delay results.
+- The dashboard has no persistent matching panel. The bell polls notifications every ten seconds while visible and shows an in-app alert for fresh suggestions. The alert opens the comparison and return confirmation in a dialog over the current page. Queue length, provider latency, retries and budget can delay suggestions.
 - Results never change report/claim status or decide ownership. There is no fabricated similarity percentage. A `possible_match` needs two distinct agreeing identity attributes, including model/marking/contents/damage, and no conflicts. Otherwise the display gate abstains. This conservative heuristic still needs measured evaluation; it is not a proven accuracy threshold.
 
 ## Configuration and costs
@@ -31,7 +31,13 @@ Pair enumeration is exhaustive across open opposite-type reports; its storage/wo
 
 `GET /api/v1/matches[?before=<matchId>]` requires a session and returns 20 current suggested pairs plus `nextCursor`, `pendingCount`, `failedCount`, `serviceStatus` (`disabled`, `active`, `budget_exhausted`) and `refreshAfterSeconds:10`. Each pair has `matchId`, own/candidate report IDs and titles, assessment and completion time. Counts cover materialized jobs only; the reconciler may still be discovering pairs. No global usage/key/account identifiers are exposed. Responses are no-store. Unknown/duplicate/invalid query parameters are rejected.
 
-Image routes: public `GET /api/v1/item-reports/:id/image`; owner-only `GET /api/v1/item-reports/:id/image/access`, `PUT /.../image`, `DELETE /.../image`. Missing/non-owned mutations return a non-disclosing 404. `MATCH_SUGGESTED` notifications link to `/dashboard`; no notification publishing API exists.
+Image routes: public `GET /api/v1/item-reports/:id/image`; owner-only `GET /api/v1/item-reports/:id/image/access`, `PUT /.../image`, `DELETE /.../image`. Missing/non-owned mutations return a non-disclosing 404. `MATCH_SUGGESTED` with a pair ID opens its dialog. The direct route `/matches/:id` opens the same dialog over the signed-in user's list. Older notifications without a pair ID open `/matches`.
+
+## Confirming a return
+
+`GET /api/v1/matches/:id` is private to the two reporters. It returns the public report details, the caller's role, both revision strings, and the confirmation timestamps. `PUT /api/v1/matches/:id` accepts `{ lostRevision, foundRevision }` over same-origin authenticated requests. The server derives the role from ownership. After physically exchanging the item, the owner confirms receipt and the finder confirms handoff. The first confirmation leaves both reports open and alerts the other participant. The second resolves both reports and alerts both participants in one transaction. Retrying either confirmation preserves the recorded timestamp and does not emit another alert.
+
+Changing an open report invalidates pending confirmations. A stale submission is rejected so both reporters can review the updated pair. Confirming a return does not alter claim decisions. Migration `0009` adds columns to the existing tables.
 
 ## Verification and release limits
 

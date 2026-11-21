@@ -8,6 +8,7 @@ import type {
 type Row = {
   notification_id: number;
   kind: AccountNotification['kind'];
+  match_id: number | null;
   created_at: Date;
   read_at: Date | null;
 };
@@ -19,7 +20,7 @@ export class PgNotificationRepository implements NotificationRepository {
       `SELECT
       (SELECT COUNT(*)::integer FROM notifications WHERE user_id=$1 AND read_at IS NULL) AS unread_count,
       COALESCE((SELECT json_agg(page) FROM (
-        SELECT notification_id, kind, created_at, read_at FROM notifications
+        SELECT notification_id, kind, match_id, created_at, read_at FROM notifications
         WHERE user_id=$1 AND ($2::integer IS NULL OR notification_id < $2)
         ORDER BY notification_id DESC LIMIT 21
       ) page), '[]'::json) AS items`,
@@ -28,6 +29,7 @@ export class PgNotificationRepository implements NotificationRepository {
     const items = (row?.items ?? []).slice(0, 20).map((item) => ({
       notificationId: item.notification_id,
       kind: item.kind,
+      ...(item.match_id === null ? {} : { matchId: item.match_id }),
       createdAt: new Date(item.created_at).toISOString(),
       readAt: item.read_at ? new Date(item.read_at).toISOString() : null,
     }));

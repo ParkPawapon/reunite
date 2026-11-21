@@ -661,30 +661,3 @@
   padding: 0;
   margin: 0;
 }
-
-.guestAccount {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 44px;
-  padding-inline: 0.75rem;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  color: var(--color-orange-800);
-}
-
-.guestAccount:hover {
-  background: var(--color-orange-50);
-}
-
-@media (max-width: 599px) {
-  .guestAccount span {
-    display: none;
-  }
-
-  .guestAccount {
-    justify-content: center;
-    width: 44px;
-    padding: 0;
-  }
-}

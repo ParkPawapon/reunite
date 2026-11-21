@@ -12,6 +12,7 @@ import {
 } from '@/modules/item-reports/presentation/reports-client';
 import { reportDate, ReportStatus } from './report-table';
 import { ReportImageUpload } from './report-image-upload';
+import { ReportManagement } from './report-management';
 import { ReportDetailSkeleton } from './report-detail-skeleton';
 import { ReportPhoto } from './report-photo';
 import styles from './report-detail.module.css';
@@ -19,9 +20,11 @@ import styles from './report-detail.module.css';
 export function ReportDetail({
   reportId,
   onClose,
+  onManaged,
 }: {
   reportId: number;
   onClose: () => void;
+  onManaged?: () => void;
 }) {
   const titleId = useId();
   const title = useRef<HTMLHeadingElement>(null);
@@ -29,6 +32,7 @@ export function ReportDetail({
   const [open, setOpen] = useState(true);
   const [revision, setRevision] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [managing, setManaging] = useState(false);
   const [state, setState] = useState<
     | { kind: 'loading' }
     | { kind: 'error'; missing: boolean }
@@ -60,7 +64,9 @@ export function ReportDetail({
   const row = state.kind === 'ready' ? state.row : null;
   const imageHref = reportImageHref(row?.image ?? null);
   const managedImage = imageHref === `/api/v1/item-reports/${reportId}/image`;
-  const close = () => setOpen(false);
+  const close = () => {
+    if (!managing) setOpen(false);
+  };
   return (
     <Dialog
       className={styles.root}
@@ -109,6 +115,7 @@ export function ReportDetail({
           type="button"
           className={styles.close}
           onClick={close}
+          disabled={managing}
           aria-label="ปิดรายละเอียด"
           title="ปิดรายละเอียด"
         >
@@ -120,7 +127,7 @@ export function ReportDetail({
         role="region"
         aria-label="รายละเอียดรายการ"
         tabIndex={0}
-        aria-busy={state.kind === 'loading' || refreshing}
+        aria-busy={state.kind === 'loading' || refreshing || managing}
       >
         {state.kind === 'loading' ? (
           <ReportDetailSkeleton motion={motion} />
@@ -208,6 +215,22 @@ export function ReportDetail({
             )}
           </>
         )}
+        {row && onManaged && (
+          <ReportManagement
+            row={row}
+            onPendingChange={setManaging}
+            onUpdated={(next) => {
+              setState((current) =>
+                current.kind === 'ready'
+                  ? { kind: 'ready', row: next }
+                  : current,
+              );
+              setRefreshing(true);
+              setRevision((value) => value + 1);
+              onManaged();
+            }}
+          />
+        )}
         <ReportImageUpload
           reportId={reportId}
           shown={state.kind === 'ready'}
@@ -234,7 +257,12 @@ export function ReportDetail({
       </div>
       <footer className={styles.footer}>
         <p>ของสำคัญ มีเจ้าของ</p>
-        <button type="button" className={styles.back} onClick={close}>
+        <button
+          type="button"
+          className={styles.back}
+          onClick={close}
+          disabled={managing}
+        >
           กลับไปดูรายการ <ShellIcon name="arrow" width={14} height={14} />
         </button>
       </footer>

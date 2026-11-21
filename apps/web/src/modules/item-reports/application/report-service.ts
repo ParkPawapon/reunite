@@ -1,10 +1,11 @@
-import { AppError, type Page } from '@campus/shared';
+import { AppError } from '@campus/shared';
 import type {
   Report,
   ReportRepository,
   ReportInput,
   ReportPatch,
   ReportFilter,
+  ReportBrowse,
 } from '../domain/report';
 
 export class ReportService {
@@ -39,7 +40,7 @@ export class ReportService {
     return report;
   }
 
-  listOwned(userId: number, page: Page): Promise<Report[]> {
-    return this.repository.listOwned(userId, page);
+  listOwned(userId: number, filter: ReportBrowse): Promise<Report[]> {
+    return this.repository.listOwned(userId, filter);
   }
 }

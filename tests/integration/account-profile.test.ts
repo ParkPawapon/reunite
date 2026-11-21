@@ -89,7 +89,13 @@ afterAll(() => fixture.close());
 
 describe('student profile and private notification workflow', () => {
   it('upgrades legacy accounts without inventing personal data or losing active sessions', async () => {
-    expect(await migrate(pool)).toEqual(['0005', '0006', '0007', '0008']);
+    expect(await migrate(pool)).toEqual([
+      '0005',
+      '0006',
+      '0007',
+      '0008',
+      '0009',
+    ]);
     expect(
       await data(await handlers.profile(request('profile'))),
     ).toMatchObject({
@@ -185,7 +191,9 @@ describe('student profile and private notification workflow', () => {
       'kind',
       'created_at',
       'read_at',
+      'match_id',
     ]);
+    expect(raw.rows[0].match_id).toBeNull();
   });
   it('enforces uniqueness without partial updates and requires a throttled password check for email changes', async () => {
     const duplicate = await handlers.updateProfile(

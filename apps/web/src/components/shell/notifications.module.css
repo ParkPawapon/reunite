@@ -116,14 +116,24 @@
   flex: 1;
   min-width: 0;
 }
-.list a {
+.list a,
+.matchAction {
   color: var(--color-text);
   font-size: 0.8125rem;
   font-weight: 600;
   text-decoration: none;
 }
-.list a:hover {
+.list a:hover,
+.matchAction:hover {
   text-decoration: underline;
+}
+.matchAction {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: start;
+  cursor: pointer;
 }
 .list p {
   margin: 0.25rem 0 0.375rem;
@@ -207,4 +217,15 @@
   .close {
     transition: none;
   }
+}
+.toastAction {
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--color-orange-100);
+  font-weight: 650;
+  padding: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
 }

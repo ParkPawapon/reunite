@@ -18,7 +18,8 @@ export function AppShell({
   user?: ShellUser;
   children: ReactNode;
   loading?: boolean;
-  page?: 'dashboard' | 'profile' | 'campus' | 'report-new';
+  page?:
+    'dashboard' | 'profile' | 'campus' | 'matches' | 'myReports' | 'report-new';
 }) {
   const desktop = useMediaQuery('(min-width: 1000px)');
   const [compact, setCompact] = useState(false);
@@ -26,6 +27,15 @@ export function AppShell({
   const [paused, setPaused] = useState(false);
   const { visible, reducedMotion } = useMotionPolicy();
   const running = visible && !reducedMotion && !paused;
+  const navigationPage = page === 'matches' ? 'dashboard' : page;
+  const title = {
+    campus: 'แผนที่บางมด',
+    profile: 'โปรไฟล์',
+    dashboard: 'หน้าหลัก',
+    matches: 'จับคู่สิ่งของ',
+    myReports: 'รายการของฉัน',
+    'report-new': 'แจ้งสิ่งของ',
+  }[page];
   return (
     <ShellMotionProvider value={running}>
       <div
@@ -40,7 +50,7 @@ export function AppShell({
           ข้ามไปยังเนื้อหา
         </a>
         <aside className={styles.desktopSidebar} id="desktop-navigation">
-          <Sidebar compact={compact} page={page} />
+          <Sidebar compact={compact} page={navigationPage} />
         </aside>
         <Drawer
           anchor="left"
@@ -64,23 +74,15 @@ export function AppShell({
           }}
         >
           <Sidebar
-            page={page}
+            page={navigationPage}
             onClose={() => setDrawer(false)}
             onNavigate={() => setDrawer(false)}
           />
         </Drawer>
         <div className={styles.workspace}>
           <Topbar
-            title={
-              page === 'campus'
-                ? 'แผนที่บางมด'
-                : page === 'profile'
-                  ? 'โปรไฟล์'
-                  : page === 'report-new'
-                    ? 'แจ้งสิ่งของ'
-                    : 'หน้าหลัก'
-            }
-            publicPage={page === 'campus'}
+            title={title}
+            showMotionControl={page !== 'campus'}
             user={user}
             menuExpanded={desktop ? !compact : drawer}
             menuId={desktop ? 'desktop-navigation' : 'mobile-navigation'}

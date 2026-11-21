@@ -26,7 +26,7 @@ export function Topbar({
   menuLabel,
   reducedMotion,
   title = 'ภาพรวม',
-  publicPage = false,
+  showMotionControl = true,
 }: {
   user?: ShellUser;
   menuExpanded: boolean;
@@ -37,7 +37,7 @@ export function Topbar({
   menuLabel: string;
   reducedMotion: boolean;
   title?: string;
-  publicPage?: boolean;
+  showMotionControl?: boolean;
 }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [pending, setPending] = useState(false);
@@ -93,7 +93,7 @@ export function Topbar({
           enabled={Boolean(user)}
           reducedMotion={reducedMotion}
         />
-        {!publicPage && (
+        {showMotionControl && (
           <button
             type="button"
             className={styles.motionButton}
@@ -133,15 +133,6 @@ export function Topbar({
               className={styles.chevron}
             />
           </button>
-        ) : publicPage ? (
-          <Link
-            href="/login"
-            prefetch={false}
-            className={styles.guestAccount}
-            aria-label="เข้าสู่ระบบ"
-          >
-            <ShellIcon name="user" /> <span>เข้าสู่ระบบ</span>
-          </Link>
         ) : (
           <div className={styles.accountPlaceholder} aria-hidden="true">
             <Skeleton

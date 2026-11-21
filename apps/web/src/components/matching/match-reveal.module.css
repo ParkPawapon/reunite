@@ -1,0 +1,243 @@
+.scene {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1.85;
+  width: 100%;
+  min-height: 7.5rem;
+  color: var(--color-orange-100);
+  --signal: var(--color-brand-yellow);
+}
+
+.scene[data-match-scene='returned'] {
+  --signal: var(--color-status-success-dark);
+}
+
+.scope {
+  position: absolute;
+  z-index: -1;
+  width: min(64%, 10rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--signal) 45%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(circle, #e7401133, transparent 74%);
+  box-shadow:
+    0 0 0 0.65rem #ffe4d609,
+    0 0 0 1.35rem #ffe4d606;
+  overflow: hidden;
+}
+
+.scope::after {
+  content: '';
+  position: absolute;
+  inset: 15%;
+  border: 1px dashed color-mix(in srgb, var(--signal) 36%, transparent);
+  border-radius: 50%;
+}
+
+.sweep {
+  position: absolute;
+  inset: -1px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 65%,
+    color-mix(in srgb, var(--signal) 30%, transparent) 99%,
+    transparent 100%
+  );
+  transform: rotate(58deg);
+  opacity: 0.44;
+}
+
+.signal {
+  position: absolute;
+  z-index: -2;
+  inset: 54% 8% auto;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--signal), transparent);
+  opacity: 0.85;
+}
+
+.lost,
+.found {
+  position: absolute;
+  top: 37%;
+  display: grid;
+  place-items: center;
+  width: clamp(1.85rem, 6vw, 3.75rem);
+  aspect-ratio: 1;
+  border: 1px solid #ffb984a6;
+  border-radius: 27%;
+  background: linear-gradient(
+    160deg,
+    var(--color-orange-700),
+    var(--color-orange-900)
+  );
+  box-shadow:
+    0 10px 20px #260a0770,
+    inset 0 0 0 2px #ffc8af1c;
+  transform: rotate(var(--angle));
+}
+
+.lost {
+  left: 7%;
+  top: 31%;
+  --angle: -14deg;
+  --origin-x: -32%;
+  --origin-y: -18%;
+}
+
+.found {
+  right: 5%;
+  --angle: 13deg;
+  --origin-x: 32%;
+  --origin-y: 16%;
+}
+
+.lost svg,
+.found svg {
+  width: 49%;
+  height: 49%;
+}
+
+.honk {
+  width: min(43%, 7.25rem);
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 9px #280b0875);
+  transform: translateY(-1%) rotate(-7deg);
+}
+
+.seal {
+  position: absolute;
+  bottom: 4%;
+  left: 60%;
+  display: grid;
+  place-items: center;
+  width: clamp(1.65rem, 5vw, 3.15rem);
+  aspect-ratio: 1;
+  border: 1px solid #ffffff40;
+  border-radius: 50%;
+  background: var(--signal);
+  color: var(--color-orange-950);
+  box-shadow:
+    0 0 0 4px #391309bf,
+    0 7px 24px #280b085e;
+}
+
+.seal svg {
+  width: 56%;
+  height: 56%;
+}
+
+.scene[data-motion='on'] .sweep {
+  animation: scan 1040ms cubic-bezier(0.3, 0.3, 0.25, 1) both;
+}
+
+.scene[data-motion='on'] .signal {
+  animation: connect 590ms 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.scene[data-motion='on'] :is(.lost, .found) {
+  animation: gather 660ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.scene[data-motion='on'] .found {
+  animation-delay: 100ms;
+}
+
+.scene[data-motion='on'] .honk {
+  animation: inspect 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.scene[data-motion='on'] .seal {
+  animation: seal 470ms 570ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes scan {
+  from {
+    transform: rotate(-162deg);
+    opacity: 0.2;
+  }
+  70% {
+    opacity: 0.86;
+  }
+  to {
+    transform: rotate(58deg);
+    opacity: 0.44;
+  }
+}
+
+@keyframes connect {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 0.85;
+  }
+}
+
+@keyframes gather {
+  from {
+    transform: translate(var(--origin-x), var(--origin-y)) rotate(0deg)
+      scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(var(--angle));
+    opacity: 1;
+  }
+}
+
+@keyframes inspect {
+  from {
+    transform: translate(-7%, 9%) rotate(-17deg);
+    opacity: 0.5;
+  }
+  66% {
+    transform: translateY(-4%) rotate(-4deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-1%) rotate(-7deg);
+    opacity: 1;
+  }
+}
+
+@keyframes seal {
+  from {
+    transform: scale(0.48) rotate(-32deg);
+    opacity: 0;
+  }
+  62% {
+    transform: scale(1.13) rotate(6deg);
+    opacity: 1;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 560px) {
+  .scene {
+    min-height: 5.2rem;
+  }
+  .lost {
+    left: 0;
+  }
+  .found {
+    right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene[data-motion='on'] :is(.sweep, .signal, .lost, .found, .honk, .seal) {
+    animation: none;
+  }
+}

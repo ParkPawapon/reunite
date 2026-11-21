@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ReportPatch } from '../domain/report';
 
 const id = z.number().int().positive();
 const reportSchema = z.object({
@@ -17,7 +18,8 @@ const reportSchema = z.object({
 const categorySchema = z.object({ categoryId: id, categoryName: z.string() });
 const locationSchema = z.object({ locationId: id, locationName: z.string() });
 export type ReportType = z.infer<typeof reportSchema>['type'];
-export type ReportRow = z.infer<typeof reportSchema> & {
+type ReportRecord = z.infer<typeof reportSchema>;
+export type ReportRow = ReportRecord & {
   categoryName: string;
   locationName: string;
 };
@@ -32,11 +34,17 @@ async function request<T>(
   path: string,
   schema: z.ZodType<T>,
   signal: AbortSignal,
+  patch?: ReportPatch | { status: 'CLOSED' },
 ) {
   const response = await fetch(`/api/v1/${path}`, {
     credentials: 'same-origin',
     cache: 'no-store',
     signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+    ...(patch && {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    }),
   });
   if (!response.ok) throw new ReportRequestError(response.status);
   const parsed = z.object({ data: schema }).safeParse(await response.json());
@@ -60,11 +68,15 @@ async function catalog<T>(
     if (page.length < 100) return rows;
   }
 }
-async function names(signal: AbortSignal) {
+export async function loadReportCatalogs(signal: AbortSignal) {
   const [categories, locations] = await Promise.all([
     catalog('categories', categorySchema, signal),
     catalog('locations', locationSchema, signal),
   ]);
+  return { categories, locations };
+}
+async function names(signal: AbortSignal) {
+  const { categories, locations } = await loadReportCatalogs(signal);
   return {
     categories: new Map(
       categories.map((row) => [row.categoryId, row.categoryName]),
@@ -76,10 +88,7 @@ async function names(signal: AbortSignal) {
 }
 export type ReportOption = { id: number; name: string };
 export async function loadReportOptions(signal: AbortSignal) {
-  const [categories, locations] = await Promise.all([
-    catalog('categories', categorySchema, signal),
-    catalog('locations', locationSchema, signal),
-  ]);
+  const { categories, locations } = await loadReportCatalogs(signal);
   return {
     categories: categories.map((row): ReportOption => ({
       id: row.categoryId,
@@ -105,11 +114,18 @@ export async function loadReportPage(
   type: ReportType,
   offset: number,
   signal: AbortSignal,
+  options: { q?: string; owned?: boolean } = {},
 ) {
+  const query = new URLSearchParams({
+    type,
+    limit: String(REPORT_PAGE_SIZE + 1),
+    offset: String(offset),
+  });
+  if (options.q) query.set('q', options.q);
   // Look ahead one row; the API does not provide a total count.
   const [rows, lookup] = await Promise.all([
     request(
-      `item-reports?type=${type}&limit=${REPORT_PAGE_SIZE + 1}&offset=${offset}`,
+      `item-reports${options.owned ? '/me' : ''}?${query}`,
       z.array(reportSchema),
       signal,
     ),
@@ -127,6 +143,21 @@ export async function loadReportDetail(reportId: number, signal: AbortSignal) {
     names(signal),
   ]);
   return describe(row, lookup);
+}
+export function updateReportDetails(
+  reportId: number,
+  fields: Pick<
+    ReportRecord,
+    'title' | 'description' | 'categoryId' | 'locationId'
+  >,
+  signal: AbortSignal,
+) {
+  return request(`item-reports/${reportId}`, reportSchema, signal, fields);
+}
+export function closeReport(reportId: number, signal: AbortSignal) {
+  return request(`item-reports/${reportId}/status`, reportSchema, signal, {
+    status: 'CLOSED',
+  });
 }
 export type CreateReportInput = {
   type: ReportType;
