@@ -64,17 +64,19 @@ export function createMatchingHandlers(
           z.strictObject({ before: idSchema.optional() }),
           queryInput(request),
         );
-        const { reservedUsdMicros, ...page } = await resolve().matching.list(
-          identity.userId,
-          before,
-        );
+        const { reservedUsdMicros, freeAttemptsToday, ...page } =
+          await resolve().matching.list(identity.userId, before);
         const config = matchingConfig();
+        const quotaExhausted =
+          config.provider === 'cloudflare'
+            ? freeAttemptsToday >= config.freeDailyLimit
+            : reservedUsdMicros + MATCHING_RESERVATION_USD_MICROS >
+              config.budgetUsdMicros;
         return success({
           ...page,
           serviceStatus: !config.enabled
             ? 'disabled'
-            : reservedUsdMicros + MATCHING_RESERVATION_USD_MICROS >
-                config.budgetUsdMicros
+            : quotaExhausted
               ? 'budget_exhausted'
               : 'active',
           refreshAfterSeconds: 10,

@@ -95,6 +95,7 @@ describe('student profile and private notification workflow', () => {
       '0007',
       '0008',
       '0009',
+      '0010',
     ]);
     expect(
       await data(await handlers.profile(request('profile'))),

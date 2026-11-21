@@ -18,5 +18,6 @@ export interface MatchReader {
     pendingCount: number;
     failedCount: number;
     reservedUsdMicros: number;
+    freeAttemptsToday: number;
   }>;
 }

@@ -223,6 +223,7 @@ it('keeps no-budget jobs pending and rejects fabricated two-photo comparisons', 
     job,
     'INVALID_IMAGE_ASSESSMENT',
     false,
+    undefined,
   );
 });
 

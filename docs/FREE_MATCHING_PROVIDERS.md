@@ -1,6 +1,16 @@
 # Free matching provider research
 
-Checked November 16, 2026 (Asia/Bangkok). The user's latest instruction is to find a free provider first. No paid API calls are authorized by that instruction. The existing OpenAI implementation remains disabled with a zero configured budget. This is provider research, not an installed Groq/Gemini adapter or a live accuracy test.
+## Selected provider, November 21, 2026
+
+Cloudflare Workers AI runs [Gemma 4 26B A4B](https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/) with text and vision through the [Chat Completions endpoint](https://developers.cloudflare.com/workers-ai/configuration/open-ai-compatibility/). The adapter requests JSON Schema and validates the result before the suggestion can appear. It sends the two item photos inline from existing normalized WebP bytes.
+
+Workers Free includes 10,000 Neurons per UTC day and stops requests when that allowance is exhausted. The app also caps dispatched comparisons at 10 per day across its database. Other projects using the same account can consume its allowance. Keep the account on Workers Free. An inference token cannot verify the plan and Workers Paid may incur charges. [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)
+
+Cloudflare states that standard synchronous inference does not retain content after processing, subject to safety and legal exceptions, and that Workers AI content is not used to train models. Reunite uses the direct synchronous API. Follow [the deployment checks](MATCHING.md#cloudflare-workers-free-on-vercel) before enabling it. [Workers AI data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/)
+
+## Earlier provider research
+
+The following tradeoffs were recorded on November 16, 2026. Neither Groq nor Gemini is wired into the app.
 
 ## Evaluation candidate: GroqCloud Free + Qwen 3.8 27B
 

@@ -2,6 +2,7 @@ import { getPool } from '@campus/database';
 import {
   matchingConfig,
   MATCHING_MODEL,
+  CLOUDFLARE_MATCHING_MODEL,
   MATCHING_RESERVATION_USD_MICROS,
 } from '../apps/web/src/config/matching';
 const pool = getPool();
@@ -10,9 +11,12 @@ try {
   const totals = await pool.query<{
     reserved: string;
     estimated: string;
+    free_attempts: number;
   }>(`SELECT
     COALESCE(sum(reserved_usd_micros),0)::text AS reserved,
-    COALESCE(sum(estimated_usd_micros),0)::text AS estimated FROM report_matches`);
+    COALESCE(sum(estimated_usd_micros),0)::text AS estimated,
+    COALESCE(sum(free_attempts_today) FILTER (WHERE free_quota_day=(statement_timestamp() AT TIME ZONE 'UTC')::date), 0)::integer AS free_attempts
+    FROM report_matches`);
   const counts = await pool.query<{ state: string; count: number }>(
     'SELECT state,count(*)::integer AS count FROM report_matches GROUP BY state ORDER BY state',
   );
@@ -22,7 +26,15 @@ try {
       {
         enabled: config.enabled,
         keyConfigured: !!config.apiKey,
-        model: MATCHING_MODEL,
+        provider: config.provider,
+        model:
+          config.provider === 'cloudflare'
+            ? CLOUDFLARE_MATCHING_MODEL
+            : MATCHING_MODEL,
+        ...(config.provider === 'cloudflare' && {
+          freeDailyLimit: config.freeDailyLimit,
+          freeAttemptsToday: totals.rows[0]?.free_attempts ?? 0,
+        }),
         budgetUsd: config.budgetUsdMicros / 1_000_000,
         reservedUsd: reserved / 1_000_000,
         estimatedCompletedCostUsd:

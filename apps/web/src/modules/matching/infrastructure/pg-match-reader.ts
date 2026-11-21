@@ -1,7 +1,7 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
 import type { MatchReader } from '../domain/match-reader';
-import { assessmentSchema } from './openai-matching-provider';
+import { assessmentSchema } from './matching-provider-contract';
 export class PgMatchReader implements MatchReader {
   constructor(private readonly db: Sql) {}
   async listOwned(userId: number, before?: number) {
@@ -33,6 +33,7 @@ export class PgMatchReader implements MatchReader {
       pending: number;
       failed: number;
       reserved: string;
+      free_attempts: number;
     }>(
       this.db,
       `SELECT
@@ -42,7 +43,9 @@ export class PgMatchReader implements MatchReader {
       (SELECT count(*)::integer FROM report_matches m JOIN item_reports l ON l.report_id=m.lost_report_id
         JOIN item_reports f ON f.report_id=m.found_report_id WHERE (l.user_id=$1 OR f.user_id=$1)
         AND l.status='OPEN' AND f.status='OPEN' AND m.state='failed') AS failed,
-      (SELECT COALESCE(sum(reserved_usd_micros),0)::text FROM report_matches) AS reserved`,
+      (SELECT COALESCE(sum(reserved_usd_micros),0)::text FROM report_matches) AS reserved,
+      (SELECT COALESCE(sum(free_attempts_today),0)::integer FROM report_matches
+        WHERE free_quota_day=(statement_timestamp() AT TIME ZONE 'UTC')::date) AS free_attempts`,
       [userId],
     );
     const items = rows.slice(0, 20).map((r) => ({
@@ -60,6 +63,7 @@ export class PgMatchReader implements MatchReader {
       pendingCount: counts?.pending ?? 0,
       failedCount: counts?.failed ?? 0,
       reservedUsdMicros: Number(counts?.reserved ?? 0),
+      freeAttemptsToday: counts?.free_attempts ?? 0,
     };
   }
 }
