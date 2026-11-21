@@ -161,6 +161,43 @@ it('serializes budget reservations across concurrent workers, and never leases a
   ).toBe(100000);
   expect(await queue.claim(99999, 100000)).toBeNull();
 });
+it('enforces one shared free quota per UTC day, preserving retries and the paid ledger', async () => {
+  await report();
+  await report(2, 'FOUND');
+  await report(3, 'FOUND');
+  const freeQueue = new PgMatchingQueue(pool, 1);
+  const [first, concurrent] = await Promise.all([
+    freeQueue.claim(0, 0),
+    freeQueue.claim(0, 0),
+  ]);
+  const claimed = first ?? concurrent;
+  if (!claimed) throw new Error('Missing quota fixture job');
+  expect([first, concurrent].filter(Boolean)).toHaveLength(1);
+  await freeQueue.fail(claimed, 'PROVIDER_RATE_LIMITED', true, 180);
+  const {
+    rows: [delayed],
+  } = await pool.query(
+    `SELECT state, available_at > NOW() + INTERVAL '2 minutes' AS delayed, reserved_usd_micros
+      FROM report_matches WHERE match_id=$1`,
+    [claimed.matchId],
+  );
+  expect(delayed).toMatchObject({
+    state: 'queued',
+    delayed: true,
+    reserved_usd_micros: '0',
+  });
+  await pool.query(
+    'UPDATE report_matches SET free_quota_day=free_quota_day-1 WHERE match_id=$1',
+    [claimed.matchId],
+  );
+  expect(await freeQueue.claim(0, 0)).toBeNull();
+  await pool.query(
+    'UPDATE report_matches SET available_at=NOW() WHERE match_id=$1',
+    [claimed.matchId],
+  );
+  expect(await freeQueue.claim(0, 0)).not.toBeNull();
+  expect(await freeQueue.claim(0, 0)).toBeNull();
+});
 it('paginates private results without duplicates and rejects invalid query parameters', async () => {
   await report();
   for (let i = 0; i < 22; i++) await report(2, 'FOUND');

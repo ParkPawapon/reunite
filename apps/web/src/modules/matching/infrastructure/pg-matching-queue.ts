@@ -38,7 +38,10 @@ async function loadItem(db: Sql, id: number) {
 }
 
 export class PgMatchingQueue implements MatchingQueue {
-  constructor(private readonly pool: Pool) {}
+  constructor(
+    private readonly pool: Pool,
+    private readonly freeDailyLimit?: number,
+  ) {}
   async reconcile() {
     // Recovers pairs inserted concurrently in separate report transactions and legacy reports.
     // No category/date hard exclusion: those fields can be wrong or missing in a real report.
@@ -65,9 +68,10 @@ export class PgMatchingQueue implements MatchingQueue {
     reservationUsdMicros: number,
   ): Promise<MatchJob | null> {
     if (
-      !Number.isSafeInteger(budgetUsdMicros) ||
-      !Number.isSafeInteger(reservationUsdMicros) ||
-      reservationUsdMicros <= 0
+      this.freeDailyLimit === undefined &&
+      (!Number.isSafeInteger(budgetUsdMicros) ||
+        !Number.isSafeInteger(reservationUsdMicros) ||
+        reservationUsdMicros <= 0)
     )
       throw new Error('Invalid matching budget');
     return withTransaction(this.pool, async (db) => {
@@ -78,12 +82,41 @@ export class PgMatchingQueue implements MatchingQueue {
         `UPDATE report_matches SET state='failed',lease_token=NULL,leased_until=NULL,
         error_code='LEASE_EXHAUSTED' WHERE state='processing' AND leased_until<CURRENT_TIMESTAMP AND attempts>=3`,
       );
-      const [usage] = await query<{ reserved: string }>(
-        db,
-        'SELECT COALESCE(SUM(reserved_usd_micros),0)::text AS reserved FROM report_matches',
-      );
-      if (Number(usage?.reserved ?? 0) + reservationUsdMicros > budgetUsdMicros)
-        return null;
+      let quotaDay: string | null = null;
+      if (this.freeDailyLimit !== undefined) {
+        const [day] = await query<{ utc_day: string }>(
+          db,
+          `SELECT (statement_timestamp() AT TIME ZONE 'UTC')::date::text AS utc_day`,
+        );
+        if (!day) throw new Error('Matching quota day unavailable');
+        quotaDay = day.utc_day;
+        const [usage] = await query<{
+          attempts: number;
+          cooling_down: boolean;
+        }>(
+          db,
+          `SELECT COALESCE(SUM(free_attempts_today),0)::integer AS attempts,
+            EXISTS(SELECT 1 FROM report_matches WHERE free_quota_day IS NOT NULL
+              AND error_code='PROVIDER_RATE_LIMITED' AND available_at>statement_timestamp()) AS cooling_down
+           FROM report_matches WHERE free_quota_day=$1::date`,
+          [quotaDay],
+        );
+        if (
+          usage?.cooling_down ||
+          (usage?.attempts ?? 0) >= this.freeDailyLimit
+        )
+          return null;
+      } else {
+        const [usage] = await query<{ reserved: string }>(
+          db,
+          'SELECT COALESCE(SUM(reserved_usd_micros),0)::text AS reserved FROM report_matches',
+        );
+        if (
+          Number(usage?.reserved ?? 0) + reservationUsdMicros >
+          budgetUsdMicros
+        )
+          return null;
+      }
       const [row] = await query<{
         match_id: number;
         lost_report_id: number;
@@ -106,8 +139,19 @@ export class PgMatchingQueue implements MatchingQueue {
         db,
         `UPDATE report_matches SET state='processing',attempts=attempts+1,
         lease_token=$2,leased_until=CURRENT_TIMESTAMP+INTERVAL '2 minutes',
-        reserved_usd_micros=reserved_usd_micros+$3,error_code=NULL WHERE match_id=$1`,
-        [row.match_id, leaseToken, reservationUsdMicros],
+        reserved_usd_micros=reserved_usd_micros+$3,error_code=NULL,
+        free_attempts_today=CASE
+          WHEN $4::date IS NULL THEN free_attempts_today
+          WHEN free_quota_day=$4::date THEN free_attempts_today+1
+          ELSE 1 END,
+        free_quota_day=COALESCE($4::date,free_quota_day)
+        WHERE match_id=$1`,
+        [
+          row.match_id,
+          leaseToken,
+          quotaDay ? 0 : reservationUsdMicros,
+          quotaDay,
+        ],
       );
       const [lost, found] = await Promise.all([
         loadItem(db, row.lost_report_id),
@@ -168,15 +212,20 @@ export class PgMatchingQueue implements MatchingQueue {
       return true;
     });
   }
-  async fail(job: MatchJob, code: string, retryable: boolean) {
+  async fail(
+    job: MatchJob,
+    code: string,
+    retryable: boolean,
+    retryAfterSeconds = 0,
+  ) {
     await query(
       this.pool,
       `UPDATE report_matches SET
       state=CASE WHEN $4::boolean AND attempts<3 THEN 'queued' ELSE 'failed' END,
-      available_at=CURRENT_TIMESTAMP + (30 * attempts) * INTERVAL '1 second',
+      available_at=CURRENT_TIMESTAMP + GREATEST(30 * attempts, $5::integer) * INTERVAL '1 second',
       lease_token=NULL,leased_until=NULL,error_code=$3
       WHERE match_id=$1 AND lease_token=$2 AND state='processing'`,
-      [job.matchId, job.leaseToken, code, retryable],
+      [job.matchId, job.leaseToken, code, retryable, retryAfterSeconds],
     );
   }
 }

@@ -5,6 +5,7 @@ export class MatchingFailure extends Error {
   constructor(
     public readonly code: string,
     public readonly retryable: boolean,
+    public readonly retryAfterSeconds?: number,
   ) {
     super(code);
   }
@@ -39,7 +40,12 @@ export class MatchingWorker {
         error instanceof MatchingFailure
           ? error
           : new MatchingFailure('PROVIDER_UNAVAILABLE', true);
-      await this.queue.fail(job, failure.code, failure.retryable);
+      await this.queue.fail(
+        job,
+        failure.code,
+        failure.retryable,
+        failure.retryAfterSeconds,
+      );
     }
     return true;
   }

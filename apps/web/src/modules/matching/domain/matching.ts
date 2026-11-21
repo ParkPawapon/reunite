@@ -51,7 +51,12 @@ export interface MatchingQueue {
     reservationUsdMicros: number,
   ): Promise<MatchJob | null>;
   complete(job: MatchJob, result: ProviderResult): Promise<boolean>;
-  fail(job: MatchJob, code: string, retryable: boolean): Promise<void>;
+  fail(
+    job: MatchJob,
+    code: string,
+    retryable: boolean,
+    retryAfterSeconds?: number,
+  ): Promise<void>;
 }
 
 // Conservative display gate, not a calibrated probability or an ownership decision.
