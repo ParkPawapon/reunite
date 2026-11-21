@@ -28,7 +28,7 @@ To create one local login account after migrations, run `bun run db:seed --devel
 
 `env:setup` creates ignored root `.env` and `apps/web/.env.local` with one random local DB password. It preserves existing files; reconcile them manually if changing existing configuration. Never commit credentials. For your own passwords, URL-encode reserved characters in `DATABASE_URL` and in the Compose URL components; the generated hex password requires no encoding.
 
-Open the [Bangmod map](http://localhost:3000/map) to search for buildings, view the campus in 2D or 3D, and plan a walking route. The separate [campus study](http://localhost:3000/research/kmutt-bangmod) contains rendered images, downloadable GLB, GeoJSON, and the building catalog. See the [study documentation](research/kmutt-bangmod/README.md) for provenance and limitations.
+Sign in to use the [Bangmod map](http://localhost:3000/map) to search for buildings, view the campus in 2D or 3D, and plan a walking route. Shared place and walking links reopen the same selection after sign-in. The separate public [campus study](http://localhost:3000/research/kmutt-bangmod) contains rendered images, downloadable GLB, GeoJSON, and the building catalog. See the [study documentation](research/kmutt-bangmod/README.md) for provenance and limitations.
 
 ## Commands
 

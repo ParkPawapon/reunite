@@ -60,11 +60,6 @@ export function LoginSkeleton() {
           <Piece height="3.5rem" control="submit" />
         </div>
       </div>
-      <div className={styles.mapLink}>
-        <span className={styles.skeletonMapLine}>
-          <Piece width="8rem" height=".8125rem" />
-        </span>
-      </div>
     </div>
   );
 }

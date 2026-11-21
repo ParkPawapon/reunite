@@ -2,7 +2,10 @@ import { spawn } from 'node:child_process';
 import { isolatedDatabase } from '../tests/integration/database-fixture';
 import { migrate } from '../packages/database/src/migrations';
 import { hashPassword } from '../packages/database/src/password';
-import { browserAccount } from '../tests/browser/test-account';
+import {
+  browserAccount,
+  browserMapAccount,
+} from '../tests/browser/test-account';
 import {
   cleanupBrowserSchema,
   registerBrowserSchema,
@@ -29,13 +32,14 @@ try {
   registerBrowserSchema(database.schema);
   await database.open();
   await migrate(database.pool);
+  const passwordHash = await hashPassword(browserAccount.password);
   const account = await database.pool.query<{ user_id: number }>(
     'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING user_id',
-    [
-      browserAccount.name,
-      browserAccount.email,
-      await hashPassword(browserAccount.password),
-    ],
+    [browserAccount.name, browserAccount.email, passwordHash],
+  );
+  await database.pool.query(
+    'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
+    [browserMapAccount.name, browserMapAccount.email, passwordHash],
   );
   const category = await database.pool.query<{ category_id: number }>(
     'INSERT INTO categories(category_name) VALUES($1) RETURNING category_id',

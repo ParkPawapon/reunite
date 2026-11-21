@@ -15,6 +15,9 @@ const config: NextConfig = {
   transpilePackages: ['@campus/database', '@campus/shared'],
   serverExternalPackages: ['pg', 'argon2'],
   poweredByHeader: false,
+  async redirects() {
+    return [{ source: '/maps', destination: '/map', permanent: false }];
+  },
   async headers() {
     return [
       {
