@@ -99,9 +99,9 @@ export function createHandlers(deps: Dependencies = defaults) {
     locations: (request: Request) =>
       listLocations(request, () => deps.services().locations),
     listReports: (request: Request) =>
-      listReports(request, () => deps.services().reports),
+      listReports(request, requireUser, () => deps.services().reports),
     getReport: (request: Request, context: RouteContext) =>
-      getReport(request, context, () => deps.services().reports),
+      getReport(request, context, requireUser, () => deps.services().reports),
     createReport: (request: Request) =>
       api(request, async () => {
         mutation(request);

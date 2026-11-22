@@ -14,7 +14,12 @@ export type ReportInput = {
 export type ReportPatch = Partial<
   Pick<
     ReportInput,
-    'title' | 'description' | 'image' | 'categoryId' | 'locationId'
+    | 'title'
+    | 'description'
+    | 'image'
+    | 'categoryId'
+    | 'locationId'
+    | 'eventDatetime'
   >
 >;
 export type Report = Omit<ReportInput, 'description' | 'image'> & {
@@ -29,9 +34,9 @@ export type Report = Omit<ReportInput, 'description' | 'image'> & {
 export type ReportBrowse = Page & {
   type?: ReportType;
   q?: string;
+  status?: ReportStatus;
 };
 export type ReportFilter = ReportBrowse & {
-  status?: ReportStatus;
   categoryId?: number;
   locationId?: number;
 };

@@ -9,7 +9,6 @@ import TextField from '@mui/material/TextField';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
-import type { ReportOption } from '@/modules/item-reports/presentation/reports-client';
 import type { ReportType } from '@/modules/item-reports/presentation/reports-client';
 import {
   DESCRIPTION_LIMIT,
@@ -32,9 +31,11 @@ import { usePhotoDrafts } from './use-photo-drafts';
 import { SubmitFeedback } from './submit-feedback';
 import { useReportOptions } from './use-report-options';
 import { useReportSubmit } from './use-report-submit';
+import {
+  ReportLocationChoice,
+  type ChoiceProps,
+} from './report-location-choice';
 import styles from './report-submission.module.css';
-
-type Option = ReportOption;
 
 // Labels sit above each field, so the outline must not reserve a notch for them.
 const baseSlots = {
@@ -68,15 +69,7 @@ function Choice({
   options,
   error,
   onChange,
-}: {
-  id: string;
-  error?: string;
-  label: string;
-  placeholder: string;
-  value: string;
-  options: Option[];
-  onChange: (value: string) => void;
-}) {
+}: ChoiceProps) {
   return (
     <TextField
       select
@@ -280,7 +273,8 @@ export function ReportSubmission() {
             {state.status === 'loading' ? (
               <ChoiceSkeleton animate={motion} />
             ) : (
-              <Choice
+              <ReportLocationChoice
+                key={type}
                 id={fieldId('locationId')}
                 error={errors.locationId}
                 label={copy.place}

@@ -6,7 +6,7 @@ Every mutation validates exact configured Origin, rejects missing/null/foreign O
 
 Ten login attempts per normalized account identifier are allowed per fixed 15-minute DB window, shared atomically across instances. Successful attempts also consume the budget; callers receive 429 after exhaustion. The key is a SHA-256 account digest, which is pseudonymous, not anonymous. This limits per-account guessing but does not prevent distributed attacks across many accounts, resource exhaustion or deliberate account lockout. Production edge/global rate controls and monitoring remain operational requirements. No untrusted proxy-IP policy is invented.
 
-All SQL values are parameterized; identifiers are application-owned. Ownership is checked in the report application service and scoped UPDATE predicate. Claim queries always scope to the claimant; even a report owner cannot read another user's evidence under the current privacy default. Personal user profiles/password hashes are excluded from public report output. Authenticated own profile/evidence responses are private and no-store. Public report text/images are author-supplied; no image is fetched, uploaded or rendered by this foundation. Approve a report-publication/privacy policy before public launch.
+All SQL values are parameterized. Ownership is checked in the application service and scoped UPDATE predicate. Claimant routes scope evidence to the claimant. The incoming-claims endpoint checks report ownership before returning evidence for review. Report lists, details and stored images require a valid session and use `Cache-Control: no-store`. Report output omits owner identities and password hashes. URLs for legacy externally hosted attachments remain subject to the external host’s access policy.
 
 Responses sanitize exceptions. Structured logs contain only method, generated request ID, status and duration; no URL/query, credentials, tokens, names, evidence, raw DB errors or request bodies. Security headers include nosniff, frame denial, referrer policy, disabled camera/mic/location, and a CSP for frame ancestors/base/object sources. This is a baseline CSP, not a complete nonce-based script policy. HSTS and TLS termination belong to the HTTPS deployment configuration and are not claimed for local HTTP.
 
@@ -17,7 +17,7 @@ Migration 0004 enforces canonical lowercase/trimmed email with the existing uniq
 ## Release requirements still open
 
 - Approved onboarding/provisioning and account recovery policy; the only provisioning CLI is explicitly for non-production.
-- Claim eligibility/approval authority, report lifecycle and public-read policy.
+- Claim eligibility, repeat submissions, approval policy and additional report lifecycle transitions.
 - PDPA/privacy notice, consent/lawful processing, access/erasure and retention policy for identities, reports, evidence, hashed throttling keys and expired sessions. This scaffold makes no legal-compliance claim.
 - Approved scheduled cleanup, backups/restore rehearsal, production TLS/proxy/secret management, least-privilege roles, edge abuse limits and monitoring.
 - External matching accuracy evaluation, production consent/retention policy, approved API budget and credentials before enabling paid processing. Bounded item-image storage and matching architecture are implemented in [MATCHING.md](MATCHING.md); live-provider verification remains separate. Private profile photos are never sent to the matching provider.

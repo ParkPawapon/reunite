@@ -10,11 +10,14 @@ import {
   REPORT_PAGE_SIZE,
   ReportRequestError,
   type ReportRow,
+  type ReportStatus,
   type ReportType,
 } from '@/modules/item-reports/presentation/reports-client';
-import { ReportTable } from './report-table';
+import { ReportTable, reportStatusLabels } from './report-table';
 import { ReportDetail } from './report-detail';
 import styles from './report-board.module.css';
+
+const SEARCH_DELAY_MS = 250;
 
 type PageState = {
   key: string;
@@ -36,8 +39,17 @@ export function DashboardContent({
     page: number;
     revision: number;
     q: string;
-  }>({ type: 'LOST', page: 0, revision: 0, q: '' });
+    status: ReportStatus | '';
+  }>({
+    type: 'LOST',
+    page: 0,
+    revision: 0,
+    q: '',
+    status: owned ? '' : 'OPEN',
+  });
   const [search, setSearch] = useState('');
+  const [composing, setComposing] = useState(false);
+  const query = search.trim();
   const searchField = useRef<HTMLInputElement>(null);
   const updated = useRef(false);
   const [state, setState] = useState<PageState>({
@@ -47,11 +59,19 @@ export function DashboardContent({
     hasNext: false,
   });
   const [selected, setSelected] = useState<number | null>(null);
-  const key = `${view.type}:${view.page}:${view.revision}:${view.q}`;
+  const key = `${view.type}:${view.status}:${view.page}:${view.revision}:${view.q}`;
   const current = state.key === key;
   const loading = !current || state.kind === 'loading';
   const failed = current && state.kind === 'error';
   const rows = current && state.kind === 'ready' ? state.rows : [];
+  useEffect(() => {
+    if (composing || query === view.q) return;
+    const timer = window.setTimeout(
+      () => setView((value) => ({ ...value, q: query, page: 0 })),
+      query ? SEARCH_DELAY_MS : 0,
+    );
+    return () => window.clearTimeout(timer);
+  }, [composing, query, view.q]);
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
@@ -59,7 +79,7 @@ export function DashboardContent({
       view.type,
       view.page * REPORT_PAGE_SIZE,
       controller.signal,
-      { q: view.q, owned },
+      { q: view.q, owned, status: view.status || undefined },
     )
       .then((result) => {
         if (active) setState({ key, kind: 'ready', ...result });
@@ -76,16 +96,9 @@ export function DashboardContent({
       active = false;
       controller.abort();
     };
-  }, [key, owned, view.type, view.page, view.q]);
+  }, [key, owned, view.type, view.page, view.q, view.status]);
   const refresh = () =>
     setView((value) => ({ ...value, revision: value.revision + 1 }));
-  const runSearch = (q: string) =>
-    setView((value) => ({
-      ...value,
-      q: q.trim(),
-      page: 0,
-      revision: value.revision + 1,
-    }));
   const lost = view.type === 'LOST';
   const label = lost ? 'ของหาย' : 'ของที่พบ';
   return (
@@ -150,18 +163,11 @@ export function DashboardContent({
           </Tabs>
           <span className={styles.order}>แจ้งล่าสุดก่อน</span>
         </div>
-        <form
-          role="search"
-          className={styles.search}
-          onSubmit={(event) => {
-            event.preventDefault();
-            runSearch(search);
-          }}
-        >
-          <label className={styles.srOnly} htmlFor={`${id}-search`}>
-            ค้นหาชื่อสิ่งของ
-          </label>
-          <div className={styles.searchInput}>
+        <div className={styles.toolbar}>
+          <div role="search" className={styles.search}>
+            <label className={styles.srOnly} htmlFor={`${id}-search`}>
+              ค้นหาชื่อสิ่งของ
+            </label>
             <ShellIcon name="search" width={17} height={17} />
             <input
               id={`${id}-search`}
@@ -171,6 +177,11 @@ export function DashboardContent({
               placeholder="ค้นหาชื่อสิ่งของ"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              onCompositionStart={() => setComposing(true)}
+              onCompositionEnd={(event) => {
+                setSearch(event.currentTarget.value);
+                setComposing(false);
+              }}
             />
             {(search || view.q) && (
               <button
@@ -180,7 +191,6 @@ export function DashboardContent({
                 title="ล้างการค้นหา"
                 onClick={() => {
                   setSearch('');
-                  runSearch('');
                   searchField.current?.focus();
                 }}
               >
@@ -188,10 +198,28 @@ export function DashboardContent({
               </button>
             )}
           </div>
-          <button type="submit" className={styles.searchButton}>
-            ค้นหา
-          </button>
-        </form>
+          <div className={styles.statusFilter}>
+            <label htmlFor={`${id}-status`}>สถานะประกาศ</label>
+            <span className={styles.statusChoice} data-status={view.status}>
+              <select
+                id={`${id}-status`}
+                value={view.status}
+                onChange={(event) => {
+                  const status = event.target.value as ReportStatus | '';
+                  setView((value) => ({ ...value, status, page: 0 }));
+                }}
+              >
+                {Object.entries(reportStatusLabels).map(([status, label]) => (
+                  <option key={status} value={status}>
+                    {label}
+                  </option>
+                ))}
+                <option value="">ทั้งหมด</option>
+              </select>
+              <ShellIcon name="chevron" width={16} height={16} />
+            </span>
+          </div>
+        </div>
         <div
           role="tabpanel"
           id={`${id}-panel`}

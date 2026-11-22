@@ -14,16 +14,16 @@ export const reportDate = new Intl.DateTimeFormat('th-TH', {
   year: 'numeric',
   timeZone: 'Asia/Bangkok',
 });
-const statusLabels = {
+export const reportStatusLabels = {
   OPEN: 'เปิดอยู่',
-  RESOLVED: 'เสร็จสิ้น',
+  RESOLVED: 'ได้คืนแล้ว',
   CLOSED: 'ปิดแล้ว',
 };
 export function ReportStatus({ status }: { status: ReportRow['status'] }) {
   return (
     <span className={styles.status} data-status={status}>
       <i aria-hidden="true" />
-      {statusLabels[status]}
+      {reportStatusLabels[status]}
     </span>
   );
 }

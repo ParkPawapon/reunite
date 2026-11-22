@@ -104,7 +104,8 @@ export class PgReportRepository implements ReportRepository {
       image = CASE WHEN $7::boolean THEN $8::varchar ELSE image END,
       image_data = CASE WHEN $7::boolean THEN NULL ELSE image_data END,
       category_id = CASE WHEN $9::boolean THEN $10::integer ELSE category_id END,
-      location_id = CASE WHEN $11::boolean THEN $12::integer ELSE location_id END
+      location_id = CASE WHEN $11::boolean THEN $12::integer ELSE location_id END,
+      event_datetime = COALESCE($13::timestamptz, event_datetime)
       WHERE report_id = $1 AND user_id = $2 RETURNING ${columns}`,
       [
         id,
@@ -119,6 +120,7 @@ export class PgReportRepository implements ReportRepository {
         patch.categoryId ?? null,
         patch.locationId !== undefined,
         patch.locationId ?? null,
+        patch.eventDatetime ?? null,
       ],
     );
     return row ? map(row) : null;
@@ -146,6 +148,7 @@ export class PgReportRepository implements ReportRepository {
       WHERE user_id = $1
       AND ($4::varchar IS NULL OR type = $4)
       AND ($5::text IS NULL OR strpos(lower(title), lower($5::text)) > 0)
+      AND ($6::varchar IS NULL OR status = $6)
       ORDER BY report_id DESC
       LIMIT $2 OFFSET $3`,
       [
@@ -154,6 +157,7 @@ export class PgReportRepository implements ReportRepository {
         filter.offset,
         filter.type ?? null,
         filter.q || null,
+        filter.status ?? null,
       ],
     );
     return rows.map(map);

@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   api,
+  idSchema,
   parse,
   paginationSchema,
   queryInput,
@@ -16,8 +17,11 @@ export function listClaims(
 ) {
   return api(request, async () => {
     const user = await requireUser(request);
-    const page = parse(paginationSchema.strict(), queryInput(request));
-    const claims = await getService().list(user.userId, page);
-    return success(claims, 200, page);
+    const filter = parse(
+      paginationSchema.extend({ reportId: idSchema.optional() }).strict(),
+      queryInput(request),
+    );
+    const claims = await getService().list(user.userId, filter);
+    return success(claims, 200, { limit: filter.limit, offset: filter.offset });
   });
 }

@@ -533,7 +533,10 @@ it('uploads only owner images, strips metadata, sends stored bytes into jobs and
     (await handlers.uploadImage(request('PUT', cookie, image), context(lost)))
       .status,
   ).toBe(200);
-  const view = await handlers.image(request('GET', ''), context(lost));
+  expect((await handlers.image(request('GET', ''), context(lost))).status).toBe(
+    401,
+  );
+  const view = await handlers.image(request('GET', cookie), context(lost));
   expect(view.status).toBe(200);
   const meta = await sharp(Buffer.from(await view.arrayBuffer())).metadata();
   expect(meta.format).toBe('webp');

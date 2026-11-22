@@ -81,7 +81,7 @@
     var(--color-surface)
   );
   display: grid;
-  grid-template-columns: minmax(0, 651fr) minmax(0, 381fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem 1rem;
 }
 .choiceSkeleton {
@@ -154,7 +154,14 @@
 .grid :global(.MuiOutlinedInput-root.MuiInputBase-multiline) {
   padding: 0;
 }
-.grid :global(.MuiOutlinedInput-input) {
+.grid :global(.MuiAutocomplete-root .MuiOutlinedInput-root) {
+  /* The end adornment's reserved width still comes from Autocomplete. */
+  padding-block: 0;
+  padding-inline-start: 0;
+}
+.grid :global(.MuiOutlinedInput-input),
+.grid
+  :global(.MuiAutocomplete-root .MuiOutlinedInput-root .MuiAutocomplete-input) {
   padding: 1rem 0.875rem;
 }
 .grid :global(.MuiOutlinedInput-notchedOutline) {

@@ -3,6 +3,7 @@ import { idSchema, paginationSchema } from '@/lib/http/api';
 import { REPORT_TITLE_LIMIT } from '../domain/report';
 
 const fields = {
+  eventDatetime: z.iso.datetime({ offset: true }),
   categoryId: z.number().int().positive().max(2147483647),
   locationId: z.number().int().positive().max(2147483647),
   title: z.string().trim().min(1).max(REPORT_TITLE_LIMIT),
@@ -35,7 +36,6 @@ const fields = {
 export const reportCreateSchema = z.strictObject({
   ...fields,
   type: z.enum(['LOST', 'FOUND']),
-  eventDatetime: z.iso.datetime({ offset: true }),
 });
 export const reportPatchSchema = z
   .strictObject(fields)
@@ -51,6 +51,7 @@ export const reportStatusPatchSchema = z.strictObject({
 export const reportBrowseSchema = paginationSchema
   .extend({
     type: z.enum(['LOST', 'FOUND']).optional(),
+    status: z.enum(['OPEN', 'RESOLVED', 'CLOSED']).optional(),
     q: z
       .string()
       .trim()
@@ -61,7 +62,6 @@ export const reportBrowseSchema = paginationSchema
   .strict();
 export const reportFilterSchema = reportBrowseSchema
   .extend({
-    status: z.enum(['OPEN', 'RESOLVED', 'CLOSED']).optional(),
     categoryId: idSchema.optional(),
     locationId: idSchema.optional(),
   })

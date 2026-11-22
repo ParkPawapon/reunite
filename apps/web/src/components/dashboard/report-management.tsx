@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { bangkokEventFields } from '@/components/item-reports/report-format';
+import { ReportLocationChoice } from '@/components/item-reports/report-location-choice';
+import { validateReport } from '@/components/item-reports/report-validation';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { REPORT_TITLE_LIMIT } from '@/modules/item-reports/domain/report';
 import {
   closeReport,
-  loadReportCatalogs,
+  loadReportOptions,
   ReportRequestError,
   updateReportDetails,
   type ReportRow,
 } from '@/modules/item-reports/presentation/reports-client';
 import styles from './report-detail.module.css';
 
-type Catalogs = Awaited<ReturnType<typeof loadReportCatalogs>>;
+type Catalogs = Awaited<ReturnType<typeof loadReportOptions>>;
 
 export function ReportManagement({
   row,
@@ -23,6 +26,9 @@ export function ReportManagement({
   onUpdated: (row: ReportRow) => void;
   onPendingChange: (pending: boolean) => void;
 }) {
+  const locationFieldId = useId();
+  const [locationId, setLocationId] = useState(String(row.locationId));
+  const eventFields = bangkokEventFields(row.eventDatetime);
   const [panel, setPanel] = useState<'actions' | 'edit' | 'close'>('actions');
   const [catalogs, setCatalogs] = useState<Catalogs | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -39,7 +45,7 @@ export function ReportManagement({
   useEffect(() => {
     if (panel !== 'edit') return;
     const controller = new AbortController();
-    void loadReportCatalogs(controller.signal)
+    void loadReportOptions(controller.signal)
       .then((data) => {
         if (!controller.signal.aborted) setCatalogs(data);
       })
@@ -62,6 +68,7 @@ export function ReportManagement({
     setError('');
     setNotice('');
     setCatalogs(null);
+    setLocationId(String(row.locationId));
     setPanel(next);
   }
   function finish() {
@@ -113,27 +120,46 @@ export function ReportManagement({
       return;
     }
     const category = catalogs?.categories.find(
-      (item) => String(item.categoryId) === form.get('category'),
+      (item) => String(item.id) === form.get('category'),
     );
     const location = catalogs?.locations.find(
-      (item) => String(item.locationId) === form.get('location'),
+      (item) => String(item.id) === locationId,
     );
     if (!category || !location) {
       setError('กรุณาเลือกหมวดหมู่และสถานที่');
       return;
     }
     const description = String(form.get('description') ?? '');
+    const date = String(form.get('date') ?? '');
+    const time = String(form.get('time') ?? '');
+    const validated = validateReport(row.type, {
+      title,
+      description,
+      date,
+      time,
+      categoryId: String(category.id),
+      locationId,
+    });
+    if (!validated.ok) {
+      setError(Object.values(validated.errors)[0] ?? 'กรุณาตรวจข้อมูล');
+      return;
+    }
+    const eventChanged = date !== eventFields.date || time !== eventFields.time;
     const fields = {
       title,
       description: description.trim() ? description : null,
-      categoryId: category.categoryId,
-      locationId: location.locationId,
+      categoryId: category.id,
+      locationId: location.id,
+      ...(eventChanged
+        ? { eventDatetime: validated.payload.eventDatetime }
+        : {}),
     };
     if (
       fields.title === row.title &&
       fields.description === row.description &&
       fields.categoryId === row.categoryId &&
-      fields.locationId === row.locationId
+      fields.locationId === row.locationId &&
+      !eventChanged
     ) {
       finish();
       return;
@@ -141,8 +167,8 @@ export function ReportManagement({
     void save(
       async (signal) => ({
         ...(await updateReportDetails(row.reportId, fields, signal)),
-        categoryName: category.categoryName,
-        locationName: location.locationName,
+        categoryName: category.name,
+        locationName: location.name,
       }),
       'บันทึกการแก้ไขแล้ว',
     );
@@ -193,26 +219,43 @@ export function ReportManagement({
                     defaultValue={row.categoryId}
                     required
                   >
-                    {catalogs.categories.map(({ categoryId, categoryName }) => (
-                      <option key={categoryId} value={categoryId}>
-                        {categoryName}
+                    {catalogs.categories.map(({ id, name }) => (
+                      <option key={id} value={id}>
+                        {name}
                       </option>
                     ))}
                   </select>
                 </label>
+                <div className={styles.editLocation}>
+                  <ReportLocationChoice
+                    id={locationFieldId}
+                    label={row.type === 'LOST' ? 'สถานที่หาย' : 'สถานที่พบ'}
+                    placeholder="ค้นหาอาคารหรือบริเวณ"
+                    options={catalogs.locations}
+                    value={locationId}
+                    onChange={setLocationId}
+                    disabled={pending}
+                  />
+                </div>
+              </div>
+              <div className={styles.catalogFields}>
                 <label>
-                  สถานที่
-                  <select
-                    name="location"
-                    defaultValue={row.locationId}
+                  วันที่เกิดเหตุ
+                  <input
+                    name="date"
+                    type="date"
+                    defaultValue={eventFields.date}
                     required
-                  >
-                    {catalogs.locations.map(({ locationId, locationName }) => (
-                      <option key={locationId} value={locationId}>
-                        {locationName}
-                      </option>
-                    ))}
-                  </select>
+                  />
+                </label>
+                <label>
+                  เวลาเกิดเหตุ (เวลาไทย)
+                  <input
+                    name="time"
+                    type="time"
+                    defaultValue={eventFields.time}
+                    required
+                  />
                 </label>
               </div>
               <label>

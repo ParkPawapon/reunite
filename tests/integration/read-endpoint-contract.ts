@@ -82,8 +82,17 @@ export function verifyReadEndpointContract(
       });
     return body;
   }
+  const owner = async () => ({
+    userId: users[0] ?? 0,
+    name: 'Owner',
+    email: 'owner@review.test',
+  });
   const get = (path: string, session?: string) => {
-    const req = request(path, session);
+    const requireReportSession = task === 'BE005' || task === 'BE006';
+    const req = request(
+      path,
+      session ?? (requireReportSession ? cookie(token) : undefined),
+    );
     if (task === 'BE007') return handlers.listClaims(req);
     if (task === 'BE008')
       return handlers.getClaim(
@@ -333,7 +342,7 @@ export function verifyReadEndpointContract(
               )
             : task === 'BE002'
               ? await listCategories(req, fail)
-              : await listReports(req, fail);
+              : await listReports(req, owner, fail);
         await checked(response, 422);
       });
     }
@@ -473,6 +482,7 @@ export function verifyReadEndpointContract(
                 'status',
                 'createdAt',
                 'updatedAt',
+                'isOwner',
               ];
         expect(Object.keys(data).sort()).toEqual([...fields].sort());
         if (task === 'BE008')
@@ -484,6 +494,7 @@ export function verifyReadEndpointContract(
         else {
           expect(data).toMatchObject({
             reportId: reports[0],
+            isOwner: true,
             description: null,
             image: null,
             eventDatetime: '2026-11-04T05:30:00.000Z',
@@ -523,15 +534,28 @@ export function verifyReadEndpointContract(
                 }),
                 fail,
               )
-            : await getReport(request(`${base}/abc`), ctx('abc'), fail);
+            : await getReport(request(`${base}/abc`), ctx('abc'), owner, fail);
         await checked(response, 422);
       });
     }
     if (task === 'BE006')
-      it('allows public report detail without any session cookie', async () => {
+      it('requires a session for details and identifies whether the viewer owns the report', async () => {
+        await checked(await get(`${base}/${reports[0]}`, ''), 401);
+        await checked(
+          await get(`${base}/${reports[0]}`, cookie(expiredToken)),
+          401,
+        );
         expect(
-          await checked(await get(`${base}/${reports[1]}`), 200),
-        ).toMatchObject({ data: { reportId: reports[1] } });
+          await checked(
+            await get(`${base}/${reports[0]}`, cookie(peerToken)),
+            200,
+          ),
+        ).toMatchObject({ data: { reportId: reports[0], isOwner: false } });
+      });
+    if (task === 'BE005')
+      it('requires a valid session for the report feed', async () => {
+        await checked(await get(base, ''), 401);
+        await checked(await get(base, cookie(expiredToken)), 401);
       });
     if (task === 'BE008')
       it('hides another claimant evidence even from the underlying report owner', async () => {
@@ -577,8 +601,8 @@ export function verifyReadEndpointContract(
             : task === 'BE002'
               ? await listCategories(req, fail)
               : task === 'BE005'
-                ? await listReports(req, fail)
-                : await getReport(req, ctx('1'), fail);
+                ? await listReports(req, owner, fail)
+                : await getReport(req, ctx('1'), owner, fail);
       const body = await checked(response, 500);
       expect(body).toMatchObject({ error: { code: 'INTERNAL_ERROR' } });
       expect(JSON.stringify(body)).not.toMatch(/PRIVATE|password|SQL|stack/);

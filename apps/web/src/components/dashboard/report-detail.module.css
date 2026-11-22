@@ -300,16 +300,28 @@
   padding: 0;
   margin: 0;
 }
-.manageFields label {
+.manageFields label:not(:global(.MuiInputLabel-root)) {
   display: grid;
   min-width: 0;
   gap: 0.35rem;
   font-size: 0.875rem;
 }
-.catalogFields label {
+.catalogFields > label,
+.editLocation {
   flex: 1 1 12rem;
+  min-width: 0;
 }
-.manageFields :is(input, select, textarea) {
+.editLocation :global(.MuiInputLabel-root) {
+  position: static;
+  transform: none;
+  margin-bottom: 0.35rem;
+  font-size: 0.875rem;
+}
+.editLocation :global(.MuiOutlinedInput-root) {
+  min-height: 44px;
+  border-radius: 0.625rem;
+}
+.manageFields label > :is(input, select, textarea) {
   width: 100%;
   min-height: 44px;
   border: 1px solid var(--color-border);
@@ -323,12 +335,47 @@
 .manageFields textarea {
   resize: vertical;
 }
-.manageFields :is(input, select, textarea):focus-visible {
+.manageFields label > :is(input, select, textarea):focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 1px;
 }
 .formError {
   color: var(--color-danger);
+}
+.claimList {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.claimCard {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+}
+.claimMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+.claimStatus[data-status='APPROVED'] {
+  color: var(--color-success);
+}
+.claimStatus[data-status='REJECTED'] {
+  color: var(--color-danger);
+}
+.claimStatus[data-status='PENDING'] {
+  color: var(--color-orange-800);
+}
+.claimCard p {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 .footer {
   flex: none;

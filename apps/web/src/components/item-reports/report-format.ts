@@ -35,3 +35,25 @@ export function formatEventDate(value: string) {
 // "10:30" -> "10:30 น."
 export const formatEventTime = (value: string) =>
   /^\d{2}:\d{2}/.test(value) ? `${value.slice(0, 5)} น.` : value;
+
+const bangkokDateTime = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Bangkok',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+export function bangkokEventFields(value: string) {
+  const parts = Object.fromEntries(
+    bangkokDateTime
+      .formatToParts(new Date(value))
+      .map(({ type, value }) => [type, value]),
+  );
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}:${parts.minute}`,
+  };
+}

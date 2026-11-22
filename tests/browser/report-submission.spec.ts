@@ -2,6 +2,7 @@ import {
   test,
   expect,
   type BrowserContext,
+  type Locator,
   type Page,
   type Request,
 } from '@playwright/test';
@@ -122,7 +123,7 @@ async function fillForm(page: Page, title: string, withPhoto = false) {
   await page.getByLabel(/ชื่อสิ่งของ/).fill(title);
   await page.getByRole('combobox').first().click();
   await page.getByRole('option').first().click();
-  await page.getByRole('combobox').nth(1).click();
+  await page.getByRole('combobox', { name: /สถานที่(?:หาย|พบ)/ }).click();
   await page.getByRole('option').first().click();
   const narrow = (page.viewportSize()?.width ?? 1440) < 768;
   if (narrow) {
@@ -140,6 +141,110 @@ async function fillForm(page: Page, title: string, withPhoto = false) {
 }
 const submitLost = (page: Page) =>
   page.getByRole('button', { name: 'แจ้งของหาย', exact: true });
+
+test('keeps location and date controls the same size on desktop and mobile', async ({
+  page,
+}) => {
+  await openForm(page);
+
+  const controlBox = async (input: Locator) => {
+    const outline = input.locator('xpath=..').locator('fieldset');
+    await expect(outline).toBeVisible();
+    const box = await outline.boundingBox();
+    if (!box) throw new Error('Expected a visible field outline');
+    return box;
+  };
+  const compareSize = (
+    first: Awaited<ReturnType<typeof controlBox>>,
+    second: Awaited<ReturnType<typeof controlBox>>,
+  ) => {
+    expect(Math.abs(first.width - second.width)).toBeLessThan(1);
+    expect(Math.abs(first.height - second.height)).toBeLessThan(1);
+  };
+
+  for (const [tab, label] of [
+    ['ของหาย', /สถานที่หาย/],
+    ['ของที่พบ', /สถานที่พบ/],
+  ] as const) {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.getByRole('tab', { name: tab, exact: true }).click();
+    const location = page.getByRole('combobox', { name: label });
+    const desktopPlace = await controlBox(location);
+    const datetime = await controlBox(
+      page.locator('input[type=datetime-local]'),
+    );
+    compareSize(desktopPlace, datetime);
+    expect(Math.abs(desktopPlace.y - datetime.y)).toBeLessThan(1);
+
+    await location.click();
+    await page.getByRole('option').first().click();
+    await expect(location).toHaveValue(/สถานที่ทดสอบ/);
+    compareSize(await controlBox(location), datetime);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobilePlace = await controlBox(location);
+    const date = await controlBox(page.locator('input[type=date]'));
+    const time = await controlBox(page.locator('input[type=time]'));
+    compareSize(mobilePlace, date);
+    compareSize(mobilePlace, time);
+    expect(Math.abs(mobilePlace.x - date.x)).toBeLessThan(1);
+    expect(date.y).toBeGreaterThan(mobilePlace.y + mobilePlace.height);
+  }
+});
+
+test('searches all locations and scrolls beyond the first seven choices', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const lastLocation = 'สนามกีฬา (S15)';
+  const locations = Array.from({ length: 11 }, (_, index) => ({
+    locationId: index + 1,
+    locationName: `อาคาร N${index + 1}`,
+  }));
+  locations.push({ locationId: 12, locationName: lastLocation });
+  await page.route('**/api/v1/locations?*', (route) =>
+    route.fulfill({ json: { data: locations } }),
+  );
+
+  await openForm(page);
+  const place = page.getByRole('combobox', { name: /สถานที่หาย/ });
+  await place.click();
+  const list = page.getByRole('listbox');
+  await expect(list.getByRole('option')).toHaveCount(locations.length);
+  expect(
+    await list.evaluate((listbox) => {
+      const { top, bottom } = listbox.getBoundingClientRect();
+      return Array.from(listbox.children).filter((option) => {
+        const row = option.getBoundingClientRect();
+        return row.top < bottom && row.bottom > top;
+      }).length;
+    }),
+  ).toBe(7);
+
+  const last = list.getByRole('option', { name: lastLocation });
+  await expect(last).not.toBeInViewport();
+  await list.evaluate((listbox) => {
+    listbox.scrollTop = listbox.scrollHeight;
+  });
+  await expect(last).toBeInViewport();
+
+  await place.fill('ไม่มีสถานที่นี้');
+  await expect(page.getByText('ไม่พบสถานที่', { exact: true })).toBeVisible();
+  await place.fill('s15');
+  await expect(list.getByRole('option')).toHaveCount(1);
+  await expect(last).toBeVisible();
+  await place.press('ArrowDown');
+  await place.press('Enter');
+  await expect(place).toHaveValue(lastLocation);
+
+  const found = page.getByRole('tab', { name: /ของที่พบ/ });
+  await found.click();
+  await expect(page.getByRole('combobox', { name: /สถานที่พบ/ })).toHaveValue(
+    '',
+  );
+  await page.getByRole('tab', { name: /ของหาย/ }).click();
+  await expect(place).toHaveValue(lastLocation);
+});
 
 test('creates a lost report with a photo and confirms it in Thai', async ({
   page,
