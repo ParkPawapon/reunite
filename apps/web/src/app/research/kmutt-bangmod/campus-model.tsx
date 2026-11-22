@@ -1,12 +1,10 @@
 'use client';
 
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import { ShellIcon } from '@/components/shell/shell-icon';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildings } from './catalog';
 import { CampusLoading } from './campus-loading';
-import { CampusPlan, type FollowAction } from './campus-plan';
+import { CampusMapControls, type FollowAction } from './campus-map-controls';
+import { CampusPlan } from './campus-plan';
 import { useSmoothPosition } from './use-smooth-position';
 import type { LiveFix, WalkProgress } from './live-position';
 import { mapLabels } from './map-labels';
@@ -51,6 +49,7 @@ export function CampusModel({
   onSelect: (id: string) => void;
   onBack: () => void;
 }) {
+  const viewport = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const scene = useRef<CampusScene>(null);
   const pin = useRef<HTMLSpanElement>(null);
@@ -58,7 +57,6 @@ export function CampusModel({
   const startPin = useRef<HTMLSpanElement>(null);
   const endPin = useRef<HTMLSpanElement>(null);
   const labelNodes = useRef(new Map<string, HTMLButtonElement>());
-  const [showLabels, setShowLabels] = useState(true);
   const [state, setState] = useState<'loading' | 'ready' | 'unavailable'>(
     'loading',
   );
@@ -78,6 +76,12 @@ export function CampusModel({
           knownIds,
           onSelect,
           onPan,
+          onNorthAngle(angle) {
+            viewport.current?.style.setProperty(
+              '--map-north-angle',
+              `${angle}rad`,
+            );
+          },
           onPin(position) {
             positionMarker(pin.current, position);
           },
@@ -127,7 +131,7 @@ export function CampusModel({
     if (!view) return;
     view.select(place?.building?.featureId ?? null);
     view.locate(place?.world ?? null);
-    if (!place) view.setView('perspective');
+    if (!place) view.resetView();
   }, [place, state]);
 
   useEffect(() => {
@@ -145,110 +149,7 @@ export function CampusModel({
   const ready = state === 'ready';
   return (
     <>
-      {ready && (
-        <div className={styles.controls} aria-label="ควบคุมมุมกล้อง 3 มิติ">
-          {followAction && (
-            <Tooltip title="ตามตำแหน่งฉัน">
-              <span>
-                <IconButton
-                  className={styles.iconControl}
-                  aria-label="ตามตำแหน่งฉัน"
-                  aria-pressed={following}
-                  disabled={!followAction.enabled}
-                  onClick={followAction.onClick}
-                >
-                  <ShellIcon name="target" />
-                </IconButton>
-              </span>
-            </Tooltip>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              onPan();
-              scene.current?.setView('perspective');
-            }}
-          >
-            ภาพรวม
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onPan();
-              scene.current?.setView('north');
-            }}
-          >
-            มุมสูง
-          </button>
-          <button
-            type="button"
-            aria-pressed={showLabels}
-            onClick={() => setShowLabels(!showLabels)}
-          >
-            ชื่อบนแผนที่
-          </button>
-          {route && !following && (
-            <button
-              type="button"
-              onClick={() => {
-                onPan();
-                scene.current?.focusRoute(route.segments);
-              }}
-            >
-              ขยายเส้นทาง
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              onPan();
-              scene.current?.rotate(1);
-            }}
-          >
-            หมุนซ้าย 45°
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onPan();
-              scene.current?.rotate(-1);
-            }}
-          >
-            หมุนขวา 45°
-          </button>
-          <button
-            type="button"
-            aria-label="ซูมเข้า"
-            onClick={() => {
-              onPan();
-              scene.current?.zoom(1);
-            }}
-          >
-            +
-          </button>
-          <button
-            type="button"
-            aria-label="ซูมออก"
-            onClick={() => {
-              onPan();
-              scene.current?.zoom(-1);
-            }}
-          >
-            −
-          </button>
-          <button
-            type="button"
-            disabled={!place}
-            onClick={() => {
-              onPan();
-              scene.current?.locate(place?.world ?? null);
-            }}
-          >
-            กลับไปที่หมุด
-          </button>
-        </div>
-      )}
-      <div className={styles.viewport} data-render-state={state}>
+      <div ref={viewport} className={styles.viewport} data-render-state={state}>
         <canvas
           ref={canvas}
           className={styles.canvas}
@@ -257,7 +158,7 @@ export function CampusModel({
           aria-label="โมเดลภายนอกอาคารในวิทยาเขตบางมด"
         />
         {ready && (
-          <div className={styles.mapLabels} hidden={!showLabels}>
+          <div className={styles.mapLabels}>
             {mapLabels.map(({ id, label, code, caption }) => (
               <button
                 key={id}
@@ -317,6 +218,16 @@ export function CampusModel({
               ถึง {placesById.get(route.to.id)?.building?.code}
             </span>
           </>
+        )}
+        {ready && (
+          <CampusMapControls
+            onZoom={(direction) => {
+              onPan();
+              scene.current?.zoom(direction);
+            }}
+            followAction={followAction}
+            following={following}
+          />
         )}
         {state === 'loading' && <CampusLoading />}
         {state === 'unavailable' && (
