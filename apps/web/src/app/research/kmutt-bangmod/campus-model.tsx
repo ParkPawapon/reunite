@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from 'react';
 import { buildings } from './catalog';
 import { CampusLoading } from './campus-loading';
 import { CampusMapControls, type FollowAction } from './campus-map-controls';
@@ -60,6 +66,7 @@ export function CampusModel({
   const [state, setState] = useState<'loading' | 'ready' | 'unavailable'>(
     'loading',
   );
+  const selectPlace = useEffectEvent(onSelect);
 
   useEffect(() => {
     const element = canvas.current;
@@ -74,7 +81,9 @@ export function CampusModel({
           signal,
           assetUrl,
           knownIds,
-          onSelect,
+          onSelect(id) {
+            selectPlace(id);
+          },
           onPan,
           onNorthAngle(angle) {
             viewport.current?.style.setProperty(
@@ -124,7 +133,7 @@ export function CampusModel({
       scene.current?.dispose();
       scene.current = null;
     };
-  }, [assetUrl, onPan, onSelect]);
+  }, [assetUrl, onPan]);
 
   useEffect(() => {
     const view = scene.current;
