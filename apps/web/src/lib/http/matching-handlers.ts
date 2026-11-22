@@ -84,6 +84,7 @@ export function createMatchingHandlers(
       }),
     image: (request: Request, context: RouteContext) =>
       api(request, async () => {
+        await user(request);
         const id = parse(idSchema, (await context.params).id);
         const image = await resolve().reportImages.get(id);
         return new Response(new Uint8Array(image), {

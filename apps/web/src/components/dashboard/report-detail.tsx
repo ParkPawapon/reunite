@@ -5,6 +5,10 @@ import Skeleton from '@mui/material/Skeleton';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
 import {
+  bangkokEventFields,
+  formatEventTime,
+} from '@/components/item-reports/report-format';
+import {
   loadReportDetail,
   ReportRequestError,
   reportImageHref,
@@ -13,6 +17,7 @@ import {
 import { reportDate, ReportStatus } from './report-table';
 import { ReportImageUpload } from './report-image-upload';
 import { ReportManagement } from './report-management';
+import { ReportClaims } from './report-claims';
 import { ReportDetailSkeleton } from './report-detail-skeleton';
 import { ReportPhoto } from './report-photo';
 import styles from './report-detail.module.css';
@@ -33,6 +38,7 @@ export function ReportDetail({
   const [revision, setRevision] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [managing, setManaging] = useState(false);
+  const [claimPending, setClaimPending] = useState(false);
   const [state, setState] = useState<
     | { kind: 'loading' }
     | { kind: 'error'; missing: boolean }
@@ -46,6 +52,14 @@ export function ReportDetail({
         if (active) setState({ kind: 'ready', row });
       })
       .catch((error: unknown) => {
+        if (
+          active &&
+          error instanceof ReportRequestError &&
+          error.status === 401
+        ) {
+          window.location.replace('/login');
+          return;
+        }
         if (active)
           setState({
             kind: 'error',
@@ -64,8 +78,9 @@ export function ReportDetail({
   const row = state.kind === 'ready' ? state.row : null;
   const imageHref = reportImageHref(row?.image ?? null);
   const managedImage = imageHref === `/api/v1/item-reports/${reportId}/image`;
+  const saving = managing || claimPending;
   const close = () => {
-    if (!managing) setOpen(false);
+    if (!saving) setOpen(false);
   };
   return (
     <Dialog
@@ -115,7 +130,7 @@ export function ReportDetail({
           type="button"
           className={styles.close}
           onClick={close}
-          disabled={managing}
+          disabled={saving}
           aria-label="ปิดรายละเอียด"
           title="ปิดรายละเอียด"
         >
@@ -127,7 +142,7 @@ export function ReportDetail({
         role="region"
         aria-label="รายละเอียดรายการ"
         tabIndex={0}
-        aria-busy={state.kind === 'loading' || refreshing || managing}
+        aria-busy={state.kind === 'loading' || refreshing || saving}
       >
         {state.kind === 'loading' ? (
           <ReportDetailSkeleton motion={motion} />
@@ -189,6 +204,10 @@ export function ReportDetail({
                 <dd>
                   <time dateTime={state.row.eventDatetime}>
                     {reportDate.format(new Date(state.row.eventDatetime))}
+                    {' · '}
+                    {formatEventTime(
+                      bangkokEventFields(state.row.eventDatetime).time,
+                    )}
                   </time>
                 </dd>
               </div>
@@ -222,7 +241,7 @@ export function ReportDetail({
             onUpdated={(next) => {
               setState((current) =>
                 current.kind === 'ready'
-                  ? { kind: 'ready', row: next }
+                  ? { kind: 'ready', row: { ...current.row, ...next } }
                   : current,
               );
               setRefreshing(true);
@@ -254,6 +273,11 @@ export function ReportDetail({
             setRevision((value) => value + 1);
           }}
         />
+        {row &&
+          (row.isOwner === true ||
+            (row.isOwner === false && row.type === 'FOUND')) && (
+            <ReportClaims row={row} onPendingChange={setClaimPending} />
+          )}
       </div>
       <footer className={styles.footer}>
         <p>ของสำคัญ มีเจ้าของ</p>
@@ -261,7 +285,7 @@ export function ReportDetail({
           type="button"
           className={styles.back}
           onClick={close}
-          disabled={managing}
+          disabled={saving}
         >
           กลับไปดูรายการ <ShellIcon name="arrow" width={14} height={14} />
         </button>

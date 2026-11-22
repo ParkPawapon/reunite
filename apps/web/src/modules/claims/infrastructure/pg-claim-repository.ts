@@ -3,6 +3,7 @@ import { query, type Sql } from '@campus/database';
 import { AppError, type Page } from '@campus/shared';
 import type {
   Claim,
+  ClaimBrowse,
   ClaimRepository,
   ClaimInput,
   ClaimStatusDecision,
@@ -38,12 +39,13 @@ const map = (row: Row): Claim => ({
 });
 export class PgClaimRepository implements ClaimRepository {
   constructor(private readonly db: Sql) {}
-  async listOwned(userId: number, page: Page): Promise<Claim[]> {
+  async listOwned(userId: number, page: ClaimBrowse): Promise<Claim[]> {
     const rows = await query<Row>(
       this.db,
       `SELECT ${columns} FROM claims
-       WHERE user_id = $1 ORDER BY claim_id DESC LIMIT $2 OFFSET $3`,
-      [userId, page.limit, page.offset],
+       WHERE user_id = $1 AND ($4::integer IS NULL OR report_id = $4)
+       ORDER BY claim_id DESC LIMIT $2 OFFSET $3`,
+      [userId, page.limit, page.offset, page.reportId ?? null],
     );
     return rows.map(map);
   }

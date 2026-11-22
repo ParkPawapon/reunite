@@ -58,12 +58,6 @@ export function Sidebar({
         >
           <ShellIcon name="home" />
           <span>หน้าหลัก</span>
-          <ShellIcon
-            name="arrow"
-            className={styles.navArrow}
-            width={16}
-            height={16}
-          />
         </Link>
         <Link
           href="/reports/new"

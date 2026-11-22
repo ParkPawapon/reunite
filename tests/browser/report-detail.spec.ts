@@ -19,6 +19,14 @@ const artifacts =
   process.env.UI_ARTIFACT_DIR ?? path.join(tmpdir(), 'reunite-item-modal');
 const reportPath = () => `/api/v1/item-reports/${reportId}`;
 
+async function deleteFixtureReport(db: Pool, id: number) {
+  await db.query(
+    'DELETE FROM report_matches WHERE lost_report_id=$1 OR found_report_id=$1',
+    [id],
+  );
+  await db.query('DELETE FROM item_reports WHERE report_id=$1', [id]);
+}
+
 test.beforeEach(async ({ page }) => {
   test.skip(
     !!process.env.PLAYWRIGHT_BASE_URL,
@@ -66,11 +74,7 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(async () => {
   if (!pool) return;
   try {
-    await pool.query(
-      'DELETE FROM report_matches WHERE lost_report_id=$1 OR found_report_id=$1',
-      [reportId],
-    );
-    await pool.query('DELETE FROM item_reports WHERE report_id=$1', [reportId]);
+    await deleteFixtureReport(pool, reportId);
     await pool.query('DELETE FROM categories WHERE category_id=$1', [
       categoryId,
     ]);
@@ -268,7 +272,7 @@ test('shows real detail loading and recovers from server failure or a removed re
   await expect(dialog).toHaveCount(0);
   await page.unroute(`**${reportPath()}`);
   if (!pool) throw new Error('Missing isolated fixture');
-  await pool.query('DELETE FROM item_reports WHERE report_id=$1', [reportId]);
+  await deleteFixtureReport(pool, reportId);
   await trigger.click();
   await expect(dialog.getByRole('alert')).toContainText('ไม่พบรายการนี้แล้ว');
   await expect(

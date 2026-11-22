@@ -127,6 +127,21 @@ test('switches real LOST/FOUND data, resets pagination and opens current report 
   await expect(
     page.getByRole('button', { name: 'หน้าก่อนหน้า', exact: true }),
   ).toBeDisabled();
+  const status = page.getByLabel('สถานะประกาศ');
+  await expect(status).toHaveValue('OPEN');
+  await expect(page.getByRole('button', { name: 'หน้าถัดไป' })).toBeDisabled();
+  await status.selectOption('RESOLVED');
+  await expect(page.locator('[data-report-id]')).toHaveCount(1);
+  await expect(
+    page.getByRole('button', { name: 'ของหายทดสอบ 11', exact: true }),
+  ).toBeVisible();
+  await status.selectOption('CLOSED');
+  await expect(page.locator('[data-report-id]')).toHaveCount(1);
+  await expect(
+    page.getByRole('button', { name: 'ของหายทดสอบ 10', exact: true }),
+  ).toBeVisible();
+  await status.selectOption('');
+  await expect(page.locator('[data-report-id]')).toHaveCount(10);
   await page.getByRole('button', { name: 'หน้าถัดไป', exact: true }).click();
   await expect(page.locator('[data-report-id]')).toHaveCount(2);
   await expect(page.getByText('รายการ 11–12', { exact: true })).toBeVisible();

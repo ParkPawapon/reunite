@@ -14,10 +14,12 @@ const reportSchema = z.object({
   status: z.enum(['OPEN', 'RESOLVED', 'CLOSED']),
   createdAt: z.iso.datetime({ offset: true }),
   updatedAt: z.iso.datetime({ offset: true }),
+  isOwner: z.boolean().optional(),
 });
 const categorySchema = z.object({ categoryId: id, categoryName: z.string() });
 const locationSchema = z.object({ locationId: id, locationName: z.string() });
 export type ReportType = z.infer<typeof reportSchema>['type'];
+export type ReportStatus = z.infer<typeof reportSchema>['status'];
 type ReportRecord = z.infer<typeof reportSchema>;
 export type ReportRow = ReportRecord & {
   categoryName: string;
@@ -114,7 +116,7 @@ export async function loadReportPage(
   type: ReportType,
   offset: number,
   signal: AbortSignal,
-  options: { q?: string; owned?: boolean } = {},
+  options: { q?: string; owned?: boolean; status?: ReportStatus } = {},
 ) {
   const query = new URLSearchParams({
     type,
@@ -122,6 +124,7 @@ export async function loadReportPage(
     offset: String(offset),
   });
   if (options.q) query.set('q', options.q);
+  if (options.status) query.set('status', options.status);
   // Look ahead one row; the API does not provide a total count.
   const [rows, lookup] = await Promise.all([
     request(
@@ -149,7 +152,8 @@ export function updateReportDetails(
   fields: Pick<
     ReportRecord,
     'title' | 'description' | 'categoryId' | 'locationId'
-  >,
+  > &
+    Partial<Pick<ReportRecord, 'eventDatetime'>>,
   signal: AbortSignal,
 ) {
   return request(`item-reports/${reportId}`, reportSchema, signal, fields);

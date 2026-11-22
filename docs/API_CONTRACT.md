@@ -4,7 +4,7 @@
 
 BE003 is implemented: public `GET /api/v1/locations` reads PostgreSQL and returns ordered, paginated locationId/locationName/nullable detail with the standard response envelope. Invalid, unknown and duplicate query parameters return 422.
 
-Implemented read assignments: BE002, BE005, BE006, BE007, BE008. All assigned catalog, public-report and own-claim read endpoints now return their documented real-data responses. Integration coverage checks real PostgreSQL data, validation, pagination and privacy for delivered tasks. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
+Implemented read assignments: BE002, BE005, BE006, BE007, BE008. All assigned catalog, signed-in report and own-claim read endpoints now return their documented real-data responses. Integration coverage checks real PostgreSQL data, validation, pagination and privacy for delivered tasks. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
 
 ## Private student profile and account notifications
 
@@ -31,7 +31,7 @@ Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED`, `AVATAR_
 | Method/path                          | Authentication      | Behavior                                                                             |
 | ------------------------------------ | ------------------- | ------------------------------------------------------------------------------------ |
 | `GET /matches?before=123`            | Session             | Own current match suggestions, 20 items/keyset cursor, job counts and service status |
-| `GET /item-reports/:id/image`        | Public              | Normalized item WebP, 404 if absent                                                  |
+| `GET /item-reports/:id/image`        | Session             | Normalized item WebP, 404 if absent                                                  |
 | `GET /item-reports/:id/image/access` | Owner               | `{ hasImage: boolean }` for image controls; non-owner/missing report returns 404     |
 | `PUT /item-reports/:id/image`        | Owner + same-origin | Raw JPEG/PNG/WebP, <=4 MiB; normalizes and stores item photo; `{ updated: true }`    |
 | `DELETE /item-reports/:id/image`     | Owner + same-origin | Clears stored photo and reference; `{ updated: true }`                               |
@@ -47,14 +47,14 @@ See [MATCHING.md](MATCHING.md) for the exact match DTO, privacy, provider contra
 | GET `/auth/me`                   | session              | Own `{userId,name,email}`                                                              |
 | GET `/categories`                | none                 | Paginated `[{categoryId,categoryName}]`, ordered by category ID                        |
 | GET `/locations`                 | none                 | Paginated `[{locationId,locationName,detail}]` (implemented in BE003)                  |
-| GET `/item-reports`              | none                 | Paginated public reports, optional filters, newest report ID first                     |
-| GET `/item-reports/:id`          | none                 | Public single report or 404; reporter identity omitted                                 |
+| GET `/item-reports`              | session              | Paginated reports, optional filters, newest report ID first                            |
+| GET `/item-reports/:id`          | session              | Single report or 404 with viewer-specific `isOwner`; reporter identity omitted         |
 | POST `/item-reports`             | session              | Create report as current user, `OPEN`; 201                                             |
 | PATCH `/item-reports/:id`        | owner session        | Safe field update; other owners/missing reports return 404                             |
 | PATCH `/item-reports/:id/status` | owner session        | Report status lifecycle transition (`RESOLVED`, `CLOSED`); non-owner returns 404       |
-| GET `/item-reports/me`           | session              | Paginated own reports, newest first, with optional `type` and `q` filters              |
+| GET `/item-reports/me`           | session              | Paginated own reports, newest first, with optional `type`, `status` and `q` filters    |
 | GET `/item-reports/:id/claims`   | report-owner session | Paginated claims submitted on owned report; non-owner returns 404 (BE012)              |
-| GET `/claims`                    | session              | Own claims only, paginated by descending claim ID                                      |
+| GET `/claims`                    | session              | Own claims only, newest first, with optional `reportId` filter                         |
 | GET `/claims/:id`                | claimant session     | Own claim/evidence or non-disclosing 404                                               |
 | POST `/claims`                   | session              | Current claimant, supplied report/evidence, DB `PENDING` and timestamp; 201            |
 | PATCH `/claims/:id/status`       | report-owner session | Review and approve/reject claim (`APPROVED`, `REJECTED`); non-report-owner returns 404 |
@@ -81,13 +81,13 @@ Report creation:
 }
 ```
 
-IDs in JSON must be positive 32-bit integers. Catalog IDs must already exist. `title` is trimmed, required, max 255; description is nullable/optional, max 10000; image is nullable/optional, max 500, HTTP(S) without credentials or an absolute single-slash application path. No image fetching or file uploading occurs. Date/time must be valid ISO 8601 with timezone. `type`: `LOST` or `FOUND`. Output: `{reportId,categoryId,locationId,type,title,description,image,eventDatetime,status,createdAt,updatedAt}`. Dates serialize as UTC, e.g. `2026-11-04T05:30:00.000Z`. createdAt is submission metadata, distinct from the eventDatetime incident instant; pre-0004 reports use the migration instant because historical submission time is unknown. Public output omits reporter IDs/profiles.
+IDs in JSON must be positive 32-bit integers. Catalog IDs must already exist. `title` is trimmed, required, max 255; description is nullable/optional, max 10000; image is nullable/optional, max 500, HTTP(S) without credentials or an absolute single-slash application path. No image fetching or file uploading occurs. Date/time must be valid ISO 8601 with timezone. `type`: `LOST` or `FOUND`. Output: `{reportId,categoryId,locationId,type,title,description,image,eventDatetime,status,createdAt,updatedAt}`. Dates serialize as UTC, e.g. `2026-11-04T05:30:00.000Z`. createdAt is submission metadata, distinct from the eventDatetime incident instant; pre-0004 reports use the migration instant because historical submission time is unknown. Report responses omit reporter IDs/profiles. The authenticated detail endpoint adds the viewer-specific boolean `isOwner`.
 
-PATCH accepts only `title`, `description`, `image`, `categoryId`, `locationId`, with at least one field. Nullable fields can be explicitly cleared with `null`. Ownership, type, status, event date/time, createdAt and updatedAt cannot be supplied or rewritten by clients. PostgreSQL maintains updatedAt on successful UPDATE statements.
+PATCH accepts only `title`, `description`, `image`, `categoryId`, `locationId`, `eventDatetime`, with at least one field. Nullable fields can be explicitly cleared with `null`. Ownership, type, status, createdAt and updatedAt cannot be supplied or rewritten by clients. PostgreSQL maintains updatedAt on successful UPDATE statements.
 
-Both report lists accept `q` for a case-insensitive literal substring of the report title. It is trimmed and limited to 255 characters. A blank value is equivalent to omitting it, and characters such as `%` and `_` are literal. Search and the other filters apply before pagination. The signed-in **รายการของฉัน** page at `/reports/mine` uses the owner-scoped list and existing report edit and close endpoints.
+Both report lists accept `q` for a case-insensitive literal substring of the report title. It is trimmed and limited to 255 characters. A blank value is equivalent to omitting it, and characters such as `%` and `_` are literal. Search and status (`OPEN`, `RESOLVED`, `CLOSED`) apply before pagination. The dashboard defaults to open reports, while **รายการของฉัน** defaults to all statuses. The signed-in **รายการของฉัน** page at `/reports/mine` uses the owner-scoped list and existing report edit and close endpoints.
 
-Claim creation: `{ "reportId": 1, "evidence": "Private identifying details" }`. Evidence is required after trimming, max 10000. Output to the authenticated claimant: `{claimId,reportId,userId,evidence,status,claimDate,updatedAt}`. Clients cannot supply identity, status, claimDate or updatedAt. Only existing report FK eligibility is enforced; no undocumented LOST/FOUND, self-claim, duplicate-request, lifecycle or approval rule is assumed. Those decisions must be made before public release.
+Claim creation: `{ "reportId": 1, "evidence": "Private identifying details" }`. Evidence is required after trimming, max 10000. Output to the authenticated claimant: `{claimId,reportId,userId,evidence,status,claimDate,updatedAt}`. Clients cannot supply identity, status, claimDate or updatedAt. Only existing report FK eligibility is enforced; no undocumented LOST/FOUND, self-claim, duplicate-request, lifecycle or approval rule is assumed. The report detail dialog offers submission for other users’ open found reports. Each claimant can view only their own submissions. The report owner reviews incoming claims in the same dialog. Claim approval is a claim status change. Return confirmation uses its existing separate workflow.
 
 ## Error statuses
 

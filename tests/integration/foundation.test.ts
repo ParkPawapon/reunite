@@ -425,7 +425,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     expect(
       (
         await apiHandlers.getReport(
-          request(`item-reports/${reportId}`),
+          request(`item-reports/${reportId}`, 'GET', undefined, cookie),
           context(reportId),
         )
       ).status,
@@ -433,7 +433,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     expect(
       (
         await apiHandlers.getReport(
-          request('item-reports/2147483647'),
+          request('item-reports/2147483647', 'GET', undefined, cookie),
           context(2147483647),
         )
       ).status,
@@ -487,7 +487,12 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       expect.objectContaining({ reportId, userId }),
     ]);
     const listResponse = await apiHandlers.listReports(
-      request('item-reports?limit=1&offset=0&type=FOUND'),
+      request(
+        'item-reports?limit=1&offset=0&type=FOUND',
+        'GET',
+        undefined,
+        cookie,
+      ),
     );
     expect(listResponse.status).toBe(200);
     const listBody = (await listResponse.json()) as {
@@ -501,7 +506,7 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
     expect(await repository.find(reportId)).toMatchObject({ reportId, userId });
     expect(await repository.find(2147483647)).toBeNull();
     const detailResponse = await apiHandlers.getReport(
-      request(`item-reports/${reportId}`),
+      request(`item-reports/${reportId}`, 'GET', undefined, cookie),
       context(reportId),
     );
     expect(detailResponse.status).toBe(200);
@@ -543,12 +548,19 @@ describe('real PostgreSQL foundation (ordered workflow)', () => {
       request(
         `item-reports/${reportId}`,
         'PATCH',
-        { title: 'Updated', description: null },
+        {
+          title: 'Updated',
+          description: null,
+          eventDatetime: '2026-11-05T08:15:00+07:00',
+        },
         cookie,
       ),
       context(reportId),
     );
-    expect((await json(update)).data.title).toBe('Updated');
+    expect((await json(update)).data).toMatchObject({
+      title: 'Updated',
+      eventDatetime: '2026-11-05T01:15:00.000Z',
+    });
   });
   it('creates PENDING claims and verifies private claim read contracts', async () => {
     const claimRepository = new PgClaimRepository(pool);

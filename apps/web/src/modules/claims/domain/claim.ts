@@ -12,13 +12,14 @@ export type Claim = {
   updatedAt: string;
 };
 export type ClaimInput = { reportId: number; evidence: string };
+export type ClaimBrowse = Page & { reportId?: number };
 export type ClaimStatusDecision = {
   status: 'APPROVED' | 'REJECTED';
   resolutionNote?: string | null;
 };
 
 export interface ClaimRepository {
-  listOwned(userId: number, page: Page): Promise<Claim[]>;
+  listOwned(userId: number, page: ClaimBrowse): Promise<Claim[]>;
   findOwned(id: number, userId: number): Promise<Claim | null>;
   create(userId: number, input: ClaimInput): Promise<Claim>;
   reviewReportClaim(

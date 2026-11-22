@@ -47,12 +47,18 @@ describe('boundary validation', () => {
       {},
       { status: 'RESOLVED' },
       { userId: 2 },
-      { eventDatetime: valid.eventDatetime },
+      { eventDatetime: '2026-11-04T12:30:00' },
+      { createdAt: valid.eventDatetime },
       { type: 'FOUND' },
     ])
       expect(reportPatchSchema.safeParse(patch).success).toBe(false);
     expect(reportPatchSchema.parse({ description: null })).toEqual({
       description: null,
+    });
+    expect(
+      reportPatchSchema.parse({ eventDatetime: valid.eventDatetime }),
+    ).toEqual({
+      eventDatetime: valid.eventDatetime,
     });
   });
   it('bounds pagination and rejects invalid status or SQL-like input', () => {

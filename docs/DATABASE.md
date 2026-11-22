@@ -1,6 +1,6 @@
 # Database
 
-PostgreSQL 18.4 is pinned for Compose and CI. The two source PDFs have matching relational schemas/data dictionaries. Migration `0001` preserves their five business tables, identity integer keys, names, lengths, nullability, foreign keys, defaults and status checks: `users`, `categories`, `locations`, `item_reports`, `claims`. No catalog data is seeded into production.
+PostgreSQL 18.4 is pinned for Compose and CI. The two source PDFs have matching relational schemas/data dictionaries. Migration `0001` preserves their five business tables, identity integer keys, names, lengths, nullability, foreign keys, defaults and status checks: `users`, `categories`, `locations`, `item_reports`, `claims`. The [Bangmod catalog seed](../packages/database/seeds/production-bangmod-catalog.sql) supplies the production form's categories and locations independently of schema migrations.
 
 `0002` adds technical `auth_sessions`: only SHA-256 digests of 256-bit random tokens, user FK, expiry and creation time. Logout deletes the row; reads enforce expiry. `0003` adds technical `auth_login_throttles`: hashed normalized account identifier, fixed-window start and atomic bounded attempt counter. `schema_migrations` tracks runner infrastructure. None of these are extra business entities.
 

@@ -107,50 +107,118 @@
   color: var(--color-text-muted);
   flex: none;
 }
-.search {
+.toolbar {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
   align-items: stretch;
-  padding: 1rem clamp(1rem, 3vw, 1.75rem) 0;
+  gap: 0.625rem 0.875rem;
+  padding: 1.125rem clamp(1rem, 3vw, 1.75rem) 0;
 }
-.searchInput {
+.search,
+.statusFilter {
   display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  flex: 1 1 26rem;
-  max-width: 30rem;
   min-width: 0;
-  padding-inline-start: 0.75rem;
-  min-height: 44px;
+  min-height: 54px;
   border: 1px solid var(--color-border);
-  border-radius: 0.625rem;
+  border-radius: 0.875rem;
+}
+.search {
+  align-items: center;
+  flex: 1 1 19rem;
+  gap: 0.625rem;
+  padding: 0.25rem 0.25rem 0.25rem 0.875rem;
+  background: var(--color-background);
   color: var(--color-text-muted);
 }
-.searchInput input {
-  width: 100%;
+.search:focus-within,
+.statusFilter:focus-within {
+  border-color: var(--color-focus);
+  background: var(--color-surface);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.statusFilter {
+  align-items: center;
+  flex: 1 1 15.5rem;
+  max-inline-size: 15.5rem;
+  gap: 0.65rem;
+  padding-inline-start: 0.875rem;
+  background: var(--color-surface);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.statusFilter:hover {
+  background: var(--color-orange-50);
+}
+.statusChoice {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
   min-width: 0;
-  padding: 0.55rem 0.5rem 0.55rem 0;
+  border-inline-start: 1px solid var(--color-border);
+}
+.statusChoice::before,
+.statusChoice svg {
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.statusChoice::before {
+  content: '';
+  inset-inline-start: 0.75rem;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--report-status-color, var(--color-text-muted));
+}
+.statusChoice svg {
+  inset-inline-end: 0.75rem;
+}
+.statusChoice select {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 2rem 0 1.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.statusChoice select:focus {
+  outline: none;
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 0.625rem 0 0;
   background: transparent;
   border: 0;
   color: var(--color-text);
   font: inherit;
   font-size: 1rem;
 }
-.searchInput input::-webkit-search-cancel-button {
+.search input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+.search input::-webkit-search-cancel-button {
   appearance: none;
 }
-.searchInput input:focus {
+.search input:focus {
   outline: none;
 }
-.searchInput:focus-within {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 1px;
-}
-.searchInput > svg {
+.search > svg {
   flex: none;
 }
-.clearSearch,
-.searchButton {
+.clearSearch {
   display: grid;
   place-items: center;
   min-width: 44px;
@@ -161,16 +229,10 @@
   background: transparent;
   font: inherit;
   cursor: pointer;
+  flex: none;
 }
-.searchButton {
-  padding-inline: 0.9rem;
+.clearSearch:hover {
   background: var(--color-orange-50);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-.clearSearch:hover,
-.searchButton:hover {
-  background: var(--color-orange-100);
 }
 .context {
   display: flex;
@@ -282,7 +344,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  color: var(--color-text-muted);
+  color: var(--report-status-color, var(--color-text-muted));
   font-size: 0.75rem;
 }
 .status i {
@@ -293,11 +355,11 @@
   background: currentColor;
   flex: none;
 }
-.status[data-status='OPEN'] {
-  color: var(--color-orange-700);
+:is(.status, .statusChoice)[data-status='OPEN'] {
+  --report-status-color: var(--color-orange-700);
 }
-.status[data-status='RESOLVED'] {
-  color: var(--color-success);
+:is(.status, .statusChoice)[data-status='RESOLVED'] {
+  --report-status-color: var(--color-success);
 }
 .table td.actionCell {
   padding-inline: 0 0.5rem;
@@ -482,6 +544,12 @@
   }
   .pageButton {
     padding-inline: 0.5rem;
+  }
+}
+@media (max-width: 600px) {
+  .statusFilter {
+    max-inline-size: none;
+    flex-basis: 100%;
   }
 }
 @media (max-width: 430px) {
