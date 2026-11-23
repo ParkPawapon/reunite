@@ -8,15 +8,18 @@ import {
   accountRequest,
 } from '@/modules/users/presentation/profile-client';
 import { profileCompletionSchema } from '@/modules/users/presentation/profile-schema';
-import type { StudentProfile } from '@/modules/users/domain/profile';
+import type { ProfileCompletionDraft } from '@/modules/users/domain/profile';
 import { LoginShell } from './login-shell';
 import styles from './login.module.css';
 
 const completionResult = z.object({ completed: z.literal(true) });
-type Fields = Pick<StudentProfile, 'firstName' | 'lastName' | 'studentId'>;
 type Action = 'save' | 'logout';
 
-export function CompleteProfileForm({ initial }: { initial: Fields }) {
+export function CompleteProfileForm({
+  initial,
+}: {
+  initial: ProfileCompletionDraft;
+}) {
   const [pending, setPending] = useState<Action | null>(null);
   const [failure, setFailure] = useState('');
   const busy = useRef(false);
@@ -39,11 +42,9 @@ export function CompleteProfileForm({ initial }: { initial: Fields }) {
         return;
       }
       setFailure(
-        error instanceof AccountRequestError && error.status === 409
-          ? 'รหัสนักศึกษานี้ถูกใช้แล้ว กรุณาตรวจสอบและลองอีกครั้ง'
-          : action === 'save'
-            ? 'บันทึกโปรไฟล์ไม่สำเร็จ กรุณาลองอีกครั้ง'
-            : 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง',
+        action === 'save'
+          ? 'บันทึกโปรไฟล์ไม่สำเร็จ กรุณาลองอีกครั้ง'
+          : 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง',
       );
       busy.current = false;
       setPending(null);
@@ -56,7 +57,7 @@ export function CompleteProfileForm({ initial }: { initial: Fields }) {
       Object.fromEntries(new FormData(event.currentTarget)),
     );
     if (!input.success) {
-      setFailure('กรุณากรอกชื่อและนามสกุล และรหัสนักศึกษาเป็นตัวเลข 8–20 หลัก');
+      setFailure('กรุณากรอกชื่อและนามสกุล');
       return;
     }
     void execute('save', () =>
@@ -115,25 +116,6 @@ export function CompleteProfileForm({ initial }: { initial: Fields }) {
                 defaultValue={initial.lastName ?? ''}
               />
             </div>
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="completion-student-id">รหัสนักศึกษา</label>
-            <div className={styles.inputWrap}>
-              <input
-                id="completion-student-id"
-                name="studentId"
-                inputMode="numeric"
-                pattern="[0-9]{8,20}"
-                maxLength={20}
-                aria-describedby="completion-student-id-hint"
-                required
-                readOnly={pending !== null}
-                defaultValue={initial.studentId ?? ''}
-              />
-            </div>
-            <p className={styles.formIntro} id="completion-student-id-hint">
-              ตัวเลข 8–20 หลัก
-            </p>
           </div>
           <button
             type="submit"

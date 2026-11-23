@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
-import { migrate } from '../../packages/database/src/migrations';
+import {
+  migrate,
+  readMigrations,
+} from '../../packages/database/src/migrations';
 import { hashPassword } from '@campus/database/password';
 import { createServices } from '@/lib/composition';
 import { createHandlers } from '@/lib/http/handlers';
@@ -25,6 +28,11 @@ const identity = {
   name: 'Assigned campus member',
 };
 const password = 'disposable-test-password';
+const existing = {
+  ...identity,
+  objectId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  email: 'completed@kmutt.ac.th',
+};
 
 function request(
   path: string,
@@ -46,7 +54,27 @@ beforeAll(async () => {
   vi.stubEnv('APP_BASE_URL', origin);
   vi.stubEnv('LOG_LEVEL', 'silent');
   await fixture.open();
-  await migrate(pool);
+  const migrations = await readMigrations();
+  await migrate(
+    pool,
+    migrations.filter(({ version }) => version < '0013'),
+  );
+  await pool.query(
+    `INSERT INTO users (name, email, microsoft_tenant_id, microsoft_object_id, first_name, last_name, student_id)
+    VALUES ('Existing Member', $1, $2, $3, 'Existing', 'Member', '0000000123')`,
+    [existing.email, existing.tenantId, existing.objectId],
+  );
+  await migrate(pool, migrations);
+});
+
+it('preserves prior profile completion and the saved student ID', async () => {
+  const user = await application.auth.loginWithMicrosoft(existing, 600);
+  expect(user.profileCompletionRequired).toBe(false);
+  expect(await application.profile.get(user.profile.userId)).toMatchObject({
+    firstName: 'Existing',
+    lastName: 'Member',
+    studentId: '0000000123',
+  });
 });
 afterAll(async () => {
   vi.unstubAllEnvs();
@@ -66,13 +94,10 @@ it('creates one account under concurrent sign-in and uses the existing session l
   const profileDraft = {
     firstName: 'Directory',
     lastName: 'Name',
-    studentId: '0123456789',
   };
   await application.auth.loginWithMicrosoft({ ...identity, profileDraft }, 600);
-  expect(await application.profile.getCompletionDraft(userId)).toEqual(
-    profileDraft,
-  );
   expect(await application.profile.get(userId)).toMatchObject({
+    ...profileDraft,
     studentId: null,
   });
   expect(
@@ -98,7 +123,7 @@ it('creates one account under concurrent sign-in and uses the existing session l
     firstName: 'Campus',
     lastName: 'Member',
     email: identity.email,
-    studentId: '0123456789',
+    studentId: null,
     faculty: null,
     department: null,
     major: null,
@@ -107,7 +132,6 @@ it('creates one account under concurrent sign-in and uses the existing session l
   const completion = {
     firstName: details.firstName,
     lastName: details.lastName,
-    studentId: details.studentId,
   };
   const endpoint = '/profile/complete';
   expect(
@@ -156,7 +180,7 @@ it('creates one account under concurrent sign-in and uses the existing session l
       await account.completeProfile(
         request(endpoint, 'POST', first.token, {
           ...completion,
-          studentId: 'bad',
+          studentId: '0123456789',
         }),
       )
     ).status,
@@ -196,8 +220,8 @@ it('creates one account under concurrent sign-in and uses the existing session l
     (await account.profile(request('/profile', 'GET', first.token))).status,
   ).toBe(200);
   await expect(
-    application.profile.update(userId, { ...details, studentId: null }),
-  ).rejects.toMatchObject({ code: 'STUDENT_ID_REQUIRED' });
+    application.profile.update(userId, details),
+  ).resolves.toMatchObject({ studentId: null });
   await expect(
     application.profile.update(userId, {
       ...details,
@@ -215,9 +239,10 @@ it('creates one account under concurrent sign-in and uses the existing session l
     first.token,
   );
   expect(rotated.profileCompletionRequired).toBe(false);
-  expect(await application.profile.getCompletionDraft(userId)).toEqual(
-    completion,
-  );
+  expect(await application.profile.get(userId)).toMatchObject({
+    ...completion,
+    studentId: null,
+  });
   expect(
     (
       await pool.query(

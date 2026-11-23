@@ -25,20 +25,16 @@ export type ProfileInput = {
 export type ProfileCompletionInput = Pick<
   ProfileInput,
   'firstName' | 'lastName'
-> & {
-  studentId: string;
-};
+>;
 export type ProfileCompletionDraft = Pick<
   StudentProfile,
-  'firstName' | 'lastName' | 'studentId'
+  'firstName' | 'lastName'
 >;
 export interface ProfileRepository {
   get(userId: number): Promise<StudentProfile | null>;
-  getCompletionDraft(userId: number): Promise<ProfileCompletionDraft | null>;
   credentials(userId: number): Promise<{
     email: string;
     hash: string | null;
-    microsoftLinked: boolean;
   } | null>;
   complete(userId: number, input: ProfileCompletionInput): Promise<void>;
   update(

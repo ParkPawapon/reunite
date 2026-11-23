@@ -18,7 +18,6 @@ const studentId = /^[0-9]{8,20}$/;
 export const profileCompletionSchema = z.strictObject({
   firstName: name,
   lastName: name,
-  studentId: z.string().trim().regex(studentId),
 });
 export const profileSchema = z
   .object({

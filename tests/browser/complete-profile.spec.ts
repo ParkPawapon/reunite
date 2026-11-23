@@ -17,8 +17,8 @@ test('requires a Microsoft-linked user to finish setup before using the app', as
   try {
     await pool.query(
       `WITH account AS (
-        INSERT INTO users (name, email, microsoft_tenant_id, microsoft_object_id, first_name, microsoft_student_id_draft)
-        VALUES ('new-member', $1, $2, $3, 'ทดสอบ', '0987654321') RETURNING user_id
+        INSERT INTO users (name, email, microsoft_tenant_id, microsoft_object_id, first_name, last_name)
+        VALUES ('new-member', $1, $2, $3, 'ทดสอบ', 'บัญชีมหาวิทยาลัย') RETURNING user_id
       )
       INSERT INTO auth_sessions (user_id, token_hash, expires_at)
       SELECT user_id, $4, CURRENT_TIMESTAMP + INTERVAL '1 day' FROM account`,
@@ -42,8 +42,8 @@ test('requires a Microsoft-linked user to finish setup before using the app', as
     expect((await page.request.get('/api/v1/item-reports')).status()).toBe(403);
 
     await expect(page.getByLabel('ชื่อจริง')).toHaveValue('ทดสอบ');
-    await expect(page.getByLabel('รหัสนักศึกษา')).toHaveValue('0987654321');
-    await page.getByLabel('นามสกุล').fill('บัญชีมหาวิทยาลัย');
+    await expect(page.getByLabel('รหัสนักศึกษา')).toHaveCount(0);
+    await expect(page.getByLabel('นามสกุล')).toHaveValue('บัญชีมหาวิทยาลัย');
     await page.getByRole('button', { name: 'บันทึกและไปหน้าภาพรวม' }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     expect((await page.request.get('/api/v1/item-reports')).status()).toBe(200);
@@ -53,7 +53,7 @@ test('requires a Microsoft-linked user to finish setup before using the app', as
       data: {
         firstName: 'ทดสอบ',
         lastName: 'บัญชีมหาวิทยาลัย',
-        studentId: '0987654321',
+        studentId: null,
       },
     });
     await page.goto('/complete-profile');

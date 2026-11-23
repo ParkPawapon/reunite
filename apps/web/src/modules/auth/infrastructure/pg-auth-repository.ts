@@ -68,16 +68,14 @@ export class PgAuthRepository implements AuthRepository {
       user = created ? sessionUser(created) : await find();
     }
     if (user?.profileCompletionRequired && identity.profileDraft) {
-      const { firstName, lastName, studentId } = identity.profileDraft;
+      const { firstName, lastName } = identity.profileDraft;
       await query(
         this.db,
         `UPDATE users SET first_name=COALESCE(first_name, $3::varchar),
-          last_name=COALESCE(last_name, $4::varchar),
-          microsoft_student_id_draft=CASE WHEN student_id IS NULL
-            THEN COALESCE($5::varchar, microsoft_student_id_draft) ELSE NULL END
+          last_name=COALESCE(last_name, $4::varchar)
         WHERE microsoft_tenant_id=$1 AND microsoft_object_id=$2
           AND ${profileCompletionRequired}`,
-        [...key, firstName, lastName, studentId],
+        [...key, firstName, lastName],
       );
     }
     return user;

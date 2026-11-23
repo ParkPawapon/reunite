@@ -134,11 +134,7 @@ export async function finishMicrosoftAuthorization(
       pkceCodeVerifier: transaction.verifier,
     },
   );
-  return requireKmuttIdentity(
-    tokens.claims(),
-    settings.tenantId,
-    settings.studentIdClaim,
-  );
+  return requireKmuttIdentity(tokens.claims(), settings.tenantId);
 }
 
 const identityClaims = z.looseObject({
@@ -167,7 +163,6 @@ export class MicrosoftAccessDenied extends AppError {
 export function requireKmuttIdentity(
   claims: unknown,
   tenantId: string,
-  studentIdClaim?: string,
 ): MicrosoftIdentity {
   const parsed = identityClaims.safeParse(claims);
   if (!parsed.success) {
@@ -202,14 +197,10 @@ export function requireKmuttIdentity(
     extra !== undefined
   )
     throw new MicrosoftAccessDenied('invalid_kmutt_upn');
-  const { firstName, lastName, studentId } = profileCompletionSchema.shape;
+  const { firstName, lastName } = profileCompletionSchema.shape;
   const profileDraft = {
     firstName: firstName.safeParse(parsed.data.given_name).data ?? null,
     lastName: lastName.safeParse(parsed.data.family_name).data ?? null,
-    studentId:
-      (studentIdClaim && Object.hasOwn(parsed.data, studentIdClaim)
-        ? studentId.safeParse(parsed.data[studentIdClaim]).data
-        : undefined) ?? null,
   };
   if (process.env.NODE_ENV === 'development') console.info(JSON.stringify({ openidClaims: Object.keys(parsed.data), user: { upn: email, ...profileDraft } })); // eslint-disable-line no-console
   return {
