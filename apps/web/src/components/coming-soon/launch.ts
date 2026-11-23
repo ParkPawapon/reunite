@@ -1,7 +1,8 @@
 /** One launch instant, independent of the visitor's browser timezone. */
-export const LAUNCH_DATE = '2026-11-24T00:00:00+07:00';
+export const LAUNCH_DATE = '2026-11-23T09:00:00+07:00';
 export const LAUNCH_AT = Date.parse(LAUNCH_DATE);
-export const LAUNCH_DATE_LABEL = '24 พฤศจิกายน 2569';
+export const LAUNCH_DATE_LABEL = '23 พฤศจิกายน 2569';
+export const LAUNCH_TIME_LABEL = LAUNCH_DATE.slice(11, 16);
 
 export function countdownAt(now: number) {
   const total = Math.max(0, Math.ceil((LAUNCH_AT - now) / 1000));

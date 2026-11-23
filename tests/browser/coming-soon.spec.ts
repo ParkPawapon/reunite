@@ -53,8 +53,9 @@ test('public server HTML contains the launch date and local poster before hydrat
   expect(response.status()).toBe(200);
   expect(response.headers()['permissions-policy']).toContain('geolocation=()');
   const html = await response.text();
-  expect(html).toContain('24 พฤศจิกายน 2569');
-  expect(html).toContain('2026-11-24T00:00:00+07:00');
+  expect(html).toContain('23 พฤศจิกายน 2569');
+  expect(html).toContain('2026-11-23T09:00:00+07:00');
+  expect(html).toContain('09:00 น. · เวลาไทย');
   expect(html).toContain('bangmod-launch.png');
   expect(html).not.toMatch(/cdn\.tailwindcss|iconify|supabase\.co/);
   const outgoing: string[] = [];
@@ -68,7 +69,7 @@ test('public server HTML contains the launch date and local poster before hydrat
   await expect(world(page)).toHaveAttribute('data-state', 'ready', {
     timeout: 45000,
   });
-  await expect(page).toHaveTitle('Reunite — พบกัน 24 พฤศจิกายน 2569');
+  await expect(page).toHaveTitle('Reunite — พบกัน 23 พฤศจิกายน 2569');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
     'กำลังกลับมา',
   );
@@ -79,6 +80,7 @@ test('public server HTML contains the launch date and local poster before hydrat
 test('stops GPU/CSS motion while keeping countdown live and respects reduced motion', async ({
   page,
 }) => {
+  await page.clock.install({ time: new Date(LAUNCH_AT - 3600000) });
   await probe(page);
   await page.goto('/coming-soon');
   await expect(world(page)).toHaveAttribute('data-state', 'ready', {
@@ -261,7 +263,7 @@ test('keeps real rendering useful on mobile, without JavaScript or without WebGL
   const staticPage = await noJs.newPage();
   await staticPage.goto('/coming-soon');
   await expect(
-    staticPage.getByText('24 พฤศจิกายน 2569', { exact: true }),
+    staticPage.getByText('23 พฤศจิกายน 2569', { exact: true }),
   ).toBeVisible();
   await expect(
     staticPage.getByAltText(
@@ -290,7 +292,7 @@ test('keeps real rendering useful on mobile, without JavaScript or without WebGL
   ).toBeVisible();
 });
 
-test('uses Thai midnight in every browser timezone, reaches zero once and opens the actual login', async ({
+test('uses 09:00 Bangkok time in every browser timezone, reaches zero once and opens the actual login', async ({
   browser,
   baseURL,
 }) => {
@@ -332,6 +334,7 @@ test('uses Thai midnight in every browser timezone, reaches zero once and opens 
 test('suspends offscreen/hidden rendering and retains pause during a slow model download', async ({
   page,
 }) => {
+  await page.clock.install({ time: new Date(LAUNCH_AT - 3600000) });
   await probe(page);
   await page.goto('/coming-soon');
   await expect(world(page)).toHaveAttribute('data-state', 'ready', {

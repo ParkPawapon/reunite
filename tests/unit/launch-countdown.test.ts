@@ -6,12 +6,12 @@ import {
 } from '@/components/coming-soon/launch';
 
 describe('Bangkok launch countdown', () => {
-  it('uses Buddhist year 2569 as Gregorian 2026 at Thai midnight', () => {
-    expect(LAUNCH_DATE).toBe('2026-11-24T00:00:00+07:00');
-    expect(new Date(LAUNCH_AT).toISOString()).toBe('2026-11-23T17:00:00.000Z');
+  it('uses Buddhist year 2569 as Gregorian 2026 at 09:00 Bangkok time', () => {
+    expect(LAUNCH_DATE).toBe('2026-11-23T09:00:00+07:00');
+    expect(new Date(LAUNCH_AT).toISOString()).toBe('2026-11-23T02:00:00.000Z');
     expect(countdownAt(Date.parse('2026-11-06T12:00:00Z'))).toEqual({
-      days: 17,
-      hours: 5,
+      days: 16,
+      hours: 14,
       minutes: 0,
       seconds: 0,
       launched: false,

@@ -1,7 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { useLaunchClock } from './launch-clock';
-import { countdownAt, LAUNCH_DATE, LAUNCH_DATE_LABEL } from './launch';
+import {
+  countdownAt,
+  LAUNCH_DATE,
+  LAUNCH_DATE_LABEL,
+  LAUNCH_TIME_LABEL,
+} from './launch';
 import styles from './coming-soon.module.css';
 
 const units = [
@@ -53,13 +58,13 @@ export function LaunchCountdown() {
         </div>
         <div className={styles.release}>
           <div className={styles.releaseDay} aria-hidden="true">
-            <strong>24</strong>
+            <strong>{LAUNCH_DATE.slice(8, 10)}</strong>
             <small>NOV</small>
           </div>
           <div className={styles.releaseCopy}>
             <p>เปิดภารกิจพร้อมกัน</p>
             <time dateTime={LAUNCH_DATE}>{LAUNCH_DATE_LABEL}</time>
-            <small>00:00 น. · เวลาไทย</small>
+            <small>{LAUNCH_TIME_LABEL} น. · เวลาไทย</small>
           </div>
         </div>
       </section>

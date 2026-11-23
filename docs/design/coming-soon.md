@@ -2,7 +2,7 @@
 
 The approved cinematic design is implemented as the public Next.js route `/coming-soon`. Open <http://localhost:3000/coming-soon> after starting the application. Visual approval was provided on 7 November 2026 (Asia/Bangkok).
 
-Launch is **24 November 2026 / 24 พฤศจิกายน 2569, 00:00 Asia/Bangkok**: `2026-11-24T00:00:00+07:00`, equivalent to `2026-11-23T17:00:00Z`.
+Launch is **23 November 2026 / 23 พฤศจิกายน 2569, 09:00 Asia/Bangkok** (`2026-11-23T09:00:00+07:00`), equivalent to `2026-11-23T02:00:00Z`.
 
 ## Visual direction
 
@@ -45,7 +45,7 @@ Static batching converts integer/normalized attributes to floating point before 
 
 ## Verification
 
-Meaningful unit coverage checks Thai midnight, the final millisecond, day/hour/minute carry, expired values, quantized positions, normalized normals/UVs, material separation and source immutability. The geometry tests live beside the frontend code so they resolve the frontend's Three.js dependency within its workspace.
+Meaningful unit coverage checks the Bangkok launch time, the final millisecond, day/hour/minute carry, expired values, quantized positions, normalized normals/UVs, material separation and source immutability. The geometry tests live beside the frontend code so they resolve the frontend's Three.js dependency within its workspace.
 
 `tests/browser/coming-soon.spec.ts` verifies the real production build: public SSR and local assets, actual GPU draw suspension during pause, countdown continuity, pixel changes through a complete orbit and keyboard reset, reduced motion, responsive widths 320–1920 px, automated axe WCAG A/AA scans, JavaScript-disabled content, missing WebGL, model HTTP failure, context loss/retry, timezone/deadline boundaries and real login navigation, lazy-chunk reload recovery, visibility/offscreen suspension and a pause chosen during model download. WebGL calls are instrumented only by the test; no debug API is shipped.
 

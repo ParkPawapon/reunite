@@ -20,7 +20,7 @@ Profile/photo updates and their typed notification inserts use a single paramete
 
 ## Public launch page
 
-`app/coming-soon/page.tsx` composes the approved public announcement from `components/coming-soon/`. A cached external-store clock updates only the countdown; its fixed Thai-midnight launch instant is shared with meaningful boundary tests. The shell and local poster are server-rendered, while the Three.js scene is imported after hydration. It has no API/database dependency.
+`app/coming-soon/page.tsx` composes the approved public announcement from `components/coming-soon/`. A cached external-store clock updates only the countdown; its fixed launch instant in Bangkok time is shared with meaningful boundary tests. The shell and local poster are server-rendered, while the Three.js scene is imported after hydration. It has no API/database dependency.
 
 The scene controller owns its request, WebGL context, input controls, observers, cached shadows and GPU resources. React cleanup aborts pending work and disposes the scene; model/context failures retry a new canvas, while a failed JavaScript chunk offers a full-document reload. Shared motion preferences govern the scene and original `AnimatedGoose`. The former generic root loader is scoped to `/login` to keep public launch HTML usable without JavaScript; existing resource-route skeletons remain.
 
