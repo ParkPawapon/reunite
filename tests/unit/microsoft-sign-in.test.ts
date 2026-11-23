@@ -43,12 +43,26 @@ const claims = {
 };
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   vi.useRealTimers();
 });
 
 describe('KMUTT account authorization', () => {
+  it('identifies missing claims without exposing their values', () => {
+    expect(() =>
+      requireKmuttIdentity(
+        { ...claims, acct: undefined, roles: undefined },
+        tenantId,
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        reason: 'invalid_claims',
+        claims: ['acct', 'roles'],
+      }),
+    );
+  });
   it('requires an assigned member and normalizes the directory UPN', () => {
     expect(requireKmuttIdentity(claims, tenantId)).toEqual({
       tenantId,
@@ -249,11 +263,21 @@ it('uses the verified authorization code flow and rejects invalid responses', as
   expect(loginWithMicrosoft).not.toHaveBeenCalled();
 
   tokenClaims = { ...valid, acct: '1' };
+  vi.stubEnv('LOG_LEVEL', 'info');
+  const info = vi.spyOn(console, 'info').mockImplementation(() => {});
   expect(
     (await callbackMicrosoft(new Request(response, { headers }))).headers.get(
       'location',
     ),
   ).toContain('microsoft=denied');
+  expect(info).toHaveBeenCalledWith(
+    JSON.stringify({
+      level: 'info',
+      event: 'microsoft_access_denied',
+      reason: 'not_member',
+    }),
+  );
+  vi.stubEnv('LOG_LEVEL', 'silent');
   expect(loginWithMicrosoft).not.toHaveBeenCalled();
   tokenClaims = valid;
   loginWithMicrosoft.mockResolvedValue({ token: 'y'.repeat(43) });

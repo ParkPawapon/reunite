@@ -1,4 +1,5 @@
 import 'server-only';
+import type { MicrosoftAccessDenied } from '@/modules/auth/infrastructure/microsoft-oidc';
 
 export function logMatchingFailure() {
   if (process.env.LOG_LEVEL !== 'silent')
@@ -16,6 +17,21 @@ export function logMicrosoftSignInFailure(
         level: 'error',
         event: 'microsoft_sign_in_failed',
         stage,
+      }),
+    );
+}
+
+export function logMicrosoftAccessDenied(
+  reason: MicrosoftAccessDenied['reason'],
+  claims?: MicrosoftAccessDenied['claims'],
+) {
+  if ((process.env.LOG_LEVEL ?? 'info') === 'info')
+    console.info(
+      JSON.stringify({
+        level: 'info',
+        event: 'microsoft_access_denied',
+        reason,
+        claims,
       }),
     );
 }

@@ -30,6 +30,8 @@ Open the application on the exact configured origin when testing. Use a separate
 
 Both the member claim and assigned app role are enforced on every Microsoft sign-in, including for previously linked users. Removing an assignment prevents the next Microsoft sign-in. If immediate account access removal is required, revoke the user's existing Reunite sessions through the database operator process. Any separately provisioned password access must be managed under the existing account policy.
 
+When sign-in returns to `/login?microsoft=denied`, check the server's `microsoft_access_denied` event with `LOG_LEVEL=info`. For `invalid_claims`, the log lists the missing or malformed claim names. An `acct` or `upn` entry points to the ID token configuration. A `roles` entry or `missing_app_role` points to the Enterprise application assignment. `invalid_kmutt_upn` means the directory username does not meet Reunite's domain rule. The log contains no token or claim values.
+
 ## Existing accounts
 
 A first Microsoft sign-in creates an account only if the Entra identity is eligible and its normalized UPN is available in `users.email`. A matching email produces a conflict and leaves the existing account untouched. Microsoft-only users can edit profile details while their sign-in email is read-only. Previously linked users retain their existing profile and password method, if present.

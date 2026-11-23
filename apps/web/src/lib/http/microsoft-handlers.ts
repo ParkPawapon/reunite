@@ -3,11 +3,15 @@ import { AppError } from '@campus/shared';
 import { microsoftConfig } from '@/config/microsoft';
 import { serverConfig } from '@/config/server';
 import { services } from '@/lib/composition';
-import { logMicrosoftSignInFailure } from '@/lib/observability/logger';
+import {
+  logMicrosoftAccessDenied,
+  logMicrosoftSignInFailure,
+} from '@/lib/observability/logger';
 import { assertSameOrigin } from '@/lib/security/origin';
 import { readSessionToken, sessionCookie } from '@/lib/security/session';
 import {
   finishMicrosoftAuthorization,
+  MicrosoftAccessDenied,
   MICROSOFT_CALLBACK,
   MICROSOFT_TRANSACTION_TTL,
   readMicrosoftTransaction,
@@ -145,10 +149,12 @@ export const callbackMicrosoft = (request: Request) =>
       );
       return response;
     } catch (error) {
-      if (error instanceof AppError) {
-        if (error.code === 'MICROSOFT_ACCESS_DENIED') return reject('denied');
-        if (error.code === 'CONFLICT') return reject('conflict');
+      if (error instanceof MicrosoftAccessDenied) {
+        logMicrosoftAccessDenied(error.reason, error.claims);
+        return reject('denied');
       }
+      if (error instanceof AppError && error.code === 'CONFLICT')
+        return reject('conflict');
       logMicrosoftSignInFailure(stage);
       return reject(stage === 'configuration' ? 'unavailable' : 'failed');
     }
