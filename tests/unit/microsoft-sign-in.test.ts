@@ -38,7 +38,6 @@ const claims = {
   oid: objectId,
   upn: '  MEMBER@KMUTT.AC.TH  ',
   acct: '0',
-  roles: ['Reunite.SignIn'],
   name: 'Campus Member',
 };
 
@@ -53,30 +52,28 @@ describe('KMUTT account authorization', () => {
   it('identifies missing claims without exposing their values', () => {
     expect(() =>
       requireKmuttIdentity(
-        { ...claims, acct: undefined, roles: undefined },
+        { ...claims, acct: undefined, upn: undefined },
         tenantId,
       ),
     ).toThrow(
       expect.objectContaining({
         reason: 'invalid_claims',
-        claims: ['acct', 'roles'],
+        claims: ['upn', 'acct'],
       }),
     );
   });
-  it('requires an assigned member and normalizes the directory UPN', () => {
+  it('requires a member and normalizes the directory UPN', () => {
     expect(requireKmuttIdentity(claims, tenantId)).toEqual({
       tenantId,
       objectId,
       email: 'member@kmutt.ac.th',
-      name: 'Campus Member',
+      name: 'member',
     });
   });
 
   it.each([
     { acct: 1 },
     { acct: undefined },
-    { roles: undefined },
-    { roles: ['OtherRole'] },
     { oid: 'invalid' },
     { oid: undefined },
     { tid: undefined },
@@ -280,7 +277,22 @@ it('uses the verified authorization code flow and rejects invalid responses', as
   vi.stubEnv('LOG_LEVEL', 'silent');
   expect(loginWithMicrosoft).not.toHaveBeenCalled();
   tokenClaims = valid;
-  loginWithMicrosoft.mockResolvedValue({ token: 'y'.repeat(43) });
+  loginWithMicrosoft.mockResolvedValueOnce({
+    token: 'y'.repeat(43),
+    profileCompletionRequired: true,
+  });
+  const onboarding = await callbackMicrosoft(
+    new Request(response, { headers }),
+  );
+  expect(onboarding.headers.get('location')).toBe(
+    `${callback.origin}/complete-profile`,
+  );
+  expect(onboarding.headers.getSetCookie()).toHaveLength(2);
+  loginWithMicrosoft.mockClear();
+  loginWithMicrosoft.mockResolvedValue({
+    token: 'y'.repeat(43),
+    profileCompletionRequired: false,
+  });
   const completed = await callbackMicrosoft(new Request(response, { headers }));
   expect(completed.headers.get('location')).toBe(`${callback.origin}/profile`);
   expect(completed.headers.get('cache-control')).toBe('no-store');

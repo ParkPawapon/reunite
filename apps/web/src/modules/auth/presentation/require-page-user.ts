@@ -8,6 +8,12 @@ import { readSessionToken } from '@/lib/security/session';
 import { loginPath } from './login-destination';
 
 export async function requirePageUser(destination = '/dashboard') {
+  const session = await requirePageSession(destination);
+  if (session.profileCompletionRequired) redirect('/complete-profile');
+  return session.profile;
+}
+
+export async function requirePageSession(destination = '/dashboard') {
   // Enter request-time rendering before reading deployment-only configuration.
   const requestHeaders = await headers();
   const config = serverConfig();
@@ -19,7 +25,7 @@ export async function requirePageUser(destination = '/dashboard') {
   );
   if (!token) redirect(loginPath(destination));
   try {
-    return await services().auth.requireUser(token);
+    return await services().auth.requireSession(token);
   } catch (error) {
     if (error instanceof AppError && error.status === 401)
       redirect(loginPath(destination));

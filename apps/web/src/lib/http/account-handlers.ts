@@ -5,7 +5,10 @@ import { services, type createServices } from '@/lib/composition';
 import { serverConfig } from '@/config/server';
 import { assertSameOrigin } from '@/lib/security/origin';
 import { readSessionToken } from '@/lib/security/session';
-import { profileSchema } from '@/modules/users/presentation/profile-schema';
+import {
+  profileCompletionSchema,
+  profileSchema,
+} from '@/modules/users/presentation/profile-schema';
 import {
   normalizeProfileImage,
   MAX_AVATAR_BYTES,
@@ -41,13 +44,24 @@ async function imageBody(request: Request) {
 export function createAccountHandlers(
   resolve: () => ReturnType<typeof createServices> = services,
 ) {
+  const currentToken = (request: Request) =>
+    readSessionToken(request, serverConfig().SESSION_COOKIE_NAME);
   const user = (request: Request) =>
-    resolve().auth.requireUser(
-      readSessionToken(request, serverConfig().SESSION_COOKIE_NAME),
-    );
+    resolve().auth.requireUser(currentToken(request));
   const mutation = (request: Request) =>
     assertSameOrigin(request, serverConfig().APP_BASE_URL);
   return {
+    completeProfile: (request: Request) =>
+      api(request, async () => {
+        mutation(request);
+        const { profile, profileCompletionRequired } =
+          await resolve().auth.requireSession(currentToken(request));
+        if (profileCompletionRequired) {
+          const input = parse(profileCompletionSchema, await jsonBody(request));
+          await resolve().profile.complete(profile.userId, input);
+        }
+        return success({ completed: true });
+      }),
     profile: (request: Request) =>
       api(request, async () =>
         success(await resolve().profile.get((await user(request)).userId)),

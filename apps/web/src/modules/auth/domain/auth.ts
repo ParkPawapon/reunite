@@ -1,6 +1,10 @@
 import type { UserProfile } from '../../users/domain/user';
 
 export type Credentials = { profile: UserProfile; passwordHash: string };
+export type SessionUser = {
+  profile: UserProfile;
+  profileCompletionRequired: boolean;
+};
 export type MicrosoftIdentity = {
   tenantId: string;
   objectId: string;
@@ -12,14 +16,14 @@ export interface AuthRepository {
   findCredentials(email: string): Promise<Credentials | null>;
   findOrCreateMicrosoftUser(
     identity: MicrosoftIdentity,
-  ): Promise<UserProfile | null>;
+  ): Promise<SessionUser | null>;
   createSession(
     hash: string,
     userId: number,
     expiresAt: Date,
     previousHash?: string,
   ): Promise<void>;
-  findSession(hash: string): Promise<UserProfile | null>;
+  findSession(hash: string): Promise<SessionUser | null>;
   revokeSession(hash: string): Promise<void>;
 }
 export interface AuthCryptography {

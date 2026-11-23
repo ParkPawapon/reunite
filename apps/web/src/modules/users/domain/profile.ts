@@ -22,11 +22,22 @@ export type ProfileInput = {
   phone: string | null;
   currentPassword?: string;
 };
+export type ProfileCompletionInput = Pick<
+  ProfileInput,
+  'firstName' | 'lastName'
+> & {
+  studentId: string;
+};
 export interface ProfileRepository {
   get(userId: number): Promise<StudentProfile | null>;
   credentials(
     userId: number,
-  ): Promise<{ email: string; hash: string | null } | null>;
+  ): Promise<{
+    email: string;
+    hash: string | null;
+    microsoftLinked: boolean;
+  } | null>;
+  complete(userId: number, input: ProfileCompletionInput): Promise<void>;
   update(
     userId: number,
     input: ProfileInput,

@@ -39,6 +39,17 @@ export function createHandlers(deps: Dependencies = defaults) {
     readSessionToken(request, serverConfig().SESSION_COOKIE_NAME);
   const requireUser = (request: Request) =>
     deps.services().auth.requireUser(currentToken(request));
+  const requireCompletedProfileIfSignedIn = async (request: Request) => {
+    if (!request.headers.has('cookie')) return;
+    const token = currentToken(request);
+    if (!token) return;
+    try {
+      await deps.services().auth.requireUser(token);
+    } catch (error) {
+      // Public catalog reads also support anonymous and expired sessions.
+      if (!(error instanceof AppError && error.status === 401)) throw error;
+    }
+  };
   const mutation = (request: Request) =>
     assertSameOrigin(request, serverConfig().APP_BASE_URL);
   return {
@@ -93,11 +104,24 @@ export function createHandlers(deps: Dependencies = defaults) {
         return response;
       }),
     me: (request: Request) =>
-      api(request, async () => success(await requireUser(request))),
+      api(request, async () => {
+        const { profile } = await deps
+          .services()
+          .auth.requireSession(currentToken(request));
+        return success(profile);
+      }),
     categories: (request: Request) =>
-      listCategories(request, () => deps.services().categories),
+      listCategories(
+        request,
+        () => deps.services().categories,
+        requireCompletedProfileIfSignedIn,
+      ),
     locations: (request: Request) =>
-      listLocations(request, () => deps.services().locations),
+      listLocations(
+        request,
+        () => deps.services().locations,
+        requireCompletedProfileIfSignedIn,
+      ),
     listReports: (request: Request) =>
       listReports(request, requireUser, () => deps.services().reports),
     getReport: (request: Request, context: RouteContext) =>

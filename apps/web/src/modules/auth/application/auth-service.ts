@@ -47,7 +47,10 @@ export class AuthService {
         409,
         'Microsoft identity requires a verified account link',
       );
-    return this.startSession(user, ttlSeconds, previousToken);
+    return {
+      ...(await this.startSession(user.profile, ttlSeconds, previousToken)),
+      profileCompletionRequired: user.profileCompletionRequired,
+    };
   }
   private async startSession(
     profile: UserProfile,
@@ -64,6 +67,16 @@ export class AuthService {
     return { profile, token };
   }
   async requireUser(token: string | undefined) {
+    const session = await this.requireSession(token);
+    if (session.profileCompletionRequired)
+      throw new AppError(
+        'PROFILE_COMPLETION_REQUIRED',
+        403,
+        'Complete your profile to continue',
+      );
+    return session.profile;
+  }
+  async requireSession(token: string | undefined) {
     if (!token)
       throw new AppError('UNAUTHORIZED', 401, 'Authentication required');
     const user = await this.repository.findSession(

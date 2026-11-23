@@ -140,7 +140,10 @@ export const callbackMicrosoft = (request: Request) =>
         readSessionToken(request, config.SESSION_COOKIE_NAME),
       );
       const response = redirectTo(
-        new URL(next, origin),
+        new URL(
+          result.profileCompletionRequired ? '/complete-profile' : next,
+          origin,
+        ),
         transactionCookie('', secure),
       );
       response.headers.append(

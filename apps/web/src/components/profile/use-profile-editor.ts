@@ -25,6 +25,7 @@ function message(error: unknown) {
       return 'อีเมลหรือรหัสนักศึกษานี้ถูกใช้แล้ว หรือข้อมูลมีการเปลี่ยนแปลง กรุณาตรวจสอบอีกครั้ง';
     if (error.code === 'PASSWORD_REQUIRED')
       return 'กรุณายืนยันรหัสผ่านปัจจุบันให้ถูกต้องเพื่อเปลี่ยนอีเมล';
+    if (error.code === 'STUDENT_ID_REQUIRED') return 'กรุณากรอกรหัสนักศึกษา';
     if (error.status === 429)
       return 'ลองหลายครั้งเกินไป กรุณารอ 15 นาทีแล้วลองใหม่';
     if (error.status === 413) return 'รูปต้องมีขนาดไม่เกิน 2 MB';

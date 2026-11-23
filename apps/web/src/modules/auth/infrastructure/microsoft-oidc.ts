@@ -141,9 +141,7 @@ const identityClaims = z.object({
   oid: entraId,
   upn: z.string(),
   acct: z.union([z.number(), z.string()]),
-  roles: z.array(z.string()),
   idp: z.string().optional(),
-  name: z.string().optional(),
 });
 
 export class MicrosoftAccessDenied extends AppError {
@@ -152,16 +150,11 @@ export class MicrosoftAccessDenied extends AppError {
       | 'invalid_claims'
       | 'tenant_mismatch'
       | 'not_member'
-      | 'missing_app_role'
       | 'external_identity_provider'
       | 'invalid_kmutt_upn',
     readonly claims?: (keyof typeof identityClaims.shape)[],
   ) {
-    super(
-      'MICROSOFT_ACCESS_DENIED',
-      403,
-      'An assigned KMUTT member account is required',
-    );
+    super('MICROSOFT_ACCESS_DENIED', 403, 'A KMUTT member account is required');
   }
 }
 
@@ -182,12 +175,10 @@ export function requireKmuttIdentity(
       ),
     );
   }
-  const { tid, oid, upn, acct, roles, idp, name } = parsed.data;
+  const { tid, oid, upn, acct, idp } = parsed.data;
   if (tid.toLowerCase() !== tenantId)
     throw new MicrosoftAccessDenied('tenant_mismatch');
   if (acct !== 0 && acct !== '0') throw new MicrosoftAccessDenied('not_member');
-  if (!roles.includes('Reunite.SignIn'))
-    throw new MicrosoftAccessDenied('missing_app_role');
   if (
     idp !== undefined &&
     idp !== authority(tenantId) &&
@@ -205,12 +196,10 @@ export function requireKmuttIdentity(
     extra !== undefined
   )
     throw new MicrosoftAccessDenied('invalid_kmutt_upn');
-  const displayName =
-    name?.replace(/[\u0000-\u001f\u007f]/g, '').trim() || username;
   return {
     tenantId,
     objectId: oid.toLowerCase(),
     email,
-    name: Array.from(displayName).slice(0, 100).join(''),
+    name: Array.from(username).slice(0, 100).join(''),
   };
 }

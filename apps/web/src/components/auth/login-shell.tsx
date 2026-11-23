@@ -8,10 +8,12 @@ export function LoginShell({
   children,
   ready = false,
   failed = false,
+  headingId = 'login-heading',
 }: {
   children: ReactNode;
   ready?: boolean;
   failed?: boolean;
+  headingId?: string;
 }) {
   const [privateMode, setPrivateMode] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -180,7 +182,7 @@ export function LoginShell({
       <section
         className={styles.formPanel}
         aria-label={ready ? undefined : 'กำลังเตรียมหน้าเข้าสู่ระบบ'}
-        aria-labelledby={ready ? 'login-heading' : undefined}
+        aria-labelledby={ready ? headingId : undefined}
         aria-busy={busy}
         onFocusCapture={(event) =>
           setPrivateMode(

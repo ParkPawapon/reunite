@@ -1,10 +1,12 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
 import type {
+  ProfileCompletionInput,
   ProfileInput,
   ProfileRepository,
   StudentProfile,
 } from '../domain/profile';
+import { profileCompletionRequired } from './profile-completion';
 
 type Row = {
   user_id: number;
@@ -46,12 +48,40 @@ export class PgProfileRepository implements ProfileRepository {
     return row ? map(row) : null;
   }
   async credentials(userId: number) {
-    const [row] = await query<{ email: string; password_hash: string | null }>(
+    const [row] = await query<{
+      email: string;
+      password_hash: string | null;
+      microsoft_linked: boolean;
+    }>(
       this.db,
-      'SELECT email, password_hash FROM users WHERE user_id=$1',
+      'SELECT email, password_hash, microsoft_tenant_id IS NOT NULL AS microsoft_linked FROM users WHERE user_id=$1',
       [userId],
     );
-    return row ? { email: row.email, hash: row.password_hash } : null;
+    return row
+      ? {
+          email: row.email,
+          hash: row.password_hash,
+          microsoftLinked: row.microsoft_linked,
+        }
+      : null;
+  }
+  async complete(userId: number, input: ProfileCompletionInput) {
+    // The predicate makes a repeated or concurrent submission a no-op after the first completion.
+    await query(
+      this.db,
+      `WITH completed AS (
+        UPDATE users SET name=$2, first_name=$3, last_name=$4, student_id=$5
+        WHERE user_id=$1 AND ${profileCompletionRequired}
+        RETURNING user_id
+      ) INSERT INTO notifications (user_id,kind) SELECT user_id,'PROFILE_UPDATED' FROM completed`,
+      [
+        userId,
+        `${input.firstName} ${input.lastName}`,
+        input.firstName,
+        input.lastName,
+        input.studentId,
+      ],
+    );
   }
   async update(
     userId: number,
@@ -66,6 +96,7 @@ export class PgProfileRepository implements ProfileRepository {
         student_id=$6, faculty=$7, department=$8, major=$9, phone=$10
       WHERE user_id=$1 AND password_hash IS NOT DISTINCT FROM $11
         AND ($11 IS NOT NULL OR email=$5)
+        AND (microsoft_tenant_id IS NULL OR $6::varchar IS NOT NULL)
         AND ROW(first_name,last_name,email,student_id,faculty,department,major,phone)
           IS DISTINCT FROM ROW($3::varchar,$4::varchar,$5::varchar,$6::varchar,$7::varchar,$8::varchar,$9::varchar,$10::varchar)
       RETURNING ${columns}
@@ -73,7 +104,8 @@ export class PgProfileRepository implements ProfileRepository {
       INSERT INTO notifications (user_id,kind) SELECT user_id,'PROFILE_UPDATED' FROM changed
     ) SELECT ${columns} FROM changed UNION ALL
       SELECT ${columns} FROM users WHERE user_id=$1 AND password_hash IS NOT DISTINCT FROM $11
-        AND ($11 IS NOT NULL OR email=$5) AND NOT EXISTS (SELECT 1 FROM changed)`,
+        AND ($11 IS NOT NULL OR email=$5) AND (microsoft_tenant_id IS NULL OR $6::varchar IS NOT NULL)
+        AND NOT EXISTS (SELECT 1 FROM changed)`,
       [
         userId,
         `${input.firstName} ${input.lastName}`,

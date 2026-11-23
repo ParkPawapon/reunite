@@ -8,13 +8,20 @@ const optionalText = (max: number) =>
     .max(max)
     .transform((value) => value || null)
     .nullable();
+const name = z.string().trim().min(1).max(100);
+const studentId = /^[0-9]{8,20}$/;
+export const profileCompletionSchema = z.strictObject({
+  firstName: name,
+  lastName: name,
+  studentId: z.string().trim().regex(studentId),
+});
 export const profileSchema = z
   .object({
-    firstName: z.string().trim().min(1).max(100),
-    lastName: z.string().trim().min(1).max(100),
+    firstName: name,
+    lastName: name,
     email: z.string().transform(normalizeEmail).pipe(z.email().max(255)),
     studentId: optionalText(20).refine(
-      (value) => value === null || /^[0-9]{8,20}$/.test(value),
+      (value) => value === null || studentId.test(value),
     ),
     faculty: optionalText(180),
     department: optionalText(180),
