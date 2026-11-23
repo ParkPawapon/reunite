@@ -15,7 +15,6 @@ export function LoginShell({
   failed?: boolean;
   headingId?: string;
 }) {
-  const [privateMode, setPrivateMode] = useState(false);
   const [paused, setPaused] = useState(false);
   const { reducedMotion, visible } = useMotionPolicy();
   const running = visible && !reducedMotion && !paused;
@@ -157,11 +156,7 @@ export function LoginShell({
               strokeWidth="2.5"
             />
           </svg>
-          <AnimatedGoose
-            className={styles.goose}
-            running={running}
-            privateMode={privateMode}
-          />
+          <AnimatedGoose className={styles.goose} running={running} />
         </div>
         <div className={styles.storyFooter}>
           <span>อยู่ใกล้กัน ช่วยกันหา</span>
@@ -184,18 +179,6 @@ export function LoginShell({
         aria-label={ready ? undefined : 'กำลังเตรียมหน้าเข้าสู่ระบบ'}
         aria-labelledby={ready ? headingId : undefined}
         aria-busy={busy}
-        onFocusCapture={(event) =>
-          setPrivateMode(
-            event.target instanceof Element &&
-              !!event.target.closest('[data-login-password]'),
-          )
-        }
-        onBlurCapture={(event) =>
-          setPrivateMode(
-            event.relatedTarget instanceof Element &&
-              !!event.relatedTarget.closest('[data-login-password]'),
-          )
-        }
       >
         {children}
         <p className={styles.formFooter}>

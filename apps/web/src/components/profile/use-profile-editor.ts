@@ -174,9 +174,21 @@ export function useProfileEditor(initial: StudentProfile) {
     }
   }
   function change(key: keyof ProfileFields, value: string) {
-    setValues((current) => ({ ...current, [key]: value }));
+    const resetDepartment = key === 'faculty';
+    const resetMajor = resetDepartment || key === 'department';
+    setValues((current) => ({
+      ...current,
+      [key]: value,
+      ...(resetDepartment ? { department: '' } : {}),
+      ...(resetMajor ? { major: '' } : {}),
+    }));
     setSuccess('');
-    setErrors((current) => ({ ...current, [key]: undefined }));
+    setErrors((current) => ({
+      ...current,
+      [key]: undefined,
+      ...(resetDepartment ? { department: undefined } : {}),
+      ...(resetMajor ? { major: undefined } : {}),
+    }));
   }
   function cancel() {
     setValues(fields(profile));

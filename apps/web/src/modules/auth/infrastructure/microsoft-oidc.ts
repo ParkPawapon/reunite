@@ -201,12 +201,16 @@ export function requireKmuttIdentity(
     firstName: profileNameSchema.safeParse(parsed.data.given_name).data ?? null,
     lastName: profileNameSchema.safeParse(parsed.data.family_name).data ?? null,
   };
-  if (process.env.NODE_ENV === 'development') console.info(JSON.stringify({ openidClaims: Object.keys(parsed.data), user: { upn: email, ...profileDraft } })); // eslint-disable-line no-console
   return {
     tenantId,
     objectId: oid.toLowerCase(),
     email,
-    name: Array.from(username).slice(0, 100).join(''),
+    name:
+      [profileDraft.firstName, profileDraft.lastName]
+        .filter(Boolean)
+        .join(' ') ||
+      profileNameSchema.safeParse(parsed.data.name).data ||
+      Array.from(username).slice(0, 100).join(''),
     ...(Object.values(profileDraft).some((value) => value !== null)
       ? { profileDraft }
       : {}),

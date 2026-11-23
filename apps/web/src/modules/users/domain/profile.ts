@@ -26,7 +26,12 @@ export type EducationFields = Pick<
   ProfileInput,
   'studentId' | 'faculty' | 'department' | 'major'
 >;
-export type ProfileCompletionInput = Partial<EducationFields>;
+export type ProfileCompletionInput = {
+  studentId: string;
+  faculty: string;
+  department: string | null;
+  major: string;
+};
 export type ProfileNames = Pick<StudentProfile, 'firstName' | 'lastName'>;
 export interface ProfileRepository {
   get(userId: number): Promise<StudentProfile | null>;

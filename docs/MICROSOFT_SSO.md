@@ -34,7 +34,7 @@ When sign-in returns to `/login?microsoft=denied`, check the server's `microsoft
 
 ## Profile completion
 
-A first-time Microsoft user starts at `/complete-profile` and can enter their student ID, faculty, department, and major. All four fields are optional. Completion unlocks the dashboard and protected APIs using the existing session.
+A first-time Microsoft user starts at `/complete-profile`. They must provide their student ID, faculty, and major, plus the department when KMUTT lists one for the program. Completion unlocks the dashboard and protected APIs using the existing session.
 
 To populate account names from Entra, add `given_name` and `family_name` as optional **ID token** claims. Reunite capitalizes the submitted names and allows users to supply or edit them in the regular profile editor. [Microsoft optional claims](https://learn.microsoft.com/entra/identity-platform/optional-claims)
 
@@ -58,7 +58,7 @@ Confirm exactly one returned row before committing. A uniqueness error or zero r
 ## Local verification and deployment
 
 1. Apply `bun run db:migrate` to the local database. Set the Microsoft variables and `APP_BASE_URL=http://localhost:3000`, run `bun run env:check`, and start `bun run dev`.
-2. While signed out, visit `/profile` or another protected page and choose **Continue with Microsoft**. Verify that a new eligible KMUTT member reaches `/complete-profile`, that protected APIs return 403 until completion, and that submitting valid profile data opens the dashboard. Repeat sign-in and confirm the original protected destination is restored. Verify that logout returns the protected API to HTTP 401.
-3. Test cancellation, a guest, an external tenant account and a personal Microsoft account. If assignment is required by the tenant, also test an unassigned account. Try a KMUTT UPN that conflicts with a locally provisioned password account. Verify that the conflict requires verified linking and that password login still works.
+2. While signed out, visit `/profile` or another protected page and choose **Sign in with KMUTT account**. Verify that a new eligible KMUTT member reaches `/complete-profile`, that protected APIs return 403 until completion, and that submitting valid profile data opens the dashboard. Repeat sign-in and confirm the original protected destination is restored. Verify that logout returns the protected API to HTTP 401.
+3. Test cancellation, a guest, an external tenant account and a personal Microsoft account. If assignment is required by the tenant, also test an unassigned account. Try a KMUTT UPN that conflicts with a locally provisioned password account. Verify that the conflict requires verified linking and that the password API still works for existing accounts.
 4. Run `bun run lint`, `bun run typecheck`, and `bun run test` against the [isolated integration test database](DEVELOPMENT.md). Automated tests simulate Entra responses, so they can run without tenant credentials.
 5. Before enabling Microsoft sign-in in production, use the migration connection to apply migrations through `0013`, reapply [runtime grants](../infra/supabase/runtime-grants.sql), set the required server variables, and register the final HTTPS redirect URI. Configure any hosting, proxy or tracing logs to omit callback query strings. When rotating the client secret, in-flight sign-ins will need to restart.

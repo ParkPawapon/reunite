@@ -63,11 +63,13 @@ describe('KMUTT account authorization', () => {
     );
   });
   it('requires a member and normalizes the directory UPN', () => {
-    expect(requireKmuttIdentity(claims, tenantId)).toEqual({
+    expect(
+      requireKmuttIdentity({ ...claims, name: 'campus MEMBER' }, tenantId),
+    ).toEqual({
       tenantId,
       objectId,
       email: 'member@kmutt.ac.th',
-      name: 'member',
+      name: 'Campus Member',
     });
   });
   it('reads valid optional names and ignores student ID claims', () => {
@@ -78,10 +80,21 @@ describe('KMUTT account authorization', () => {
       'extn.studentId': '0123456789',
       student_id: '9999999999',
     };
-    expect(requireKmuttIdentity(studentClaims, tenantId).profileDraft).toEqual({
-      firstName: 'Campus',
-      lastName: 'McDonald-Smith',
+    expect(requireKmuttIdentity(studentClaims, tenantId)).toMatchObject({
+      name: 'Campus McDonald-Smith',
+      profileDraft: { firstName: 'Campus', lastName: 'McDonald-Smith' },
     });
+    expect(
+      requireKmuttIdentity(
+        {
+          ...studentClaims,
+          name: undefined,
+          given_name: undefined,
+          family_name: undefined,
+        },
+        tenantId,
+      ).name,
+    ).toBe('member');
     expect(
       requireKmuttIdentity(
         {

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import sharp from 'sharp';
 import { browserAccount } from './test-account';
@@ -89,9 +89,37 @@ test('edits a real private profile, uploads a photo and reads account notificati
   await page.getByLabel('ชื่อจริง', { exact: false }).fill('สมชาย');
   await page.getByLabel('นามสกุล', { exact: false }).fill('ใจดี');
   await page.getByLabel('รหัสนักศึกษา', { exact: true }).fill('1234567890123');
-  await page.getByLabel('คณะ', { exact: true }).fill('คณะสำหรับทดสอบ');
-  await page.getByLabel('ภาควิชา', { exact: true }).fill('ภาควิชาสำหรับทดสอบ');
-  await page.getByLabel('สาขาวิชา', { exact: true }).fill('สาขาสำหรับทดสอบ');
+  const faculty = page.getByRole('combobox', { name: 'คณะ', exact: true });
+  const department = page.getByRole('combobox', {
+    name: 'ภาควิชา',
+    exact: true,
+  });
+  const major = page.getByRole('combobox', { name: 'สาขาวิชา', exact: true });
+  async function choose(field: Locator, label: string) {
+    await field.click();
+    await page.getByRole('option', { name: label, exact: true }).click();
+  }
+  await expect(page.locator('#profile-faculty-label')).toHaveAttribute(
+    'data-shrink',
+    'false',
+  );
+  await expect(page.locator('#profile-department-label')).toHaveAttribute(
+    'data-shrink',
+    'false',
+  );
+  await expect(page.locator('#profile-major-label')).toHaveAttribute(
+    'data-shrink',
+    'false',
+  );
+  await expect(department).toBeDisabled();
+  await expect(major).toBeDisabled();
+  await choose(faculty, 'คณะวิทยาศาสตร์');
+  await choose(department, 'ภาควิชาคณิตศาสตร์');
+  await choose(major, 'วิทยาการคอมพิวเตอร์ประยุกต์');
+  await expect(page.locator('#profile-major-label')).toHaveAttribute(
+    'data-shrink',
+    'true',
+  );
   await page.getByLabel('เบอร์โทรศัพท์', { exact: true }).fill('0812345678');
   await page
     .getByRole('button', { name: 'บันทึกการเปลี่ยนแปลง', exact: true })
@@ -99,6 +127,27 @@ test('edits a real private profile, uploads a photo and reads account notificati
   await expect(page.getByRole('status')).toContainText(
     'บันทึกข้อมูลเรียบร้อยแล้ว',
   );
+  expect(
+    await (await page.request.get('/api/v1/profile')).json(),
+  ).toMatchObject({
+    data: {
+      faculty: 'คณะวิทยาศาสตร์',
+      department: 'ภาควิชาคณิตศาสตร์',
+      major: 'วิทยาการคอมพิวเตอร์ประยุกต์',
+    },
+  });
+  await choose(department, 'ภาควิชาเคมี');
+  await expect(page.locator('#profile-major-label')).toHaveAttribute(
+    'data-shrink',
+    'false',
+  );
+  await choose(faculty, 'คณะเทคโนโลยีสารสนเทศ');
+  await expect(department).toBeDisabled();
+  await choose(major, 'วิทยาการคอมพิวเตอร์ (หลักสูตรภาษาอังกฤษ)');
+  await page.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
+  await expect(faculty).toHaveText('คณะวิทยาศาสตร์');
+  await expect(department).toHaveText('ภาควิชาคณิตศาสตร์');
+  await expect(major).toHaveText('วิทยาการคอมพิวเตอร์ประยุกต์');
   await expect(page.locator('#account-button')).toContainText('สมชาย ใจดี');
   await expect(
     page.getByRole('button', { name: 'การแจ้งเตือน ยังไม่อ่าน 1 รายการ' }),

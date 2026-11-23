@@ -1,14 +1,18 @@
 import { z } from 'zod';
 import { normalizeEmail } from '@campus/shared';
+import { kmuttDepartments } from '../domain/kmutt-education';
 
-const optionalText = (max: number) =>
+const boundedText = (max: number) =>
   z
     .string()
     .trim()
     .max(max)
-    .refine((value) => !value.includes('\0'))
+    .refine((value) => !value.includes('\0'));
+const optionalText = (max: number) =>
+  boundedText(max)
     .transform((value) => value || null)
     .nullable();
+const requiredText = (max: number) => boundedText(max).min(1);
 export const profileNameSchema = z
   .string()
   .trim()
@@ -34,7 +38,19 @@ const educationFields = z.object({
   department: optionalText(180),
   major: optionalText(180),
 });
-export const profileCompletionSchema = educationFields.strict().partial();
+export const profileCompletionSchema = z
+  .strictObject({
+    studentId: z.string().trim().regex(studentId),
+    faculty: requiredText(180),
+    department: requiredText(180).nullable(),
+    major: requiredText(180),
+  })
+  .refine(
+    ({ faculty, department, major }) =>
+      department !== null ||
+      Boolean(kmuttDepartments(faculty)?.['']?.includes(major)),
+    { path: ['department'], error: 'Department is required for this program' },
+  );
 export const profileSchema = z
   .object({
     firstName: profileNameSchema,

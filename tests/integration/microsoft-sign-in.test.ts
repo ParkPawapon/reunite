@@ -318,13 +318,43 @@ it('preserves a password account through a collision and an explicit operator li
   await expect(application.profile.get(userId)).resolves.toMatchObject({
     phone: '0812345678',
   });
+  const endpoint = '/profile/complete';
+  const completion = {
+    studentId: '0987654321',
+    faculty: 'คณะเทคโนโลยีสารสนเทศ',
+    department: null,
+    major: 'วิทยาการคอมพิวเตอร์ (หลักสูตรภาษาอังกฤษ)',
+  };
+  for (const invalid of [
+    {},
+    { ...completion, studentId: '' },
+    { ...completion, faculty: '' },
+    { ...completion, department: undefined },
+    { ...completion, major: '' },
+    {
+      ...completion,
+      faculty: 'คณะวิศวกรรมศาสตร์',
+      major: 'วิศวกรรมคอมพิวเตอร์',
+    },
+  ]) {
+    expect(
+      (
+        await account.completeProfile(
+          request(endpoint, 'POST', linked.token, invalid),
+        )
+      ).status,
+    ).toBe(422);
+  }
   expect(
     (
       await account.completeProfile(
-        request('/profile/complete', 'POST', linked.token, {}),
+        request(endpoint, 'POST', linked.token, completion),
       )
     ).status,
   ).toBe(200);
+  await expect(application.profile.get(userId)).resolves.toMatchObject(
+    completion,
+  );
   await expect(
     application.auth.requireUser(linked.token),
   ).resolves.toMatchObject({ userId, name: 'Legacy member' });

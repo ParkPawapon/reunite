@@ -67,16 +67,16 @@ export class PgProfileRepository implements ProfileRepository {
       this.db,
       `WITH completed AS (
         UPDATE users SET name=COALESCE(NULLIF(concat_ws(' ', first_name, last_name), ''), name),
-          student_id=CASE WHEN $2::jsonb ? 'studentId' THEN $2::jsonb->>'studentId' ELSE student_id END,
-          faculty=CASE WHEN $2::jsonb ? 'faculty' THEN $2::jsonb->>'faculty' ELSE faculty END,
-          department=CASE WHEN $2::jsonb ? 'department' THEN $2::jsonb->>'department' ELSE department END,
-          major=CASE WHEN $2::jsonb ? 'major' THEN $2::jsonb->>'major' ELSE major END,
+          student_id=$2,
+          faculty=$3,
+          department=$4,
+          major=$5,
           profile_completed_at=CURRENT_TIMESTAMP,
           microsoft_student_id_draft=NULL
         WHERE user_id=$1 AND ${profileCompletionRequired}
         RETURNING user_id
       ) INSERT INTO notifications (user_id,kind) SELECT user_id,'PROFILE_UPDATED' FROM completed`,
-      [userId, JSON.stringify(input)],
+      [userId, input.studentId, input.faculty, input.department, input.major],
     );
   }
   async update(
