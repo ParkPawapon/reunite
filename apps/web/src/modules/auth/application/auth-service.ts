@@ -1,5 +1,10 @@
 import { AppError } from '@campus/shared';
-import type { AuthRepository, AuthCryptography } from '../domain/auth';
+import type {
+  AuthRepository,
+  AuthCryptography,
+  MicrosoftIdentity,
+} from '../domain/auth';
+import type { UserProfile } from '../../users/domain/user';
 
 export class AuthService {
   constructor(
@@ -28,13 +33,35 @@ export class AuthService {
         401,
         'Invalid email or password',
       );
+    return this.startSession(credentials.profile, ttlSeconds);
+  }
+  async loginWithMicrosoft(
+    identity: MicrosoftIdentity,
+    ttlSeconds: number,
+    previousToken?: string,
+  ) {
+    const user = await this.repository.findOrCreateMicrosoftUser(identity);
+    if (!user)
+      throw new AppError(
+        'CONFLICT',
+        409,
+        'Microsoft identity requires a verified account link',
+      );
+    return this.startSession(user, ttlSeconds, previousToken);
+  }
+  private async startSession(
+    profile: UserProfile,
+    ttlSeconds: number,
+    previousToken?: string,
+  ) {
     const token = this.cryptography.token();
     await this.repository.createSession(
       this.cryptography.digest(token),
-      credentials.profile.userId,
+      profile.userId,
       new Date(Date.now() + ttlSeconds * 1000),
+      previousToken ? this.cryptography.digest(previousToken) : undefined,
     );
-    return { profile: credentials.profile, token };
+    return { profile, token };
   }
   async requireUser(token: string | undefined) {
     if (!token)

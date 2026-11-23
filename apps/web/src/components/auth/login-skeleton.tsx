@@ -60,6 +60,11 @@ export function LoginSkeleton() {
           <Piece height="3.5rem" control="submit" />
         </div>
       </div>
+      <div className={styles.microsoftForm}>
+        <div className={styles.skeletonSubmit}>
+          <Piece height="3.5rem" control="microsoft" />
+        </div>
+      </div>
     </div>
   );
 }

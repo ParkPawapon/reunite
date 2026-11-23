@@ -5,8 +5,9 @@ import { AppError } from '@campus/shared';
 import { serverConfig } from '@/config/server';
 import { services } from '@/lib/composition';
 import { readSessionToken } from '@/lib/security/session';
+import { loginPath } from './login-destination';
 
-export async function requirePageUser(loginPath = '/login') {
+export async function requirePageUser(destination = '/dashboard') {
   // Enter request-time rendering before reading deployment-only configuration.
   const requestHeaders = await headers();
   const config = serverConfig();
@@ -16,11 +17,12 @@ export async function requirePageUser(loginPath = '/login') {
     }),
     config.SESSION_COOKIE_NAME,
   );
-  if (!token) redirect(loginPath);
+  if (!token) redirect(loginPath(destination));
   try {
     return await services().auth.requireUser(token);
   } catch (error) {
-    if (error instanceof AppError && error.status === 401) redirect(loginPath);
+    if (error instanceof AppError && error.status === 401)
+      redirect(loginPath(destination));
     throw error;
   }
 }

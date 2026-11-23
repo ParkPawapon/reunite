@@ -329,6 +329,17 @@
 .submit:disabled {
   cursor: wait;
 }
+.microsoftForm {
+  margin-top: 0.75rem;
+}
+.microsoftForm .submit {
+  border: 1px solid currentColor;
+  background: transparent;
+  color: var(--color-action-primary);
+}
+.microsoftForm .submit:hover:enabled {
+  background: var(--color-orange-50);
+}
 .page button:focus-visible,
 .page a:focus-visible,
 .alert:focus-visible {

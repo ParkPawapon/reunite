@@ -15,11 +15,20 @@ export class ProfileService {
     if (!profile) throw new AppError('NOT_FOUND', 404, 'Account unavailable');
     return profile;
   }
+  async canChangeEmail(userId: number) {
+    return Boolean((await this.repository.credentials(userId))?.hash);
+  }
   async update(userId: number, input: ProfileInput) {
     const credentials = await this.repository.credentials(userId);
     if (!credentials)
       throw new AppError('NOT_FOUND', 404, 'Account unavailable');
     if (input.email !== credentials.email) {
+      if (!credentials.hash)
+        throw new AppError(
+          'FORBIDDEN',
+          403,
+          'Microsoft sign-in accounts cannot change their email here',
+        );
       if (
         !input.currentPassword ||
         !(await this.confirmPassword(

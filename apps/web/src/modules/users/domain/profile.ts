@@ -24,11 +24,13 @@ export type ProfileInput = {
 };
 export interface ProfileRepository {
   get(userId: number): Promise<StudentProfile | null>;
-  credentials(userId: number): Promise<{ email: string; hash: string } | null>;
+  credentials(
+    userId: number,
+  ): Promise<{ email: string; hash: string | null } | null>;
   update(
     userId: number,
     input: ProfileInput,
-    expectedHash: string,
+    expectedHash: string | null,
   ): Promise<StudentProfile | null>;
   setAvatar(
     userId: number,

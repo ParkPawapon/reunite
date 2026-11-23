@@ -32,7 +32,7 @@ test('edits a real private profile, uploads a photo and reads account notificati
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/profile');
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/login\?next=%2Fprofile$/);
   expect((await page.request.get('/api/v1/profile')).status()).toBe(401);
   const login = await page.request.post('/api/v1/auth/login', {
     headers: { origin: 'http://localhost:3100' },

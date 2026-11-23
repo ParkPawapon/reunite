@@ -21,6 +21,74 @@ async function openLogin(page: import('@playwright/test').Page) {
   ).toBeVisible();
 }
 
+test('starts Microsoft sign-in once and returns a readable failure with the intended destination', async ({
+  page,
+}) => {
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/v1/auth/microsoft?*', async (route) => {
+    expect(route.request().method()).toBe('POST');
+    expect(new URL(route.request().url()).searchParams.get('next')).toBe(
+      '/map#from=N7&to=S3',
+    );
+    await gate;
+    await route.fulfill({
+      status: 303,
+      headers: {
+        location: '/login?next=%2Fmap%23from%3DN7%26to%3DS3&microsoft=denied',
+      },
+    });
+  });
+  await page.goto('/login?next=map#from=N7&to=S3');
+  const microsoft = page.getByRole('button', {
+    name: 'Continue with Microsoft',
+  });
+  await expect(microsoft).toBeEnabled();
+  let pendingControls: string[] | undefined;
+  await page.exposeFunction('recordMicrosoftPending', (controls: string[]) => {
+    pendingControls = controls;
+  });
+  await microsoft.evaluate((button) => {
+    const form = button.closest('form');
+    const panel = button.closest('[data-login-form]');
+    if (!form || !panel) throw new Error('Missing login controls');
+    const report = (
+      window as Window & {
+        recordMicrosoftPending?: (controls: string[]) => void;
+      }
+    ).recordMicrosoftPending;
+    if (!report) throw new Error('Missing pending-state observer');
+    // Playwright locators wait for the navigation to commit, so observe the
+    // outgoing document while the intercepted POST is still pending.
+    const observer = new MutationObserver(() => {
+      if (form.getAttribute('aria-busy') !== 'true') return;
+      observer.disconnect();
+      const disabled = panel.querySelectorAll('button[type="submit"]:disabled');
+      report(Array.from(disabled, (control) => control.textContent ?? ''));
+    });
+    observer.observe(form, {
+      attributes: true,
+      attributeFilter: ['aria-busy'],
+    });
+  });
+  await microsoft.click({ noWaitAfter: true });
+  try {
+    await expect
+      .poll(() => pendingControls)
+      .toEqual(['เข้าสู่ระบบ', 'กำลังเปิด Microsoft…']);
+  } finally {
+    release();
+  }
+  await expect(
+    page.locator('[data-login-form]').getByRole('alert'),
+  ).toContainText('กรุณาใช้บัญชี Microsoft ของ มจธ. ที่ได้รับสิทธิ์เข้าใช้งาน');
+  await expect(
+    page.getByRole('button', { name: 'Continue with Microsoft' }),
+  ).toBeEnabled();
+});
+
 test('opens the root with a 1.3-second intro when the form chunk is cached', async ({
   page,
 }) => {
@@ -315,11 +383,14 @@ test('normalizes only email, prevents duplicate requests and recovers from API e
   await expect(
     page.getByRole('button', { name: 'กำลังเข้าสู่ระบบ…', exact: true }),
   ).toBeDisabled();
-  await page.locator('form').evaluate((form) => {
-    form.dispatchEvent(
-      new Event('submit', { bubbles: true, cancelable: true }),
-    );
-  });
+  await page
+    .locator('form')
+    .filter({ has: page.locator('#login-email') })
+    .evaluate((form) => {
+      form.dispatchEvent(
+        new Event('submit', { bubbles: true, cancelable: true }),
+      );
+    });
   release();
   await expect(page.locator('form').getByRole('alert')).toContainText(
     'อีเมลหรือรหัสผ่านไม่ถูกต้อง',

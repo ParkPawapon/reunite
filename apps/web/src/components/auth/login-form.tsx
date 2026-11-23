@@ -2,7 +2,30 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { loginSchema } from '@/modules/auth/presentation/schemas';
 import { submitLogin } from '@/modules/auth/presentation/login-client';
+import { loginDestination } from '@/modules/auth/presentation/login-destination';
 import styles from './login.module.css';
+
+const microsoftErrors = new Map([
+  [
+    'cancelled',
+    'ยกเลิกการเข้าสู่ระบบ หรือ Microsoft ไม่อนุญาตให้เข้าถึงแอปนี้',
+  ],
+  ['denied', 'กรุณาใช้บัญชี Microsoft ของ มจธ. ที่ได้รับสิทธิ์เข้าใช้งาน'],
+  [
+    'conflict',
+    'อีเมลนี้มีบัญชีอยู่แล้ว กรุณาใช้วิธีเข้าสู่ระบบเดิม หรือติดต่อผู้ดูแลเพื่อเชื่อมบัญชี',
+  ],
+  [
+    'unavailable',
+    'ยังไม่สามารถเข้าสู่ระบบด้วย Microsoft ได้ กรุณาลองใหม่ภายหลัง',
+  ],
+  ['failed', 'เข้าสู่ระบบด้วย Microsoft ไม่สำเร็จ กรุณาลองอีกครั้ง'],
+]);
+
+function destination() {
+  const { search, hash } = window.location;
+  return loginDestination(new URLSearchParams(search).get('next'), hash);
+}
 
 function Arrow() {
   return (
@@ -55,18 +78,31 @@ export function LoginForm() {
   const passwordRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const request = useRef<AbortController | null>(null);
+  const microsoftStarting = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
+  const [microsoftPending, setMicrosoftPending] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {},
   );
-  const [failure, setFailure] = useState('');
+  const [failure, setFailure] = useState(() => {
+    const error = new URLSearchParams(window.location.search).get('microsoft');
+    return microsoftErrors.get(error ?? '') ?? '';
+  });
 
   useEffect(() => {
     if (document.activeElement === document.body)
       headingRef.current?.focus({ preventScroll: true });
+    function restore(event: PageTransitionEvent) {
+      if (event.persisted) {
+        microsoftStarting.current = false;
+        setMicrosoftPending(false);
+      }
+    }
+    window.addEventListener('pageshow', restore);
     return () => {
+      window.removeEventListener('pageshow', restore);
       request.current?.abort();
       request.current = null;
     };
@@ -78,7 +114,7 @@ export function LoginForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (request.current) return;
+    if (request.current || microsoftStarting.current) return;
     setFailure('');
     const parsed = loginSchema.safeParse({
       email: emailRef.current?.value ?? '',
@@ -104,10 +140,7 @@ export function LoginForm() {
       const result = await submitLogin(parsed.data, controller.signal);
       if (controller.signal.aborted) throw new Error('Request timed out');
       if (result.ok) {
-        // Accept only the map intent. Its fragment carries the selected place or walk.
-        const { search, hash } = window.location;
-        const next = new URLSearchParams(search).get('next');
-        window.location.replace(next === 'map' ? `/map${hash}` : '/dashboard');
+        window.location.replace(destination());
         return;
       }
       setFailure(result.message);
@@ -121,6 +154,19 @@ export function LoginForm() {
         setPending(false);
       }
     }
+  }
+
+  function handleMicrosoftSubmit(event: FormEvent<HTMLFormElement>) {
+    if (microsoftStarting.current || request.current) {
+      event.preventDefault();
+      return;
+    }
+    microsoftStarting.current = true;
+    setMicrosoftPending(true);
+    setFailure('');
+    const action = new URL(event.currentTarget.action);
+    action.searchParams.set('next', destination());
+    event.currentTarget.action = action.href;
   }
 
   return (
@@ -274,7 +320,11 @@ export function LoginForm() {
             </p>
           )}
         </div>
-        <button type="submit" className={styles.submit} disabled={pending}>
+        <button
+          type="submit"
+          className={styles.submit}
+          disabled={pending || microsoftPending}
+        >
           <span>{pending ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}</span>
           {pending ? (
             <span className={styles.spinner} aria-hidden="true" />
@@ -284,6 +334,31 @@ export function LoginForm() {
         </button>
         <span className={styles.srOnly} role="status" aria-live="polite">
           {pending ? 'กำลังตรวจสอบบัญชี กรุณารอสักครู่' : ''}
+        </span>
+      </form>
+      <form
+        action="/api/v1/auth/microsoft"
+        method="post"
+        onSubmit={handleMicrosoftSubmit}
+        className={styles.microsoftForm}
+        aria-busy={microsoftPending}
+      >
+        <button
+          type="submit"
+          className={styles.submit}
+          disabled={pending || microsoftPending}
+        >
+          <span lang={microsoftPending ? 'th' : 'en'}>
+            {microsoftPending
+              ? 'กำลังเปิด Microsoft…'
+              : 'Continue with Microsoft'}
+          </span>
+          {microsoftPending && (
+            <span className={styles.spinner} aria-hidden="true" />
+          )}
+        </button>
+        <span className={styles.srOnly} role="status">
+          {microsoftPending ? 'กำลังเปิดหน้าเข้าสู่ระบบของ Microsoft' : ''}
         </span>
       </form>
     </div>

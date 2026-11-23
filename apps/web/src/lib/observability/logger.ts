@@ -7,6 +7,19 @@ export function logMatchingFailure() {
     );
 }
 
+export function logMicrosoftSignInFailure(
+  stage: 'configuration' | 'authorization' | 'session',
+) {
+  if (process.env.LOG_LEVEL !== 'silent')
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        event: 'microsoft_sign_in_failed',
+        stage,
+      }),
+    );
+}
+
 export function logRequest(entry: {
   requestId: string;
   method: string;

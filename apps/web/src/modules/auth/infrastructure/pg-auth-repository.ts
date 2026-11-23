@@ -1,6 +1,10 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
-import type { AuthRepository, Credentials } from '../domain/auth';
+import type {
+  AuthRepository,
+  Credentials,
+  MicrosoftIdentity,
+} from '../domain/auth';
 import type { UserProfile } from '../../users/domain/user';
 
 type UserRow = { user_id: number; name: string; email: string };
@@ -26,18 +30,45 @@ export class PgAuthRepository implements AuthRepository {
   async findCredentials(email: string): Promise<Credentials | null> {
     const [row] = await query<UserRow & { password_hash: string }>(
       this.db,
-      'SELECT user_id, name, email, password_hash FROM users WHERE email = $1',
+      'SELECT user_id, name, email, password_hash FROM users WHERE email = $1 AND password_hash IS NOT NULL',
       [email],
     );
     return row
       ? { profile: profile(row), passwordHash: row.password_hash }
       : null;
   }
-  async createSession(hash: string, userId: number, expiresAt: Date) {
+  async findOrCreateMicrosoftUser(identity: MicrosoftIdentity) {
+    const key = [identity.tenantId, identity.objectId];
+    const find = async () => {
+      const [row] = await query<UserRow>(
+        this.db,
+        'SELECT user_id, name, email FROM users WHERE microsoft_tenant_id = $1 AND microsoft_object_id = $2',
+        key,
+      );
+      return row ? profile(row) : null;
+    };
+    const existing = await find();
+    if (existing) return existing;
+    const [created] = await query<UserRow>(
+      this.db,
+      `INSERT INTO users (microsoft_tenant_id, microsoft_object_id, name, email)
+      VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING user_id, name, email`,
+      [...key, identity.name, identity.email],
+    );
+    // A concurrent insert can win on the identity. An email-only conflict leaves no link to find.
+    return created ? profile(created) : find();
+  }
+  async createSession(
+    hash: string,
+    userId: number,
+    expiresAt: Date,
+    previousHash?: string,
+  ) {
     await query(
       this.db,
-      'INSERT INTO auth_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)',
-      [hash, userId, expiresAt],
+      `WITH revoked AS (DELETE FROM auth_sessions WHERE token_hash = $4)
+      INSERT INTO auth_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)`,
+      [hash, userId, expiresAt, previousHash ?? null],
     );
   }
   async findSession(hash: string) {

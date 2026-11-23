@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MyReportsPage() {
-  const user = await requirePageUser();
+  const user = await requirePageUser('/reports/mine');
   const profile = await services().profile.get(user.userId);
   return (
     <AppShell

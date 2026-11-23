@@ -19,9 +19,11 @@ const labels: Record<keyof ProfileFields, string> = {
 export function ProfileForm({
   editor,
   running,
+  canChangeEmail,
 }: {
   editor: ProfileEditor;
   running: boolean;
+  canChangeEmail: boolean;
 }) {
   const {
     profile,
@@ -54,7 +56,7 @@ export function ProfileForm({
         slotProps={{
           htmlInput: {
             maxLength: max,
-            readOnly: pending,
+            readOnly: pending || (key === 'email' && !canChangeEmail),
             ...(key === 'studentId' ? { inputMode: 'numeric' } : {}),
           },
         }}
@@ -106,31 +108,32 @@ export function ProfileForm({
             autoComplete: 'email',
           })}
           <AnimatePresence initial={false}>
-            {values.email.trim().toLowerCase() !== profile.email && (
-              <motion.div
-                className={styles.password}
-                key="password"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: running ? 0.2 : 0 }}
-              >
-                <TextField
-                  id="profile-password"
-                  label="รหัสผ่านปัจจุบัน"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  fullWidth
-                  value={password}
-                  onChange={(event) => editor.setPassword(event.target.value)}
-                  helperText="ยืนยันรหัสผ่านก่อนเปลี่ยนอีเมล"
-                  slotProps={{
-                    htmlInput: { maxLength: 1024, readOnly: pending },
-                  }}
-                />
-              </motion.div>
-            )}
+            {canChangeEmail &&
+              values.email.trim().toLowerCase() !== profile.email && (
+                <motion.div
+                  className={styles.password}
+                  key="password"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: running ? 0.2 : 0 }}
+                >
+                  <TextField
+                    id="profile-password"
+                    label="รหัสผ่านปัจจุบัน"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    fullWidth
+                    value={password}
+                    onChange={(event) => editor.setPassword(event.target.value)}
+                    helperText="ยืนยันรหัสผ่านก่อนเปลี่ยนอีเมล"
+                    slotProps={{
+                      htmlInput: { maxLength: 1024, readOnly: pending },
+                    }}
+                  />
+                </motion.div>
+              )}
           </AnimatePresence>
         </div>
       </section>

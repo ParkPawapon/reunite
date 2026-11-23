@@ -1,10 +1,24 @@
 import type { UserProfile } from '../../users/domain/user';
 
 export type Credentials = { profile: UserProfile; passwordHash: string };
+export type MicrosoftIdentity = {
+  tenantId: string;
+  objectId: string;
+  email: string;
+  name: string;
+};
 export interface AuthRepository {
   consumeLoginAttempt(keyHash: string): Promise<boolean>;
   findCredentials(email: string): Promise<Credentials | null>;
-  createSession(hash: string, userId: number, expiresAt: Date): Promise<void>;
+  findOrCreateMicrosoftUser(
+    identity: MicrosoftIdentity,
+  ): Promise<UserProfile | null>;
+  createSession(
+    hash: string,
+    userId: number,
+    expiresAt: Date,
+    previousHash?: string,
+  ): Promise<void>;
   findSession(hash: string): Promise<UserProfile | null>;
   revokeSession(hash: string): Promise<void>;
 }
