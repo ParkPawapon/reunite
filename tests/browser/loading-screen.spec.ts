@@ -181,6 +181,14 @@ test('shows the real map download state and replaces it on success or failure', 
     timeout: 60_000,
   });
   await expect(page.locator('[data-loading-screen]')).toHaveCount(0);
+  const sidebar = page.getByRole('complementary', {
+    name: 'การเดินในวิทยาเขต',
+  });
+  await sidebar.getByRole('searchbox').fill('N10');
+  await sidebar.getByRole('button', { name: /^N10.*สำนักหอสมุด/ }).click();
+  await expect(
+    map.locator('span[aria-hidden="true"]').filter({ hasText: /^N10$/ }),
+  ).toBeVisible();
   await mapModes.press('Enter');
   await map.getByRole('button', { name: 'แผนที่ 2 มิติ', exact: true }).click();
   await page.unroute('**/kmutt-bangmod-web.glb');
