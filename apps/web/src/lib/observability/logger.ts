@@ -36,30 +36,6 @@ export function logMicrosoftAccessDenied(
     );
 }
 
-export function logMicrosoftOidcClaims(
-  claims: Readonly<Record<string, unknown>> | undefined,
-) {
-  if (
-    process.env.NODE_ENV !== 'development' ||
-    process.env.MICROSOFT_DEBUG_CLAIMS !== 'true' ||
-    (process.env.LOG_LEVEL ?? 'info') !== 'info'
-  )
-    return;
-  const claimTypes = Object.fromEntries(
-    Object.entries(claims ?? {}).map(([name, value]) => [
-      name,
-      value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value,
-    ]),
-  );
-  console.info(
-    JSON.stringify({
-      level: 'info',
-      event: 'microsoft_oidc_claims',
-      idTokenClaims: claimTypes,
-    }),
-  );
-}
-
 export function logRequest(entry: {
   requestId: string;
   method: string;
