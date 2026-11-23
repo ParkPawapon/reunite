@@ -134,7 +134,6 @@ export async function finishMicrosoftAuthorization(
       pkceCodeVerifier: transaction.verifier,
     },
   );
-  if (process.env.NODE_ENV === 'development') console.info(JSON.stringify({ openidClaims: Object.keys(tokens.claims() ?? {}) })); // eslint-disable-line no-console
   return requireKmuttIdentity(
     tokens.claims(),
     settings.tenantId,
@@ -212,6 +211,7 @@ export function requireKmuttIdentity(
         ? studentId.safeParse(parsed.data[studentIdClaim]).data
         : undefined) ?? null,
   };
+  if (process.env.NODE_ENV === 'development') console.info(JSON.stringify({ openidClaims: Object.keys(parsed.data), user: { upn: email, ...profileDraft } })); // eslint-disable-line no-console
   return {
     tenantId,
     objectId: oid.toLowerCase(),
