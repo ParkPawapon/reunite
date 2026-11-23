@@ -16,9 +16,7 @@ import {
 } from './places';
 import { useSmoothPosition } from './use-smooth-position';
 import type { LiveFix, WalkProgress } from './live-position';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import { ShellIcon } from '@/components/shell/shell-icon';
+import { CampusMapControls, type FollowAction } from './campus-map-controls';
 import { mapLabels } from './map-labels';
 import styles from './viewer.module.css';
 import type { MapPoint, WalkRoute } from './walking';
@@ -69,8 +67,6 @@ function fittedView(bounds: readonly number[], aspect: number, upper = false) {
     nextHeight,
   ].join(' ');
 }
-
-export type FollowAction = { enabled: boolean; onClick: () => void };
 
 export function CampusPlan({
   place,
@@ -441,35 +437,11 @@ export function CampusPlan({
           </g>
         )}
       </svg>
-      <div className={styles.planFocus} aria-label="ควบคุมแผนที่" role="group">
-        <Tooltip title="ซูมเข้า">
-          <IconButton aria-label="ซูมเข้า" onClick={() => zoom(0.8)}>
-            <ShellIcon name="plus" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="ซูมออก">
-          <IconButton aria-label="ซูมออก" onClick={() => zoom(1.25)}>
-            <ShellIcon name="minus" />
-          </IconButton>
-        </Tooltip>
-        {followAction && (
-          <Tooltip title="ตามตำแหน่งฉัน">
-            <span>
-              <IconButton
-                aria-label="ตามตำแหน่งฉัน"
-                aria-pressed={following}
-                disabled={!followAction.enabled}
-                onClick={followAction.onClick}
-              >
-                <ShellIcon name="target" />
-              </IconButton>
-            </span>
-          </Tooltip>
-        )}
-        <span role="img" aria-label="ทิศเหนือ" className={styles.compass}>
-          N
-        </span>
-      </div>
+      <CampusMapControls
+        onZoom={(direction) => zoom(direction === 1 ? 0.8 : 1.25)}
+        followAction={followAction}
+        following={following}
+      />
       <div className={styles.mapScale} aria-hidden="true">
         <div>
           <span ref={scaleLine} />
