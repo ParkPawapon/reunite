@@ -8,7 +8,21 @@ const model = '**/research/kmutt-bangmod/kmutt-bangmod-web.glb';
 const world = (page: Page) => page.locator('[data-campus-world]');
 const digits = (page: Page) =>
   page.locator('[data-launch-countdown] [data-unit]');
-type ProbedWindow = Window & { __launchDraws?: number };
+type ProbedWindow = Window & {
+  __launchDraws?: number;
+  __setLaunchNow?: (now: number) => void;
+};
+async function mockClockBeforeLaunch(page: Page, offsetMs = 3_600_000) {
+  await page.addInitScript((initialNow) => {
+    const realNow = Date.now.bind(Date);
+    const startedAt = realNow();
+    let fixedNow: number | null = null;
+    (window as ProbedWindow).__setLaunchNow = (now: number) => {
+      fixedNow = now;
+    };
+    Date.now = () => fixedNow ?? initialNow + (realNow() - startedAt);
+  }, LAUNCH_AT - offsetMs);
+}
 async function probe(page: Page) {
   await page.addInitScript(() => {
     const target = window as ProbedWindow;
@@ -53,8 +67,10 @@ test('public server HTML contains the launch date and local poster before hydrat
   expect(response.status()).toBe(200);
   expect(response.headers()['permissions-policy']).toContain('geolocation=()');
   const html = await response.text();
-  expect(html).toContain('24 พฤศจิกายน 2569');
-  expect(html).toContain('2026-11-24T00:00:00+07:00');
+  expect(html).toContain('23 พฤศจิกายน 2569');
+  expect(html).toContain('23 · 11 · 2026');
+  expect(html).toContain('2026-11-23T09:00:00+07:00');
+  expect(html).toContain('09:00 น. · เวลาไทย');
   expect(html).toContain('bangmod-launch.png');
   expect(html).not.toMatch(/cdn\.tailwindcss|iconify|supabase\.co/);
   const outgoing: string[] = [];
@@ -68,7 +84,7 @@ test('public server HTML contains the launch date and local poster before hydrat
   await expect(world(page)).toHaveAttribute('data-state', 'ready', {
     timeout: 45000,
   });
-  await expect(page).toHaveTitle('Reunite — พบกัน 24 พฤศจิกายน 2569');
+  await expect(page).toHaveTitle('Reunite — พบกัน 23 พฤศจิกายน 2569');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
     'กำลังกลับมา',
   );
@@ -79,6 +95,7 @@ test('public server HTML contains the launch date and local poster before hydrat
 test('stops GPU/CSS motion while keeping countdown live and respects reduced motion', async ({
   page,
 }) => {
+  await mockClockBeforeLaunch(page);
   await probe(page);
   await page.goto('/coming-soon');
   await expect(world(page)).toHaveAttribute('data-state', 'ready', {
@@ -87,6 +104,10 @@ test('stops GPU/CSS motion while keeping countdown live and respects reduced mot
   await page
     .getByRole('button', { name: 'หยุดภาพเคลื่อนไหว', exact: true })
     .click();
+  await expect(page.locator('[data-coming-soon]')).toHaveAttribute(
+    'data-motion',
+    'still',
+  );
   await page.waitForTimeout(200);
   const before = await draws(page);
   const seconds = await page.locator('[data-unit="seconds"]').textContent();
@@ -112,6 +133,10 @@ test('stops GPU/CSS motion while keeping countdown live and respects reduced mot
     .getByRole('button', { name: 'เล่นภาพเคลื่อนไหว', exact: true })
     .click();
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('[data-coming-soon]')).toHaveAttribute(
+    'data-motion',
+    'still',
+  );
   await page.waitForTimeout(200);
   const reduced = await draws(page);
   await page.waitForTimeout(500);
@@ -163,6 +188,7 @@ test('completes a paused manual 360 orbit and supports keyboard reset', async ({
 test('recovers model download failure and WebGL context loss with a fresh canvas', async ({
   page,
 }) => {
+  await mockClockBeforeLaunch(page);
   let failing = true;
   await page.route(model, (route) =>
     failing
@@ -208,7 +234,10 @@ test('recovers model download failure and WebGL context loss with a fresh canvas
     .evaluateHandle((element) =>
       (element as HTMLCanvasElement).getContext('webgl2'),
     );
-  await page.clock.setFixedTime(new Date(LAUNCH_AT + 1000));
+  await page.evaluate(
+    (now) => (window as ProbedWindow).__setLaunchNow?.(now),
+    LAUNCH_AT + 1000,
+  );
   await page.getByRole('link', { name: 'เริ่มภารกิจ', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect
@@ -261,7 +290,7 @@ test('keeps real rendering useful on mobile, without JavaScript or without WebGL
   const staticPage = await noJs.newPage();
   await staticPage.goto('/coming-soon');
   await expect(
-    staticPage.getByText('24 พฤศจิกายน 2569', { exact: true }),
+    staticPage.getByText('23 พฤศจิกายน 2569', { exact: true }),
   ).toBeVisible();
   await expect(
     staticPage.getByAltText(
@@ -290,7 +319,7 @@ test('keeps real rendering useful on mobile, without JavaScript or without WebGL
   ).toBeVisible();
 });
 
-test('uses Thai midnight in every browser timezone, reaches zero once and opens the actual login', async ({
+test('uses 09:00 Bangkok time in every browser timezone, reaches zero once and opens the actual login', async ({
   browser,
   baseURL,
 }) => {
@@ -332,6 +361,7 @@ test('uses Thai midnight in every browser timezone, reaches zero once and opens 
 test('suspends offscreen/hidden rendering and retains pause during a slow model download', async ({
   page,
 }) => {
+  await mockClockBeforeLaunch(page);
   await probe(page);
   await page.goto('/coming-soon');
   await expect(world(page)).toHaveAttribute('data-state', 'ready', {
