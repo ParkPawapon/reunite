@@ -4,6 +4,7 @@ import * as oidc from 'openid-client';
 import { z } from 'zod';
 import { AppError, normalizeEmail } from '@campus/shared';
 import { entraId, type microsoftConfig } from '@/config/microsoft';
+import { profileCompletionSchema } from '@/modules/users/presentation/profile-schema';
 import type { MicrosoftIdentity } from '../domain/auth';
 
 type Settings = NonNullable<ReturnType<typeof microsoftConfig>>;
@@ -133,10 +134,14 @@ export async function finishMicrosoftAuthorization(
       pkceCodeVerifier: transaction.verifier,
     },
   );
-  return requireKmuttIdentity(tokens.claims(), settings.tenantId);
+  return requireKmuttIdentity(
+    tokens.claims(),
+    settings.tenantId,
+    settings.studentIdClaim,
+  );
 }
 
-const identityClaims = z.object({
+const identityClaims = z.looseObject({
   tid: entraId,
   oid: entraId,
   upn: z.string(),
@@ -162,6 +167,7 @@ export class MicrosoftAccessDenied extends AppError {
 export function requireKmuttIdentity(
   claims: unknown,
   tenantId: string,
+  studentIdClaim?: string,
 ): MicrosoftIdentity {
   const parsed = identityClaims.safeParse(claims);
   if (!parsed.success) {
@@ -196,10 +202,22 @@ export function requireKmuttIdentity(
     extra !== undefined
   )
     throw new MicrosoftAccessDenied('invalid_kmutt_upn');
+  const { firstName, lastName, studentId } = profileCompletionSchema.shape;
+  const profileDraft = {
+    firstName: firstName.safeParse(parsed.data.given_name).data ?? null,
+    lastName: lastName.safeParse(parsed.data.family_name).data ?? null,
+    studentId:
+      (studentIdClaim && Object.hasOwn(parsed.data, studentIdClaim)
+        ? studentId.safeParse(parsed.data[studentIdClaim]).data
+        : undefined) ?? null,
+  };
   return {
     tenantId,
     objectId: oid.toLowerCase(),
     email,
     name: Array.from(username).slice(0, 100).join(''),
+    ...(Object.values(profileDraft).some((value) => value !== null)
+      ? { profileDraft }
+      : {}),
   };
 }

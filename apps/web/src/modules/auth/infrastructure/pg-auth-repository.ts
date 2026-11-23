@@ -55,17 +55,32 @@ export class PgAuthRepository implements AuthRepository {
       );
       return row ? sessionUser(row) : null;
     };
-    const existing = await find();
-    if (existing) return existing;
-    const [created] = await query<SessionRow>(
-      this.db,
-      `INSERT INTO users (microsoft_tenant_id, microsoft_object_id, name, email)
+    let user = await find();
+    if (!user) {
+      const [created] = await query<SessionRow>(
+        this.db,
+        `INSERT INTO users (microsoft_tenant_id, microsoft_object_id, name, email)
       VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING
       RETURNING user_id, name, email, ${profileCompletionRequired} AS profile_completion_required`,
-      [...key, identity.name, identity.email],
-    );
-    // A concurrent insert can win on the identity. An email-only conflict leaves no link to find.
-    return created ? sessionUser(created) : find();
+        [...key, identity.name, identity.email],
+      );
+      // A concurrent insert can win on the identity. An email-only conflict leaves no link to find.
+      user = created ? sessionUser(created) : await find();
+    }
+    if (user?.profileCompletionRequired && identity.profileDraft) {
+      const { firstName, lastName, studentId } = identity.profileDraft;
+      await query(
+        this.db,
+        `UPDATE users SET first_name=COALESCE(first_name, $3::varchar),
+          last_name=COALESCE(last_name, $4::varchar),
+          microsoft_student_id_draft=CASE WHEN student_id IS NULL
+            THEN COALESCE($5::varchar, microsoft_student_id_draft) ELSE NULL END
+        WHERE microsoft_tenant_id=$1 AND microsoft_object_id=$2
+          AND ${profileCompletionRequired}`,
+        [...key, firstName, lastName, studentId],
+      );
+    }
+    return user;
   }
   async createSession(
     hash: string,

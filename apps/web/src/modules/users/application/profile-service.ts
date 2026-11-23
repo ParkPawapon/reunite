@@ -22,6 +22,11 @@ export class ProfileService {
   async canChangeEmail(userId: number) {
     return Boolean((await this.repository.credentials(userId))?.hash);
   }
+  async getCompletionDraft(userId: number) {
+    const draft = await this.repository.getCompletionDraft(userId);
+    if (!draft) throw new AppError('NOT_FOUND', 404, 'Account unavailable');
+    return draft;
+  }
   async complete(userId: number, input: ProfileCompletionInput) {
     await this.repository.complete(userId, input);
   }

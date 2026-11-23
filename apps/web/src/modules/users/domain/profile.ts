@@ -28,11 +28,14 @@ export type ProfileCompletionInput = Pick<
 > & {
   studentId: string;
 };
+export type ProfileCompletionDraft = Pick<
+  StudentProfile,
+  'firstName' | 'lastName' | 'studentId'
+>;
 export interface ProfileRepository {
   get(userId: number): Promise<StudentProfile | null>;
-  credentials(
-    userId: number,
-  ): Promise<{
+  getCompletionDraft(userId: number): Promise<ProfileCompletionDraft | null>;
+  credentials(userId: number): Promise<{
     email: string;
     hash: string | null;
     microsoftLinked: boolean;

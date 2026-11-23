@@ -63,6 +63,18 @@ it('creates one account under concurrent sign-in and uses the existing session l
   expect(first.profileCompletionRequired).toBe(true);
   expect(concurrent.profileCompletionRequired).toBe(true);
   const { userId } = first.profile;
+  const profileDraft = {
+    firstName: 'Directory',
+    lastName: 'Name',
+    studentId: '0123456789',
+  };
+  await application.auth.loginWithMicrosoft({ ...identity, profileDraft }, 600);
+  expect(await application.profile.getCompletionDraft(userId)).toEqual(
+    profileDraft,
+  );
+  expect(await application.profile.get(userId)).toMatchObject({
+    studentId: null,
+  });
   expect(
     (
       await pool.query(
@@ -193,11 +205,27 @@ it('creates one account under concurrent sign-in and uses the existing session l
     }),
   ).rejects.toMatchObject({ status: 403 });
   const rotated = await application.auth.loginWithMicrosoft(
-    { ...identity, email: 'renamed@kmutt.ac.th', name: 'Replacement' },
+    {
+      ...identity,
+      email: 'renamed@kmutt.ac.th',
+      name: 'Replacement',
+      profileDraft,
+    },
     600,
     first.token,
   );
   expect(rotated.profileCompletionRequired).toBe(false);
+  expect(await application.profile.getCompletionDraft(userId)).toEqual(
+    completion,
+  );
+  expect(
+    (
+      await pool.query(
+        'SELECT microsoft_student_id_draft FROM users WHERE user_id=$1',
+        [userId],
+      )
+    ).rows,
+  ).toEqual([{ microsoft_student_id_draft: null }]);
   expect(rotated.profile).toEqual({
     userId,
     name: 'Campus Member',

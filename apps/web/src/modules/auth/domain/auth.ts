@@ -1,4 +1,5 @@
 import type { UserProfile } from '../../users/domain/user';
+import type { ProfileCompletionDraft } from '../../users/domain/profile';
 
 export type Credentials = { profile: UserProfile; passwordHash: string };
 export type SessionUser = {
@@ -10,6 +11,7 @@ export type MicrosoftIdentity = {
   objectId: string;
   email: string;
   name: string;
+  profileDraft?: ProfileCompletionDraft;
 };
 export interface AuthRepository {
   consumeLoginAttempt(keyHash: string): Promise<boolean>;

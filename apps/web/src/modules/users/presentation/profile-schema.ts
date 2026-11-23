@@ -8,7 +8,12 @@ const optionalText = (max: number) =>
     .max(max)
     .transform((value) => value || null)
     .nullable();
-const name = z.string().trim().min(1).max(100);
+const name = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .refine((value) => !value.includes('\0'));
 const studentId = /^[0-9]{8,20}$/;
 export const profileCompletionSchema = z.strictObject({
   firstName: name,

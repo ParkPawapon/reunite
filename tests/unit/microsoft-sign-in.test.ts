@@ -70,6 +70,38 @@ describe('KMUTT account authorization', () => {
       name: 'member',
     });
   });
+  it('reads valid optional student data and ignores student IDs outside the configured claim', () => {
+    const studentClaims = {
+      ...claims,
+      given_name: '  Campus  ',
+      family_name: ' Member ',
+      'extn.studentId': '0123456789',
+      student_id: '9999999999',
+    };
+    expect(
+      requireKmuttIdentity(studentClaims, tenantId, 'extn.studentId')
+        .profileDraft,
+    ).toEqual({
+      firstName: 'Campus',
+      lastName: 'Member',
+      studentId: '0123456789',
+    });
+    expect(
+      requireKmuttIdentity(studentClaims, tenantId).profileDraft?.studentId,
+    ).toBeNull();
+    expect(
+      requireKmuttIdentity(
+        {
+          ...studentClaims,
+          given_name: '\0',
+          family_name: 7,
+          'extn.studentId': 123456789,
+        },
+        tenantId,
+        'extn.studentId',
+      ).profileDraft,
+    ).toBeUndefined();
+  });
 
   it.each([
     { acct: 1 },

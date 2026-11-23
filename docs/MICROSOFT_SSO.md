@@ -9,8 +9,9 @@ Reunite uses Microsoft Entra OpenID Connect authorization code flow through `ope
 | `MICROSOFT_CLIENT_ID` | Application (client) ID from the KMUTT app registration. |
 | `MICROSOFT_CLIENT_SECRET` | Active client secret **value** from the registration. Store it in the server's secret settings. |
 | `MICROSOFT_TENANT_ID` | KMUTT Directory (tenant) ID from the registration. |
+| `MICROSOFT_STUDENT_ID_CLAIM` | Optional JWT claim name for a KMUTT-managed directory extension, for example `extn.studentId`. |
 
-Leave all three blank to run without Microsoft sign-in. If any are set, `bun run env:check` requires all three to be valid. Set them in the ignored local environment file used by the web server or in the deployment settings. Use server-only names.
+Leave the Microsoft variables blank to run without Microsoft sign-in. If sign-in is configured, `bun run env:check` requires a valid client ID, client secret, and tenant ID. Set them in the ignored local environment file used by the web server or in the deployment settings. Use server-only names.
 
 Register these redirect URIs under the **Web** platform. Reunite builds the URI from the configured `APP_BASE_URL` and a fixed callback path.
 
@@ -34,9 +35,11 @@ When sign-in returns to `/login?microsoft=denied`, check the server's `microsoft
 
 ## Profile completion
 
-A first-time Microsoft user starts at `/complete-profile`. Reunite collects first name, last name and an 8–20 digit student ID and stores them in the existing PostgreSQL user profile. The student ID is self-reported. Completion unlocks the dashboard and protected APIs using the existing session.
+A first-time Microsoft user starts at `/complete-profile` to review and submit their first name, last name, and 8–20 digit student ID. Reunite prefills valid fields from the verified ID token when available. Any missing fields can be entered manually. The student ID suggestion becomes part of the profile only on submission. Completion unlocks the dashboard and protected APIs using the existing session.
 
-Existing Microsoft-linked users with all three fields already populated skip setup. Incomplete Microsoft-linked users are directed to setup from protected pages, and protected APIs return `403 PROFILE_COMPLETION_REQUIRED`. The signed-in user can complete the form or log out. An incomplete session is also denied access to the catalog APIs, which still serve anonymous requests. Password-only Reunite accounts keep their existing profile rules. This workflow uses columns from migrations `0005` and `0011`.
+To populate the form from Entra, add `given_name` and `family_name` as optional **ID token** claims. For a student ID, ask the KMUTT administrator to expose an institution-managed string directory extension in `optionalClaims.idToken`. The registration uses its full `extension_<appIdWithoutHyphens>_<attributeName>` name, while Entra emits `extn.<attributeName>` in the token. Set `MICROSOFT_STUDENT_ID_CLAIM` to that emitted name. Use the registrar's value as a string to retain leading zeros. Reunite treats these fields as profile suggestions. Enrollment and account linking use their own policies. [Microsoft optional claims](https://learn.microsoft.com/entra/identity-platform/optional-claims)
+
+Existing Microsoft-linked users with all three fields already saved skip setup. Incomplete Microsoft-linked users are directed to setup from protected pages, and protected APIs return `403 PROFILE_COMPLETION_REQUIRED`. The signed-in user can complete the form or log out. An incomplete session is also denied access to the catalog APIs, which still serve anonymous requests. Password-only Reunite accounts keep their existing profile rules. Migration `0012` adds the temporary student ID field and completion clears it.
 
 ## Existing accounts
 
@@ -59,4 +62,4 @@ Confirm exactly one returned row before committing. A uniqueness error or zero r
 2. While signed out, visit `/profile` or another protected page and choose **Continue with Microsoft**. Verify that a new eligible KMUTT member reaches `/complete-profile`, that protected APIs return 403 until completion, and that submitting valid profile data opens the dashboard. Repeat sign-in and confirm the original protected destination is restored. Verify that logout returns the protected API to HTTP 401.
 3. Test cancellation, a guest, an external tenant account and a personal Microsoft account. If assignment is required by the tenant, also test an unassigned account. Try a KMUTT UPN that conflicts with a locally provisioned password account. Verify that the conflict requires verified linking and that password login still works.
 4. Run `bun run lint`, `bun run typecheck`, and `bun run test` against the [isolated integration test database](DEVELOPMENT.md). Automated tests simulate Entra responses, so they can run without tenant credentials.
-5. Before enabling Microsoft sign-in in production, apply `0011` through the migration connection, reapply [runtime grants](../infra/supabase/runtime-grants.sql), set the three server variables, and register the final HTTPS redirect URI. Configure any hosting, proxy or tracing logs to omit callback query strings. When rotating the client secret, in-flight sign-ins will need to restart.
+5. Before enabling Microsoft sign-in in production, apply migrations through `0012` through the migration connection, reapply [runtime grants](../infra/supabase/runtime-grants.sql), set the required server variables, and register the final HTTPS redirect URI. Configure any hosting, proxy or tracing logs to omit callback query strings. When rotating the client secret, in-flight sign-ins will need to restart.

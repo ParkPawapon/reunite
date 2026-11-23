@@ -47,6 +47,23 @@ export class PgProfileRepository implements ProfileRepository {
     );
     return row ? map(row) : null;
   }
+  async getCompletionDraft(userId: number) {
+    const [row] = await query<
+      Pick<Row, 'first_name' | 'last_name' | 'student_id'>
+    >(
+      this.db,
+      `SELECT first_name, last_name, COALESCE(student_id, microsoft_student_id_draft) AS student_id
+      FROM users WHERE user_id=$1`,
+      [userId],
+    );
+    return row
+      ? {
+          firstName: row.first_name,
+          lastName: row.last_name,
+          studentId: row.student_id,
+        }
+      : null;
+  }
   async credentials(userId: number) {
     const [row] = await query<{
       email: string;
@@ -70,7 +87,8 @@ export class PgProfileRepository implements ProfileRepository {
     await query(
       this.db,
       `WITH completed AS (
-        UPDATE users SET name=$2, first_name=$3, last_name=$4, student_id=$5
+        UPDATE users SET name=$2, first_name=$3, last_name=$4, student_id=$5,
+          microsoft_student_id_draft=NULL
         WHERE user_id=$1 AND ${profileCompletionRequired}
         RETURNING user_id
       ) INSERT INTO notifications (user_id,kind) SELECT user_id,'PROFILE_UPDATED' FROM completed`,
