@@ -35,6 +35,8 @@ When sign-in returns to `/login?microsoft=denied`, check the server's `microsoft
 
 ## Profile completion
 
+For local claim debugging, set `MICROSOFT_DEBUG_CLAIMS=true` and `LOG_LEVEL=info` in `apps/web/.env.local`, then restart the development server. The `microsoft_oidc_claims` JSON event reports each verified ID token claim's name and JSON type, including optional profile claims that Entra actually sent. Claim values, raw tokens, and credentials are omitted. The event is disabled outside development.
+
 A first-time Microsoft user starts at `/complete-profile` to review and submit their first name, last name, and 8–20 digit student ID. Reunite prefills valid fields from the verified ID token when available. Any missing fields can be entered manually. The student ID suggestion becomes part of the profile only on submission. Completion unlocks the dashboard and protected APIs using the existing session.
 
 To populate the form from Entra, add `given_name` and `family_name` as optional **ID token** claims. For a student ID, ask the KMUTT administrator to expose an institution-managed string directory extension in `optionalClaims.idToken`. The registration uses its full `extension_<appIdWithoutHyphens>_<attributeName>` name, while Entra emits `extn.<attributeName>` in the token. Set `MICROSOFT_STUDENT_ID_CLAIM` to that emitted name. Use the registrar's value as a string to retain leading zeros. Reunite treats these fields as profile suggestions. Enrollment and account linking use their own policies. [Microsoft optional claims](https://learn.microsoft.com/entra/identity-platform/optional-claims)

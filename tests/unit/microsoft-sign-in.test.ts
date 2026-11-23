@@ -12,6 +12,7 @@ import {
   loginPath,
 } from '@/modules/auth/presentation/login-destination';
 import { microsoftConfig } from '@/config/microsoft';
+import { logMicrosoftOidcClaims } from '@/lib/observability/logger';
 import {
   callbackMicrosoft,
   startMicrosoft,
@@ -46,6 +47,32 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   vi.useRealTimers();
+});
+
+it('logs verified claim names and types only when debug is enabled in development', () => {
+  const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+  const response = {
+    upn: 'private@example.test',
+    roles: ['private-role'],
+    acct: 0,
+  };
+  vi.stubEnv('LOG_LEVEL', 'info');
+  vi.stubEnv('MICROSOFT_DEBUG_CLAIMS', 'true');
+  vi.stubEnv('NODE_ENV', 'production');
+  logMicrosoftOidcClaims(response);
+  vi.stubEnv('NODE_ENV', 'development');
+  vi.stubEnv('MICROSOFT_DEBUG_CLAIMS', 'false');
+  logMicrosoftOidcClaims(response);
+  expect(info).not.toHaveBeenCalled();
+  vi.stubEnv('MICROSOFT_DEBUG_CLAIMS', 'true');
+  logMicrosoftOidcClaims(response);
+  expect(info).toHaveBeenCalledExactlyOnceWith(
+    JSON.stringify({
+      level: 'info',
+      event: 'microsoft_oidc_claims',
+      idTokenClaims: { upn: 'string', roles: 'array', acct: 'number' },
+    }),
+  );
 });
 
 describe('KMUTT account authorization', () => {

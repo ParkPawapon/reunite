@@ -4,6 +4,7 @@ import * as oidc from 'openid-client';
 import { z } from 'zod';
 import { AppError, normalizeEmail } from '@campus/shared';
 import { entraId, type microsoftConfig } from '@/config/microsoft';
+import { logMicrosoftOidcClaims } from '@/lib/observability/logger';
 import { profileCompletionSchema } from '@/modules/users/presentation/profile-schema';
 import type { MicrosoftIdentity } from '../domain/auth';
 
@@ -134,8 +135,10 @@ export async function finishMicrosoftAuthorization(
       pkceCodeVerifier: transaction.verifier,
     },
   );
+  const claims = tokens.claims();
+  logMicrosoftOidcClaims(claims);
   return requireKmuttIdentity(
-    tokens.claims(),
+    claims,
     settings.tenantId,
     settings.studentIdClaim,
   );
