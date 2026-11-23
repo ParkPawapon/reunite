@@ -20,7 +20,7 @@ Successful login opens the session-protected `/dashboard`: reusable Topbar, Side
 
 The account menu and Sidebar link to `/profile` for first/last name, student ID, faculty, department, major, phone, email and a private profile photo. The Topbar bell shows real account activity and accepted item-match suggestions with unread counts, Skeleton, retry and read-all. The Footer retains only its brand signature. Migrations preserve existing accounts and sessions. See [Profile and notifications](docs/design/profile-notifications.md) and [item matching](docs/MATCHING.md).
 
-The public [/coming-soon](http://localhost:3000/coming-soon) page presents the approved cinematic campus scene, interactive 3D clues and Agent Honk, with a countdown to **24 November 2026 (2569), 00:00 Asia/Bangkok**. It supports pause, reduced motion, static fallback and recoverable scene loading. See [Coming Soon implementation and verification](docs/design/coming-soon.md).
+The public [/coming-soon](http://localhost:3000/coming-soon) page presents the approved cinematic campus scene, interactive 3D clues and Agent Honk, with a countdown to **23 November 2026 (2569), 09:00 Asia/Bangkok**. It supports pause, reduced motion, static fallback and recoverable scene loading. See [Coming Soon implementation and verification](docs/design/coming-soon.md).
 
 The [backend assignment handoff](docs/tasks/BACKEND_ENDPOINT_HANDOFF_TH.md) records integrated BE003, delivered BE002, BE005, BE006, BE007, BE008 endpoints, and newly assigned BE009, BE010, BE011, BE012 tasks with 501 starter stubs. All assigned category/report/claim reads use real PostgreSQL data; private claims remain claimant-only and report mutations enforce ownership.
 

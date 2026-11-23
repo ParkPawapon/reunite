@@ -5,8 +5,14 @@ import { AnimatedGoose } from '@/components/loading/animated-goose';
 import { useMotionPolicy } from '@/components/loading/use-motion-policy';
 import { CampusWorld } from './campus-world';
 import { LaunchCountdown } from './countdown';
+import { LAUNCH_DATE } from './launch';
 import { LaunchIcon } from './launch-icon';
 import styles from './coming-soon.module.css';
+
+const [launchYear = '', launchMonth = '', launchDay = ''] = LAUNCH_DATE.slice(
+  0,
+  10,
+).split('-');
 
 const subscribeToHydration = () => () => {};
 const clientHydrated = () => true;
@@ -39,7 +45,7 @@ export function ComingSoonExperience() {
         </div>
         <div className={styles.mastheadTools}>
           <span className={styles.launchDate} lang="en">
-            24 · 11 · 2026
+            {`${launchDay} · ${launchMonth} · ${launchYear}`}
           </span>
           <button
             className={`${styles.iconButton} ${styles.motionButton}`}
@@ -54,7 +60,7 @@ export function ComingSoonExperience() {
       </header>
       <main className={styles.theatre}>
         <span className={styles.ghostDate} aria-hidden="true">
-          24
+          {launchDay}
         </span>
         <div className={styles.stageArc} aria-hidden="true" />
         <div
