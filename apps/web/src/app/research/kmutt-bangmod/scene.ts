@@ -33,17 +33,14 @@ import {
 } from './map-labels';
 import type { WalkSegment } from './walking';
 
-export type View = 'perspective' | 'north';
 export type CampusScene = {
-  setView: (view: View) => void;
-  rotate: (direction: -1 | 1) => void;
+  resetView: () => void;
   zoom: (direction: -1 | 1) => void;
   setRoute: (
     segments: readonly WalkSegment[],
     progress: WalkProgress | null,
     navigating: boolean,
   ) => void;
-  focusRoute: (segments: readonly WalkSegment[]) => void;
   setLiveFix: (fix: LiveFix | null, following: boolean) => void;
   select: (id: string | null) => void;
   locate: (point: readonly [number, number, number] | null) => void;
@@ -68,6 +65,7 @@ export async function mountCampusScene({
   signal,
   onSelect,
   onPan,
+  onNorthAngle,
   onPin,
   onLivePin,
   onRoutePins,
@@ -80,6 +78,7 @@ export async function mountCampusScene({
   signal: AbortSignal;
   onPan: () => void;
   onSelect: (id: string) => void;
+  onNorthAngle: (angle: number) => void;
   onPin: (position: PinPosition) => void;
   onLivePin: (position: PinPosition) => void;
   onRoutePins: (start: PinPosition, end: PinPosition) => void;
@@ -187,6 +186,8 @@ export async function mountCampusScene({
     point: new Vector3(...label.world),
   }));
   const projectedPin = new Vector3();
+  const northOnScreen = new Vector3();
+  let previousNorthAngle: number | undefined;
   const projectPin = (point: Vector3 | null): PinPosition => {
     if (!point) return null;
     const { x, y, z } = projectedPin.copy(point).project(camera);
@@ -197,6 +198,12 @@ export async function mountCampusScene({
   const render = () => {
     if (disposed) return;
     renderer.render(scene, camera);
+    northOnScreen.set(0, 0, -1).transformDirection(camera.matrixWorldInverse);
+    const northAngle = Math.atan2(northOnScreen.x, northOnScreen.y);
+    if (northAngle !== previousNorthAngle) {
+      previousNorthAngle = northAngle;
+      onNorthAngle(northAngle);
+    }
     const selection = projectPin(pin);
     const live = projectPin(livePin);
     const start = projectPin(routeStart);
@@ -370,16 +377,12 @@ export async function mountCampusScene({
       renderer.setSize(width, height, false);
       render();
     };
-    const setView = (view: View) => {
+    const resetView = () => {
       camera.zoom = 1;
       controls.target.copy(center);
       camera.position
         .copy(center)
-        .add(
-          view === 'north'
-            ? new Vector3(0, radius * 2, 0.001)
-            : new Vector3(radius * 0.78, radius * 1.18, radius * 1.4),
-        );
+        .add(new Vector3(radius * 0.78, radius * 1.18, radius * 1.4));
       camera.updateProjectionMatrix();
       controls.update();
       camera.updateMatrixWorld();
@@ -413,12 +416,9 @@ export async function mountCampusScene({
     canvas.addEventListener('webglcontextlost', handleLoss);
     observer = new ResizeObserver(resize);
     observer.observe(canvas);
-    setView('perspective');
+    resetView();
     return {
-      setView,
-      rotate(direction) {
-        controls.rotateLeft((direction * Math.PI) / 4);
-      },
+      resetView,
       zoom(direction) {
         camera.zoom = Math.min(
           controls.maxZoom,
@@ -501,25 +501,6 @@ export async function mountCampusScene({
           routeOverlay.add(marker);
           routeMeshes.push(marker);
         }
-        render();
-      },
-      focusRoute(segments) {
-        if (!segments.length) return;
-        const bounds = new Box3();
-        for (const { from, to } of segments) {
-          bounds.expandByPoint(new Vector3(from[0], 0, from[1]));
-          bounds.expandByPoint(new Vector3(to[0], 0, to[1]));
-        }
-        const center = bounds.getCenter(new Vector3());
-        const size = bounds.getSize(new Vector3());
-        setView('north');
-        moveTarget(center.x, center.z);
-        camera.zoom = Math.min(
-          controls.maxZoom,
-          (camera.right * 2) / (size.x + 78),
-          (camera.top * 2) / (size.z + 78),
-        );
-        camera.updateProjectionMatrix();
         render();
       },
       setLiveFix(fix, following) {

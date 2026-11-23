@@ -29,9 +29,14 @@ import {
 import styles from './viewer.module.css';
 
 const modes = [
-  { id: 'plan', label: 'แผนที่ 2 มิติ', asset: null },
-  { id: 'light', label: '3D แบบเบา', asset: modelUrl },
-  { id: 'detail', label: '3D แบบละเอียด', asset: detailedWebModelUrl },
+  { id: 'plan', label: 'แผนที่ 2 มิติ', icon: 'map', asset: null },
+  { id: 'light', label: '3D แบบเบา', icon: 'box', asset: modelUrl },
+  {
+    id: 'detail',
+    label: '3D แบบละเอียด',
+    icon: 'layers',
+    asset: detailedWebModelUrl,
+  },
 ] as const;
 
 function subscribeToPlace(change: () => void) {
@@ -279,9 +284,10 @@ export function CampusViewer() {
           <summary aria-label="รูปแบบแผนที่">
             <ShellIcon name="layers" />
             <span>รูปแบบแผนที่</span>
+            <ShellIcon className={styles.mapModesChevron} name="chevron" />
           </summary>
           <div
-            className={styles.controls}
+            className={styles.mapModeOptions}
             role="group"
             aria-label="ตัวเลือกรูปแบบแผนที่"
           >
@@ -299,12 +305,20 @@ export function CampusViewer() {
                   }
                 }}
               >
-                {option.label}
+                <ShellIcon name={option.icon} />
+                <span>{option.label}</span>
+                {mode.id === option.id && <ShellIcon name="check" />}
               </button>
             ))}
-            <a href={satelliteUrl} target="_blank" rel="noreferrer">
-              ภาพดาวเทียม Google Maps ↗
-            </a>
+            <div className={styles.mapModeFooter}>
+              <a href={satelliteUrl} target="_blank" rel="noreferrer">
+                <ShellIcon name="pin" />
+                <span>
+                  ภาพดาวเทียม <small lang="en">Google Maps</small>
+                </span>
+                <ShellIcon name="external" />
+              </a>
+            </div>
           </div>
         </details>
         {mode.asset ? (
