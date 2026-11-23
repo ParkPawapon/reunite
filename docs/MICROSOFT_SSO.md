@@ -34,9 +34,9 @@ When sign-in returns to `/login?microsoft=denied`, check the server's `microsoft
 
 ## Profile completion
 
-A first-time Microsoft user starts at `/complete-profile` to review and submit their first and last name. Reunite prefills valid names from the verified ID token when available. Any missing names can be entered manually. Completion unlocks the dashboard and protected APIs using the existing session.
+A first-time Microsoft user starts at `/complete-profile` and can enter their student ID, faculty, department, and major. All four fields are optional. Completion unlocks the dashboard and protected APIs using the existing session.
 
-To populate the form from Entra, add `given_name` and `family_name` as optional **ID token** claims. A student ID remains optional in the regular profile editor. [Microsoft optional claims](https://learn.microsoft.com/entra/identity-platform/optional-claims)
+To populate account names from Entra, add `given_name` and `family_name` as optional **ID token** claims. Reunite capitalizes the submitted names and allows users to supply or edit them in the regular profile editor. [Microsoft optional claims](https://learn.microsoft.com/entra/identity-platform/optional-claims)
 
 Existing Microsoft-linked users who already completed setup skip it. Incomplete Microsoft-linked users are directed to setup from protected pages, and protected APIs return `403 PROFILE_COMPLETION_REQUIRED`. The signed-in user can complete the form or log out. An incomplete session is also denied access to the catalog APIs, which still serve anonymous requests. Migration `0013` records confirmation using a dedicated timestamp and preserves completion for accounts that met the previous setup rules.
 

@@ -22,14 +22,12 @@ export type ProfileInput = {
   phone: string | null;
   currentPassword?: string;
 };
-export type ProfileCompletionInput = Pick<
+export type EducationFields = Pick<
   ProfileInput,
-  'firstName' | 'lastName'
+  'studentId' | 'faculty' | 'department' | 'major'
 >;
-export type ProfileCompletionDraft = Pick<
-  StudentProfile,
-  'firstName' | 'lastName'
->;
+export type ProfileCompletionInput = Partial<EducationFields>;
+export type ProfileNames = Pick<StudentProfile, 'firstName' | 'lastName'>;
 export interface ProfileRepository {
   get(userId: number): Promise<StudentProfile | null>;
   credentials(userId: number): Promise<{

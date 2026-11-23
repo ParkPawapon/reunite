@@ -4,7 +4,7 @@ import * as oidc from 'openid-client';
 import { z } from 'zod';
 import { AppError, normalizeEmail } from '@campus/shared';
 import { entraId, type microsoftConfig } from '@/config/microsoft';
-import { profileCompletionSchema } from '@/modules/users/presentation/profile-schema';
+import { profileNameSchema } from '@/modules/users/presentation/profile-schema';
 import type { MicrosoftIdentity } from '../domain/auth';
 
 type Settings = NonNullable<ReturnType<typeof microsoftConfig>>;
@@ -197,10 +197,9 @@ export function requireKmuttIdentity(
     extra !== undefined
   )
     throw new MicrosoftAccessDenied('invalid_kmutt_upn');
-  const { firstName, lastName } = profileCompletionSchema.shape;
   const profileDraft = {
-    firstName: firstName.safeParse(parsed.data.given_name).data ?? null,
-    lastName: lastName.safeParse(parsed.data.family_name).data ?? null,
+    firstName: profileNameSchema.safeParse(parsed.data.given_name).data ?? null,
+    lastName: profileNameSchema.safeParse(parsed.data.family_name).data ?? null,
   };
   if (process.env.NODE_ENV === 'development') console.info(JSON.stringify({ openidClaims: Object.keys(parsed.data), user: { upn: email, ...profileDraft } })); // eslint-disable-line no-console
   return {

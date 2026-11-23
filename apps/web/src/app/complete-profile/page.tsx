@@ -12,8 +12,9 @@ export const metadata: Metadata = {
 export default async function CompleteProfilePage() {
   const session = await requirePageSession();
   if (!session.profileCompletionRequired) redirect('/dashboard');
-  const { firstName, lastName } = await services().profile.get(
-    session.profile.userId,
+  const { studentId, faculty, department, major } =
+    await services().profile.get(session.profile.userId);
+  return (
+    <CompleteProfileForm initial={{ studentId, faculty, department, major }} />
   );
-  return <CompleteProfileForm initial={{ firstName, lastName }} />;
 }

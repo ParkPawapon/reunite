@@ -73,14 +73,14 @@ describe('KMUTT account authorization', () => {
   it('reads valid optional names and ignores student ID claims', () => {
     const studentClaims = {
       ...claims,
-      given_name: '  Campus  ',
-      family_name: ' Member ',
+      given_name: '  campus  ',
+      family_name: ' McDonald-SMITH ',
       'extn.studentId': '0123456789',
       student_id: '9999999999',
     };
     expect(requireKmuttIdentity(studentClaims, tenantId).profileDraft).toEqual({
       firstName: 'Campus',
-      lastName: 'Member',
+      lastName: 'McDonald-Smith',
     });
     expect(
       requireKmuttIdentity(

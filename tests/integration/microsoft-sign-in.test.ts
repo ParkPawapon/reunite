@@ -92,8 +92,8 @@ it('creates one account under concurrent sign-in and uses the existing session l
   expect(concurrent.profileCompletionRequired).toBe(true);
   const { userId } = first.profile;
   const profileDraft = {
-    firstName: 'Directory',
-    lastName: 'Name',
+    firstName: 'Campus',
+    lastName: 'Member',
   };
   await application.auth.loginWithMicrosoft({ ...identity, profileDraft }, 600);
   expect(await application.profile.get(userId)).toMatchObject({
@@ -123,15 +123,17 @@ it('creates one account under concurrent sign-in and uses the existing session l
     firstName: 'Campus',
     lastName: 'Member',
     email: identity.email,
-    studentId: null,
-    faculty: null,
-    department: null,
-    major: null,
+    studentId: '0123456789',
+    faculty: 'Engineering',
+    department: 'Computer Engineering',
+    major: 'Software Engineering',
     phone: null,
   };
   const completion = {
-    firstName: details.firstName,
-    lastName: details.lastName,
+    studentId: details.studentId,
+    faculty: details.faculty,
+    department: details.department,
+    major: details.major,
   };
   const endpoint = '/profile/complete';
   expect(
@@ -180,7 +182,7 @@ it('creates one account under concurrent sign-in and uses the existing session l
       await account.completeProfile(
         request(endpoint, 'POST', first.token, {
           ...completion,
-          studentId: '0123456789',
+          studentId: 'invalid',
         }),
       )
     ).status,
@@ -200,7 +202,7 @@ it('creates one account under concurrent sign-in and uses the existing session l
       await account.completeProfile(
         request(endpoint, 'POST', first.token, {
           ...completion,
-          firstName: 'Replacement',
+          major: 'Replacement',
         }),
       )
     ).status,
@@ -220,9 +222,6 @@ it('creates one account under concurrent sign-in and uses the existing session l
     (await account.profile(request('/profile', 'GET', first.token))).status,
   ).toBe(200);
   await expect(
-    application.profile.update(userId, details),
-  ).resolves.toMatchObject({ studentId: null });
-  await expect(
     application.profile.update(userId, {
       ...details,
       email: 'other@kmutt.ac.th',
@@ -241,7 +240,7 @@ it('creates one account under concurrent sign-in and uses the existing session l
   expect(rotated.profileCompletionRequired).toBe(false);
   expect(await application.profile.get(userId)).toMatchObject({
     ...completion,
-    studentId: null,
+    ...profileDraft,
   });
   expect(
     (
@@ -311,15 +310,24 @@ it('preserves a password account through a collision and an explicit operator li
     'UPDATE users SET microsoft_tenant_id=$2, microsoft_object_id=$3 WHERE user_id=$1',
     [userId, legacy.tenantId, legacy.objectId],
   );
-  await expect(
-    application.auth.loginWithMicrosoft(legacy, 600),
-  ).resolves.toMatchObject({
+  const linked = await application.auth.loginWithMicrosoft(legacy, 600);
+  expect(linked).toMatchObject({
     profile: { userId, name: 'Legacy member', email: legacy.email },
     profileCompletionRequired: true,
   });
   await expect(application.profile.get(userId)).resolves.toMatchObject({
     phone: '0812345678',
   });
+  expect(
+    (
+      await account.completeProfile(
+        request('/profile/complete', 'POST', linked.token, {}),
+      )
+    ).status,
+  ).toBe(200);
+  await expect(
+    application.auth.requireUser(linked.token),
+  ).resolves.toMatchObject({ userId, name: 'Legacy member' });
   expect(
     (
       await handlers.login(

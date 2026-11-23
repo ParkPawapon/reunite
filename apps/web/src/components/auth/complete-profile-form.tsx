@@ -8,18 +8,20 @@ import {
   accountRequest,
 } from '@/modules/users/presentation/profile-client';
 import { profileCompletionSchema } from '@/modules/users/presentation/profile-schema';
-import type { ProfileCompletionDraft } from '@/modules/users/domain/profile';
+import type { EducationFields } from '@/modules/users/domain/profile';
 import { LoginShell } from './login-shell';
 import styles from './login.module.css';
 
 const completionResult = z.object({ completed: z.literal(true) });
 type Action = 'save' | 'logout';
+const fields = [
+  { key: 'studentId', label: 'รหัสนักศึกษา', maxLength: 20 },
+  { key: 'faculty', label: 'คณะ', maxLength: 180 },
+  { key: 'department', label: 'ภาควิชา', maxLength: 180 },
+  { key: 'major', label: 'สาขาวิชา', maxLength: 180 },
+] as const;
 
-export function CompleteProfileForm({
-  initial,
-}: {
-  initial: ProfileCompletionDraft;
-}) {
+export function CompleteProfileForm({ initial }: { initial: EducationFields }) {
   const [pending, setPending] = useState<Action | null>(null);
   const [failure, setFailure] = useState('');
   const busy = useRef(false);
@@ -42,9 +44,11 @@ export function CompleteProfileForm({
         return;
       }
       setFailure(
-        action === 'save'
-          ? 'บันทึกโปรไฟล์ไม่สำเร็จ กรุณาลองอีกครั้ง'
-          : 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง',
+        error instanceof AccountRequestError && error.status === 409
+          ? 'รหัสนักศึกษานี้ถูกใช้แล้ว กรุณาตรวจสอบและลองอีกครั้ง'
+          : action === 'save'
+            ? 'บันทึกโปรไฟล์ไม่สำเร็จ กรุณาลองอีกครั้ง'
+            : 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง',
       );
       busy.current = false;
       setPending(null);
@@ -57,7 +61,7 @@ export function CompleteProfileForm({
       Object.fromEntries(new FormData(event.currentTarget)),
     );
     if (!input.success) {
-      setFailure('กรุณากรอกชื่อและนามสกุล');
+      setFailure('กรุณาตรวจสอบข้อมูล รหัสนักศึกษาต้องเป็นตัวเลข 8–20 หลัก');
       return;
     }
     void execute('save', () =>
@@ -73,7 +77,7 @@ export function CompleteProfileForm({
     <LoginShell ready headingId="complete-profile-heading">
       <div className={styles.formContent}>
         <h1 id="complete-profile-heading">ตั้งค่าโปรไฟล์</h1>
-        <p className={styles.formIntro}>กรอกข้อมูลให้ครบก่อนเริ่มใช้ Reunite</p>
+        <p className={styles.formIntro}>ข้อมูลการศึกษา (ไม่บังคับ)</p>
         <form
           className={styles.form}
           onSubmit={submit}
@@ -89,34 +93,22 @@ export function CompleteProfileForm({
               {failure}
             </div>
           )}
-          <div className={styles.field}>
-            <label htmlFor="completion-first-name">ชื่อจริง</label>
-            <div className={styles.inputWrap}>
-              <input
-                id="completion-first-name"
-                name="firstName"
-                autoComplete="given-name"
-                maxLength={100}
-                required
-                readOnly={pending !== null}
-                defaultValue={initial.firstName ?? ''}
-              />
+          {fields.map(({ key, label, maxLength }) => (
+            <div className={styles.field} key={key}>
+              <label htmlFor={`completion-${key}`}>{label}</label>
+              <div className={styles.inputWrap}>
+                <input
+                  id={`completion-${key}`}
+                  name={key}
+                  inputMode={key === 'studentId' ? 'numeric' : undefined}
+                  pattern={key === 'studentId' ? '[0-9]{8,20}' : undefined}
+                  maxLength={maxLength}
+                  readOnly={pending !== null}
+                  defaultValue={initial[key] ?? ''}
+                />
+              </div>
             </div>
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="completion-last-name">นามสกุล</label>
-            <div className={styles.inputWrap}>
-              <input
-                id="completion-last-name"
-                name="lastName"
-                autoComplete="family-name"
-                maxLength={100}
-                required
-                readOnly={pending !== null}
-                defaultValue={initial.lastName ?? ''}
-              />
-            </div>
-          </div>
+          ))}
           <button
             type="submit"
             className={styles.submit}

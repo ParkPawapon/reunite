@@ -41,9 +41,12 @@ test('requires a Microsoft-linked user to finish setup before using the app', as
     ).toBeVisible();
     expect((await page.request.get('/api/v1/item-reports')).status()).toBe(403);
 
-    await expect(page.getByLabel('ชื่อจริง')).toHaveValue('ทดสอบ');
-    await expect(page.getByLabel('รหัสนักศึกษา')).toHaveCount(0);
-    await expect(page.getByLabel('นามสกุล')).toHaveValue('บัญชีมหาวิทยาลัย');
+    await expect(page.getByLabel('ชื่อจริง')).toHaveCount(0);
+    await expect(page.getByLabel('นามสกุล')).toHaveCount(0);
+    await page.getByLabel('รหัสนักศึกษา').fill('0987654321');
+    await page.getByLabel('คณะ').fill('วิศวกรรมศาสตร์');
+    await page.getByLabel('ภาควิชา').fill('วิศวกรรมคอมพิวเตอร์');
+    await page.getByLabel('สาขาวิชา').fill('ซอฟต์แวร์');
     await page.getByRole('button', { name: 'บันทึกและไปหน้าภาพรวม' }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     expect((await page.request.get('/api/v1/item-reports')).status()).toBe(200);
@@ -53,7 +56,10 @@ test('requires a Microsoft-linked user to finish setup before using the app', as
       data: {
         firstName: 'ทดสอบ',
         lastName: 'บัญชีมหาวิทยาลัย',
-        studentId: null,
+        studentId: '0987654321',
+        faculty: 'วิศวกรรมศาสตร์',
+        department: 'วิศวกรรมคอมพิวเตอร์',
+        major: 'ซอฟต์แวร์',
       },
     });
     await page.goto('/complete-profile');
