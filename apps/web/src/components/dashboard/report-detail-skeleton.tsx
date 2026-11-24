@@ -5,35 +5,28 @@ export function ReportDetailSkeleton({ motion }: { motion: boolean }) {
   const animation = motion ? 'wave' : false;
   return (
     <div
-      className={styles.overviewCard}
+      className={styles.overviewDetails}
       role="status"
       aria-label="กำลังโหลดรายละเอียด"
     >
       <div className={styles.skeletonText} aria-hidden="true">
-        <Skeleton width="100%" height={24} animation={animation} />
-        <Skeleton width="65%" height={24} animation={animation} />
+        <Skeleton width="100%" height={22} animation={animation} />
+        <Skeleton width="68%" height={22} animation={animation} />
       </div>
-      <div className={styles.details} aria-hidden="true">
-        <div className={styles.location}>
-          <Skeleton
-            variant="rounded"
-            width={38}
-            height={38}
-            className={styles.locationBadge}
-            animation={animation}
-          />
-          <Skeleton width={75} height={16} animation={animation} />
-          <Skeleton width="70%" height={24} animation={animation} />
-        </div>
-        {[0, 1, 2].map((index) => (
-          <div
-            key={index}
-            className={`${styles.metaTile} ${index === 0 ? styles.category : ''}`}
-          >
-            <Skeleton width={60} height={16} animation={animation} />
+      <div className={styles.metaList} aria-hidden="true">
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className={styles.metaRow}>
             <Skeleton
-              width={index === 0 ? '90%' : '85%'}
-              height={22}
+              variant="rounded"
+              width={34}
+              height={34}
+              className={styles.metaIcon}
+              animation={animation}
+            />
+            <Skeleton width={70} height={15} animation={animation} />
+            <Skeleton
+              width={index === 0 ? '75%' : index === 1 ? '65%' : '55%'}
+              height={20}
               animation={animation}
             />
           </div>
