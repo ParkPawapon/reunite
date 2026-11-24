@@ -167,8 +167,10 @@ test('searches the full board while typing and lets an owner edit and close only
     await picker
       .getByRole('button', { name: '12 พฤศจิกายน 2569', exact: true })
       .click();
-    await picker.getByLabel('ชั่วโมง').fill('13');
-    await picker.getByLabel('นาที').fill('42');
+    await picker
+      .getByRole('textbox', { name: 'ชั่วโมง', exact: true })
+      .fill('13');
+    await picker.getByRole('textbox', { name: 'นาที', exact: true }).fill('42');
     await picker.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
     await expect(picker).toBeHidden();
     await dialog.getByLabel('ลักษณะสิ่งของ').fill('ด้ามจับลายทาง');

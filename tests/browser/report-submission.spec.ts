@@ -154,8 +154,10 @@ async function selectNov2026DateTime(
   await picker
     .getByRole('button', { name: `${day} พฤศจิกายน 2569`, exact: true })
     .click();
-  await picker.getByLabel('ชั่วโมง').fill(hour);
-  await picker.getByLabel('นาที').fill(minute);
+  await picker
+    .getByRole('textbox', { name: 'ชั่วโมง', exact: true })
+    .fill(hour);
+  await picker.getByRole('textbox', { name: 'นาที', exact: true }).fill(minute);
   await picker.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
   await expect(picker).toBeHidden();
 }
@@ -189,10 +191,10 @@ test('keeps location and date controls the same size on desktop and mobile', asy
   await openForm(page);
 
   const outlineBox = async (input: Locator) => {
-    const outline = input.locator('xpath=..').locator('fieldset');
+    const outline = input.locator('xpath=..');
     await expect(outline).toBeVisible();
     const box = await outline.boundingBox();
-    if (!box) throw new Error('Expected a visible field outline');
+    if (!box) throw new Error('Expected a visible field container');
     return box;
   };
   const buttonBox = async (button: Locator) => {
