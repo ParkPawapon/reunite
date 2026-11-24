@@ -1,13 +1,24 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
-import type { AuthRepository, Credentials } from '../domain/auth';
+import type {
+  AuthRepository,
+  Credentials,
+  MicrosoftIdentity,
+  SessionUser,
+} from '../domain/auth';
 import type { UserProfile } from '../../users/domain/user';
+import { profileCompletionRequired } from '../../users/infrastructure/profile-completion';
 
 type UserRow = { user_id: number; name: string; email: string };
+type SessionRow = UserRow & { profile_completion_required: boolean };
 const profile = (row: UserRow): UserProfile => ({
   userId: row.user_id,
   name: row.name,
   email: row.email,
+});
+const sessionUser = (row: SessionRow): SessionUser => ({
+  profile: profile(row),
+  profileCompletionRequired: row.profile_completion_required,
 });
 export class PgAuthRepository implements AuthRepository {
   constructor(private readonly db: Sql) {}
@@ -26,28 +37,70 @@ export class PgAuthRepository implements AuthRepository {
   async findCredentials(email: string): Promise<Credentials | null> {
     const [row] = await query<UserRow & { password_hash: string }>(
       this.db,
-      'SELECT user_id, name, email, password_hash FROM users WHERE email = $1',
+      'SELECT user_id, name, email, password_hash FROM users WHERE email = $1 AND password_hash IS NOT NULL',
       [email],
     );
     return row
       ? { profile: profile(row), passwordHash: row.password_hash }
       : null;
   }
-  async createSession(hash: string, userId: number, expiresAt: Date) {
+  async findOrCreateMicrosoftUser(identity: MicrosoftIdentity) {
+    const key = [identity.tenantId, identity.objectId];
+    const find = async () => {
+      const [row] = await query<SessionRow>(
+        this.db,
+        `SELECT user_id, name, email, ${profileCompletionRequired} AS profile_completion_required
+        FROM users WHERE microsoft_tenant_id = $1 AND microsoft_object_id = $2`,
+        key,
+      );
+      return row ? sessionUser(row) : null;
+    };
+    let user = await find();
+    if (!user) {
+      const [created] = await query<SessionRow>(
+        this.db,
+        `INSERT INTO users (microsoft_tenant_id, microsoft_object_id, name, email)
+      VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING
+      RETURNING user_id, name, email, ${profileCompletionRequired} AS profile_completion_required`,
+        [...key, identity.name, identity.email],
+      );
+      // A concurrent insert can win on the identity. An email-only conflict leaves no link to find.
+      user = created ? sessionUser(created) : await find();
+    }
+    if (user?.profileCompletionRequired && identity.profileDraft) {
+      const { firstName, lastName } = identity.profileDraft;
+      await query(
+        this.db,
+        `UPDATE users SET first_name=COALESCE(first_name, $3::varchar),
+          last_name=COALESCE(last_name, $4::varchar)
+        WHERE microsoft_tenant_id=$1 AND microsoft_object_id=$2
+          AND ${profileCompletionRequired}`,
+        [...key, firstName, lastName],
+      );
+    }
+    return user;
+  }
+  async createSession(
+    hash: string,
+    userId: number,
+    expiresAt: Date,
+    previousHash?: string,
+  ) {
     await query(
       this.db,
-      'INSERT INTO auth_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)',
-      [hash, userId, expiresAt],
+      `WITH revoked AS (DELETE FROM auth_sessions WHERE token_hash = $4)
+      INSERT INTO auth_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)`,
+      [hash, userId, expiresAt, previousHash ?? null],
     );
   }
   async findSession(hash: string) {
-    const [row] = await query<UserRow>(
+    const [row] = await query<SessionRow>(
       this.db,
-      `SELECT u.user_id, u.name, u.email FROM auth_sessions s
+      `SELECT u.user_id, u.name, u.email, ${profileCompletionRequired} AS profile_completion_required FROM auth_sessions s
       JOIN users u ON u.user_id = s.user_id WHERE s.token_hash = $1 AND s.expires_at > CURRENT_TIMESTAMP`,
       [hash],
     );
-    return row ? profile(row) : null;
+    return row ? sessionUser(row) : null;
   }
   async revokeSession(hash: string) {
     await query(this.db, 'DELETE FROM auth_sessions WHERE token_hash = $1', [

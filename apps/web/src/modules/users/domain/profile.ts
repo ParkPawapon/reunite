@@ -22,13 +22,28 @@ export type ProfileInput = {
   phone: string | null;
   currentPassword?: string;
 };
+export type EducationFields = Pick<
+  ProfileInput,
+  'studentId' | 'faculty' | 'department' | 'major'
+>;
+export type ProfileCompletionInput = {
+  studentId: string;
+  faculty: string;
+  department: string | null;
+  major: string;
+};
+export type ProfileNames = Pick<StudentProfile, 'firstName' | 'lastName'>;
 export interface ProfileRepository {
   get(userId: number): Promise<StudentProfile | null>;
-  credentials(userId: number): Promise<{ email: string; hash: string } | null>;
+  credentials(userId: number): Promise<{
+    email: string;
+    hash: string | null;
+  } | null>;
+  complete(userId: number, input: ProfileCompletionInput): Promise<void>;
   update(
     userId: number,
     input: ProfileInput,
-    expectedHash: string,
+    expectedHash: string | null,
   ): Promise<StudentProfile | null>;
   setAvatar(
     userId: number,

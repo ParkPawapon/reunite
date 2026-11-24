@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import sharp from 'sharp';
-import { browserAccount } from './test-account';
+import { authenticateBrowserAccount, browserAccount } from './test-account';
 
 test.beforeEach(() => {
   test.skip(
@@ -11,19 +11,10 @@ test.beforeEach(() => {
 });
 
 async function signIn(page: Page) {
-  await page.goto('/login');
-  await page.getByLabel('อีเมล', { exact: true }).fill(browserAccount.email);
-  await page
-    .getByLabel('รหัสผ่าน', { exact: true })
-    .fill(browserAccount.password);
-  const navigation = page.waitForResponse(
-    (response) =>
-      response.url().endsWith('/dashboard') &&
-      response.request().isNavigationRequest(),
-  );
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }).click();
+  await authenticateBrowserAccount(page.request);
+  const navigation = await page.goto('/dashboard');
   await expect(page).toHaveURL(/\/dashboard$/);
-  expect((await navigation).headers()['cache-control']).toContain('no-store');
+  expect(navigation?.headers()['cache-control']).toContain('no-store');
   await expect(page.locator('[data-dashboard]')).toBeVisible();
 }
 

@@ -9,7 +9,13 @@ import { ProfileIdentity } from './profile-identity';
 import { ProfileForm } from './profile-form';
 import styles from './profile.module.css';
 
-function ProfileContent({ editor }: { editor: ProfileEditor }) {
+function ProfileContent({
+  editor,
+  canChangeEmail,
+}: {
+  editor: ProfileEditor;
+  canChangeEmail: boolean;
+}) {
   const running = useShellMotion();
   return (
     <div
@@ -29,11 +35,21 @@ function ProfileContent({ editor }: { editor: ProfileEditor }) {
         </Link>
       </header>
       <ProfileIdentity editor={editor} />
-      <ProfileForm editor={editor} running={running} />
+      <ProfileForm
+        editor={editor}
+        running={running}
+        canChangeEmail={canChangeEmail}
+      />
     </div>
   );
 }
-export function ProfileExperience({ initial }: { initial: StudentProfile }) {
+export function ProfileExperience({
+  initial,
+  canChangeEmail,
+}: {
+  initial: StudentProfile;
+  canChangeEmail: boolean;
+}) {
   const editor = useProfileEditor(initial);
   return (
     <AppShell
@@ -44,7 +60,7 @@ export function ProfileExperience({ initial }: { initial: StudentProfile }) {
         avatarVersion: editor.profile.avatarVersion,
       }}
     >
-      <ProfileContent editor={editor} />
+      <ProfileContent editor={editor} canChangeEmail={canChangeEmail} />
     </AppShell>
   );
 }

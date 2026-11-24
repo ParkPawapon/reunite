@@ -1,10 +1,12 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
 import type {
+  ProfileCompletionInput,
   ProfileInput,
   ProfileRepository,
   StudentProfile,
 } from '../domain/profile';
+import { profileCompletionRequired } from './profile-completion';
 
 type Row = {
   user_id: number;
@@ -46,28 +48,59 @@ export class PgProfileRepository implements ProfileRepository {
     return row ? map(row) : null;
   }
   async credentials(userId: number) {
-    const [row] = await query<{ email: string; password_hash: string }>(
-      this.db,
-      'SELECT email, password_hash FROM users WHERE user_id=$1',
-      [userId],
-    );
-    return row ? { email: row.email, hash: row.password_hash } : null;
+    const [row] = await query<{
+      email: string;
+      password_hash: string | null;
+    }>(this.db, 'SELECT email, password_hash FROM users WHERE user_id=$1', [
+      userId,
+    ]);
+    return row
+      ? {
+          email: row.email,
+          hash: row.password_hash,
+        }
+      : null;
   }
-  async update(userId: number, input: ProfileInput, expectedHash: string) {
+  async complete(userId: number, input: ProfileCompletionInput) {
+    // The predicate makes a repeated or concurrent submission a no-op after the first completion.
+    await query(
+      this.db,
+      `WITH completed AS (
+        UPDATE users SET name=COALESCE(NULLIF(concat_ws(' ', first_name, last_name), ''), name),
+          student_id=$2,
+          faculty=$3,
+          department=$4,
+          major=$5,
+          profile_completed_at=CURRENT_TIMESTAMP,
+          microsoft_student_id_draft=NULL
+        WHERE user_id=$1 AND ${profileCompletionRequired}
+        RETURNING user_id
+      ) INSERT INTO notifications (user_id,kind) SELECT user_id,'PROFILE_UPDATED' FROM completed`,
+      [userId, input.studentId, input.faculty, input.department, input.major],
+    );
+  }
+  async update(
+    userId: number,
+    input: ProfileInput,
+    expectedHash: string | null,
+  ) {
     // One SQL statement makes the change and its notification atomic.
     const [row] = await query<Row>(
       this.db,
       `WITH changed AS (
       UPDATE users SET name=$2, first_name=$3, last_name=$4, email=$5,
         student_id=$6, faculty=$7, department=$8, major=$9, phone=$10
-      WHERE user_id=$1 AND password_hash=$11
+      WHERE user_id=$1 AND password_hash IS NOT DISTINCT FROM $11
+        AND ($11 IS NOT NULL OR email=$5)
         AND ROW(first_name,last_name,email,student_id,faculty,department,major,phone)
           IS DISTINCT FROM ROW($3::varchar,$4::varchar,$5::varchar,$6::varchar,$7::varchar,$8::varchar,$9::varchar,$10::varchar)
       RETURNING ${columns}
     ), activity AS (
       INSERT INTO notifications (user_id,kind) SELECT user_id,'PROFILE_UPDATED' FROM changed
     ) SELECT ${columns} FROM changed UNION ALL
-      SELECT ${columns} FROM users WHERE user_id=$1 AND password_hash=$11 AND NOT EXISTS (SELECT 1 FROM changed)`,
+      SELECT ${columns} FROM users WHERE user_id=$1 AND password_hash IS NOT DISTINCT FROM $11
+        AND ($11 IS NOT NULL OR email=$5)
+        AND NOT EXISTS (SELECT 1 FROM changed)`,
       [
         userId,
         `${input.firstName} ${input.lastName}`,

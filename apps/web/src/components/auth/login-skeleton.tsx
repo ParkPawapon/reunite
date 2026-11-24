@@ -43,21 +43,9 @@ export function LoginSkeleton() {
       <div className={styles.formIntro}>
         <Piece width="15rem" height=".875rem" />
       </div>
-      <div className={styles.form}>
-        <div className={styles.field}>
-          <div className={styles.skeletonLabel}>
-            <Piece width="2.75rem" height=".8125rem" />
-          </div>
-          <Piece height="3.5rem" control="email" />
-        </div>
-        <div className={styles.field}>
-          <div className={styles.skeletonLabel}>
-            <Piece width="4rem" height=".8125rem" />
-          </div>
-          <Piece height="3.5rem" control="password" />
-        </div>
+      <div className={styles.signInForm}>
         <div className={styles.skeletonSubmit}>
-          <Piece height="3.5rem" control="submit" />
+          <Piece height="3.5rem" control="kmutt" />
         </div>
       </div>
     </div>

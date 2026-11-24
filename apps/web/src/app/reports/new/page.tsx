@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: 'แจ้งของหายหรือของที่พบ ช่วยกันหา พากลับคืน',
 };
 export default async function NewReportPage() {
-  const user = await requirePageUser();
+  const user = await requirePageUser('/reports/new');
   const profile = await services().profile.get(user.userId);
   return (
     <AppShell

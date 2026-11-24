@@ -11,6 +11,7 @@ it('stops a throttled login before credential lookup or password hashing', async
   const repository: AuthRepository = {
     consumeLoginAttempt: async () => false,
     findCredentials: vi.fn(),
+    findOrCreateMicrosoftUser: vi.fn(),
     createSession: vi.fn(),
     findSession: vi.fn(),
     revokeSession: vi.fn(),

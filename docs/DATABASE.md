@@ -6,6 +6,8 @@ PostgreSQL 18.4 is pinned for Compose and CI. The two source PDFs have matching 
 
 There are ten physical tables: the five original business tables, sessions, login throttles, migration tracking, in-app notifications and `report_matches`. No role or approval entity is added.
 
+Migration `0011` adds a nullable, unique Microsoft tenant/object ID pair to `users`. A row must have a password hash, a complete Microsoft identity, or both. Existing account data and sessions are preserved. See the [verified account-linking procedure](MICROSOFT_SSO.md#existing-accounts).
+
 Migration `0007` adds the durable matching pair queue/result table and maintained report content revisions plus bounded item-image bytes. It extends real notification kinds with `MATCH_SUGGESTED`. Pair uniqueness, a partial queue index on `(available_at, match_id)` and a found-report reverse index support the implemented queries. The existing report `(type,status,report_id DESC)` index supports candidate discovery; no redundant report index is added. Cost reservations survive edits/retries and FK RESTRICT prevents erasing job/accounting history through report deletion. See [matching behavior, costs and retention limits](MATCHING.md).
 
 ## Student profile and notifications (0005–0006)

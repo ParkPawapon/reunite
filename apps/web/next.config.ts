@@ -5,6 +5,11 @@ const config: NextConfig = {
   // Bypass the root loading boundary for unmatched URLs, including clients without JS.
   experimental: { globalNotFound: true },
   output: 'standalone',
+  logging: {
+    incomingRequests: {
+      ignore: [/^\/api\/v1\/auth\/microsoft\/callback\/?(?:\?|$)/],
+    },
+  },
   outputFileTracingRoot: path.resolve(import.meta.dirname, '../..'),
   // Bun's isolated layout needs sharp's companion native libraries, including Windows DLLs.
   outputFileTracingIncludes: {

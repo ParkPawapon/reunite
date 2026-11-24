@@ -17,12 +17,15 @@ export default async function MatchPage({
   params: Promise<{ pair?: string[] }>;
   searchParams: Promise<{ before?: string | string[] }>;
 }) {
-  const user = await requirePageUser();
   const { pair } = await params;
   const match = pair && idSchema.safeParse(pair[0]);
+  const before = idSchema.safeParse((await searchParams).before);
+  const path = match?.success ? `/matches/${match.data}` : '/matches';
+  const user = await requirePageUser(
+    before.success ? `${path}?before=${before.data}` : path,
+  );
   if (pair && (pair.length !== 1 || !match?.success)) notFound();
   const profile = await services().profile.get(user.userId);
-  const before = idSchema.safeParse((await searchParams).before);
   const inbox = await services().matching.list(
     user.userId,
     before.success ? before.data : undefined,

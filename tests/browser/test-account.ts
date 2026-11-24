@@ -13,16 +13,21 @@ export const browserMapAccount = {
   email: 'browser-map@example.test',
 };
 
-export async function authenticateBrowserMapAccount(
+export async function authenticateBrowserAccount(
   request: APIRequestContext,
+  account = browserAccount,
 ) {
   const response = await request.post('/api/v1/auth/login', {
     headers: { origin: 'http://localhost:3100' },
     data: {
-      email: browserMapAccount.email,
-      password: browserMapAccount.password,
+      email: account.email,
+      password: account.password,
     },
   });
   if (!response.ok())
     throw new Error(`Test account login failed with HTTP ${response.status()}`);
+}
+
+export function authenticateBrowserMapAccount(request: APIRequestContext) {
+  return authenticateBrowserAccount(request, browserMapAccount);
 }

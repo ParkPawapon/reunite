@@ -170,6 +170,12 @@
   max-width: 25rem;
   animation: reveal 0.18s ease-out both;
 }
+@media (width > 48rem) {
+  .formPanel:has(.completeProfile) {
+    justify-content: flex-start;
+    padding-block-start: clamp(3rem, calc((100svh - 43rem) / 2), 12rem);
+  }
+}
 .welcomeMark {
   display: grid;
   place-items: center;
@@ -248,7 +254,7 @@
   color: var(--color-text-muted);
   pointer-events: none;
 }
-.inputWrap input {
+.inputWrap > input {
   width: 100%;
   min-width: 0;
   height: 100%;
@@ -262,30 +268,70 @@
   font-size: 1rem;
   line-height: 1.5;
 }
+.inputWrap.educationInput input {
+  padding-inline-start: 1rem;
+}
+.educationSelect :global(.MuiInputBase-root) {
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  color: var(--color-text);
+  font: inherit;
+}
+.educationSelect :global(.MuiSelect-select) {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 2.75rem 0 1rem;
+}
+.educationSelect :global(.MuiSelect-select:focus) {
+  background: transparent;
+}
+.educationSelect :global(.MuiSelect-icon) {
+  inset-inline-end: 0.875rem;
+  color: var(--color-text-muted);
+}
+.educationSelect :global(.MuiSelect-select) > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.educationPlaceholder {
+  color: var(--color-text-muted);
+}
+.educationMenu {
+  max-width: min(32rem, calc(100vw - 1rem));
+  max-height: min(20rem, 50dvh);
+  border: 1px solid var(--color-brand-blue-grey);
+  border-radius: 0.875rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.educationMenu :global(.MuiMenuItem-root) {
+  min-height: 2.75rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.educationMenu :global(.MuiMenuItem-root.Mui-selected) {
+  background: var(--color-orange-100);
+}
+.educationReveal {
+  /* Hold the field at zero opacity until the select menu has closed. */
+  animation: educationReveal 460ms 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes educationReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .inputWrap input::placeholder {
   color: var(--color-text-muted);
   opacity: 1;
   font-size: 0.875rem;
-}
-.inputWrap:has(.showPassword) input {
-  padding-right: 3.25rem;
-}
-.showPassword {
-  display: grid;
-  place-items: center;
-  position: absolute;
-  right: 0.25rem;
-  width: 2.75rem;
-  height: 2.75rem;
-  border: 0;
-  background: transparent;
-  color: var(--color-text-muted);
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-.showPassword:hover {
-  background: var(--color-background);
-  color: var(--color-action-primary);
 }
 .submit {
   position: relative;
@@ -328,6 +374,31 @@
 }
 .submit:disabled {
   cursor: wait;
+}
+.microsoftForm {
+  margin-top: 0.75rem;
+}
+.microsoftForm .submit {
+  border: 1px solid currentColor;
+  background: transparent;
+  color: var(--color-action-primary);
+}
+.microsoftForm .submit:hover:enabled {
+  background: var(--color-orange-50);
+}
+.signInForm {
+  margin-top: 1.75rem;
+}
+.signInForm .alert {
+  margin-bottom: 0.75rem;
+}
+.kmuttLogo {
+  flex: none;
+  width: auto;
+  height: 1.5rem;
+  filter: brightness(0) invert(1);
+  /* The lettering gives the mark a lower visual center than its image box. */
+  transform: translateY(-0.1875rem);
 }
 .page button:focus-visible,
 .page a:focus-visible,
@@ -400,12 +471,6 @@
   display: flex;
   align-items: center;
 }
-.skeletonLabel {
-  height: 1.44375rem;
-  margin-bottom: 0.6rem;
-  display: flex;
-  align-items: center;
-}
 .skeletonSubmit {
   margin-top: 0.375rem;
 }
@@ -416,12 +481,6 @@
 .page[data-animation='still'] .clue,
 .page[data-animation='still'] .trail path {
   animation-play-state: paused;
-}
-[data-login-form] .field {
-  animation: reveal 0.18s ease-out both;
-}
-[data-login-form] .field:nth-of-type(2) {
-  animation-delay: 0.035s;
 }
 [data-login-form] .submit {
   animation: reveal 0.18s 0.04s ease-out both;
@@ -605,10 +664,10 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .formContent,
+  .educationReveal,
   .spinner,
   .clue,
   .trail path,
-  [data-login-form] .field,
   [data-login-form] .submit,
   .skeletonPiece::after {
     animation: none;
