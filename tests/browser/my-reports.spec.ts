@@ -141,7 +141,9 @@ test('searches the full board while typing and lets an owner edit and close only
     await location.press('Enter');
     await expect(location).toHaveValue(place);
     await dialog.getByRole('button', { name: /วันและเวลาที่หาย/ }).click();
-    const picker = page.getByRole('dialog').last();
+    const picker = page
+      .getByRole('dialog')
+      .filter({ hasText: 'รูปแบบ 24 ชั่วโมง' });
     await expect(picker).toBeVisible();
     const headerBtn = picker.getByRole('button', { name: /เลือกเดือนและปี/ });
     if (!((await headerBtn.textContent()) ?? '').includes('พฤศจิกายน 2569')) {
