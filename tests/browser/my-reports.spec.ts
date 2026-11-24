@@ -226,19 +226,23 @@ test('submits a private claim and shows the owner decision in report details', a
     expect(response.status()).toBe(200);
   }
   async function openReport(target: typeof page) {
+    await target.bringToFront();
     await target.goto('/dashboard');
-    await expect(target.getByRole('tabpanel')).toHaveAttribute(
-      'aria-busy',
-      'false',
-    );
+    const panel = target.getByRole('tabpanel');
+    await expect(panel).toHaveAttribute('aria-busy', 'false');
     const foundTab = target.getByRole('tab', { name: 'ของที่พบ' });
     await foundTab.click();
     await expect(foundTab).toHaveAttribute('aria-selected', 'true');
+    await expect(panel).toHaveAttribute('aria-busy', 'false');
     const search = target.getByRole('searchbox', {
       name: 'ค้นหาชื่อสิ่งของ',
     });
-    await search.fill('ClaimTag');
+    await search.click();
+    await search.pressSequentially('ClaimTag');
     await expect(search).toHaveValue('ClaimTag');
+    await expect(
+      target.getByRole('button', { name: 'ล้างการค้นหา' }),
+    ).toBeVisible();
     await expect(target.getByText('ผลการค้นหา “ClaimTag”')).toBeVisible();
     await target.getByRole('button', { name: title, exact: true }).click();
     return target.getByRole('dialog');
@@ -292,6 +296,7 @@ test('submits a private claim and shows the owner decision in report details', a
       .fill('รอยเย็บสีแดงที่มุมกระเป๋า');
     await peerDialog.getByRole('button', { name: 'ส่งคำร้องขอรับของ' }).click();
     await expect(peerDialog.getByText('รอตรวจสอบ')).toBeVisible();
+    await peerPage.close();
 
     const ownerDialog = await openReport(page);
     await ownerDialog
@@ -337,6 +342,10 @@ test('submits a private claim and shows the owner decision in report details', a
       claimantDialog.getByText('รอยเย็บสีแดงที่มุมกระเป๋า', { exact: true }),
     ).toHaveCount(0);
   } finally {
-    await Promise.all([claimantPage.close(), peerPage.close(), pool.end()]);
+    await Promise.all([
+      claimantPage.isClosed() ? Promise.resolve() : claimantPage.close(),
+      peerPage.isClosed() ? Promise.resolve() : peerPage.close(),
+      pool.end(),
+    ]);
   }
 });
