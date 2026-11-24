@@ -17,14 +17,13 @@ export function ReportDetailSkeleton({ motion }: { motion: boolean }) {
         <div className={styles.location}>
           <Skeleton
             variant="rounded"
-            width={36}
-            height={36}
+            width={38}
+            height={38}
+            className={styles.locationBadge}
             animation={animation}
           />
-          <div className={styles.locationCopy} style={{ width: '80%' }}>
-            <Skeleton width={75} height={16} animation={animation} />
-            <Skeleton width="70%" height={24} animation={animation} />
-          </div>
+          <Skeleton width={75} height={16} animation={animation} />
+          <Skeleton width="70%" height={24} animation={animation} />
         </div>
         {[0, 1, 2].map((index) => (
           <div

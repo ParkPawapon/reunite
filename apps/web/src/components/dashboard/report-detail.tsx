@@ -254,15 +254,13 @@ export function ReportDetail({
               </p>
               <dl className={styles.details}>
                 <div className={styles.location}>
-                  <span className={styles.locationBadge} aria-hidden="true">
-                    <ShellIcon name="pin" width={18} height={18} />
-                  </span>
-                  <div className={styles.locationCopy}>
-                    <dt>
-                      {state.row.type === 'LOST' ? 'สถานที่หาย' : 'สถานที่พบ'}
-                    </dt>
-                    <dd>{state.row.locationName}</dd>
-                  </div>
+                  <dt>
+                    <span className={styles.locationBadge} aria-hidden="true">
+                      <ShellIcon name="pin" width={18} height={18} />
+                    </span>
+                    {state.row.type === 'LOST' ? 'สถานที่หาย' : 'สถานที่พบ'}
+                  </dt>
+                  <dd>{state.row.locationName}</dd>
                 </div>
                 <div className={`${styles.metaTile} ${styles.category}`}>
                   <dt>หมวดหมู่</dt>
