@@ -19,63 +19,56 @@ type Catalogs = Awaited<ReturnType<typeof loadReportOptions>>;
 
 export function ReportManagement({
   row,
+  mode,
+  formId,
   onUpdated,
   onPendingChange,
+  onEditReadyChange,
 }: {
   row: ReportRow;
-  onUpdated: (row: ReportRow) => void;
+  mode: 'edit' | 'close';
+  formId: string;
+  onUpdated: (row: ReportRow, message: string) => void;
   onPendingChange: (pending: boolean) => void;
+  onEditReadyChange: (ready: boolean) => void;
 }) {
   const locationFieldId = useId();
   const [locationId, setLocationId] = useState(String(row.locationId));
   const eventFields = bangkokEventFields(row.eventDatetime);
-  const [panel, setPanel] = useState<'actions' | 'edit' | 'close'>('actions');
   const [catalogs, setCatalogs] = useState<Catalogs | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const request = useRef<AbortController | null>(null);
   const titleField = useRef<HTMLInputElement>(null);
   const closeHeading = useRef<HTMLHeadingElement>(null);
-  const editButton = useRef<HTMLButtonElement>(null);
-  const restoreFocus = useRef(false);
 
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
-    if (panel !== 'edit') return;
+    if (mode !== 'edit') {
+      onEditReadyChange(false);
+      return;
+    }
+    onEditReadyChange(false);
     const controller = new AbortController();
     void loadReportOptions(controller.signal)
       .then((data) => {
-        if (!controller.signal.aborted) setCatalogs(data);
+        if (controller.signal.aborted) return;
+        setCatalogs(data);
+        onEditReadyChange(true);
       })
       .catch(() => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setError('โหลดหมวดหมู่และสถานที่ไม่สำเร็จ');
+          onEditReadyChange(false);
+        }
       });
     return () => controller.abort();
-  }, [panel, attempt]);
+  }, [mode, attempt, onEditReadyChange]);
   useEffect(() => {
-    if (panel === 'edit' && catalogs) titleField.current?.focus();
-    if (panel === 'close') closeHeading.current?.focus();
-    if (panel === 'actions' && restoreFocus.current) {
-      restoreFocus.current = false;
-      editButton.current?.focus();
-    }
-  }, [panel, catalogs]);
-
-  function openPanel(next: 'edit' | 'close') {
-    setError('');
-    setNotice('');
-    setCatalogs(null);
-    setLocationId(String(row.locationId));
-    setPanel(next);
-  }
-  function finish() {
-    restoreFocus.current = true;
-    setError('');
-    setPanel('actions');
-  }
+    if (mode === 'edit' && catalogs) titleField.current?.focus();
+    if (mode === 'close') closeHeading.current?.focus();
+  }, [mode, catalogs]);
   async function save(
     persist: (signal: AbortSignal) => Promise<ReportRow>,
     message: string,
@@ -89,9 +82,7 @@ export function ReportManagement({
     try {
       const next = await persist(controller.signal);
       if (controller.signal.aborted) return;
-      onUpdated(next);
-      setNotice(message);
-      finish();
+      onUpdated(next, message);
     } catch (cause) {
       if (controller.signal.aborted) return;
       const status = cause instanceof ReportRequestError ? cause.status : 0;
@@ -161,7 +152,7 @@ export function ReportManagement({
       fields.locationId === row.locationId &&
       !eventChanged
     ) {
-      finish();
+      onUpdated(row, 'ไม่มีข้อมูลที่เปลี่ยนแปลง');
       return;
     }
     void save(
@@ -174,31 +165,24 @@ export function ReportManagement({
     );
   }
   return (
-    <section className={styles.management} aria-label="จัดการประกาศ">
-      {panel === 'actions' && (
-        <div className={styles.manageActions}>
-          <button
-            className={styles.primary}
-            type="button"
-            ref={editButton}
-            onClick={() => openPanel('edit')}
-          >
-            <ShellIcon name="edit" width={17} height={17} /> แก้ไขรายการ
-          </button>
-          {row.status === 'OPEN' && (
-            <button
-              className={styles.secondary}
-              type="button"
-              onClick={() => openPanel('close')}
-            >
-              ปิดประกาศ
-            </button>
-          )}
-        </div>
-      )}
-      {panel === 'edit' && (
-        <form className={styles.manageForm} onSubmit={edit}>
-          <h3>แก้ไขรายการ</h3>
+    <section
+      className={mode === 'close' ? styles.dangerCard : styles.manageCard}
+      aria-label={mode === 'close' ? 'ยืนยันการปิดประกาศ' : 'แก้ไขรายการ'}
+    >
+      {mode === 'edit' && (
+        <form id={formId} className={styles.manageForm} onSubmit={edit}>
+          <div className={styles.manageCardHead}>
+            <span className={styles.sectionIcon}>
+              <ShellIcon name="edit" width={18} height={18} />
+            </span>
+            <div>
+              <h3>แก้ไขรายการ</h3>
+              <p className={styles.mutedText}>
+                ปรับชื่อ หมวดหมู่ สถานที่
+                หรือรายละเอียดเพื่อให้ค้นหาและจับคู่แม่นยำขึ้น
+              </p>
+            </div>
+          </div>
           {catalogs ? (
             <fieldset disabled={pending} className={styles.manageFields}>
               <label>
@@ -269,84 +253,61 @@ export function ReportManagement({
               </label>
             </fieldset>
           ) : !error ? (
-            <p role="status">กำลังโหลดหมวดหมู่และสถานที่…</p>
-          ) : null}
-          <div className={styles.manageActions}>
-            <button
-              type="button"
-              className={styles.secondary}
-              onClick={finish}
-              disabled={pending}
-            >
-              ยกเลิก
-            </button>
-            {catalogs ? (
+            <p className={styles.mutedText} role="status">
+              กำลังโหลดหมวดหมู่และสถานที่…
+            </p>
+          ) : (
+            <div className={styles.editReloadRow}>
               <button
-                type="submit"
-                className={styles.primary}
-                disabled={pending}
+                type="button"
+                className={styles.outlineBtn}
+                onClick={() => {
+                  setError('');
+                  setAttempt((value) => value + 1);
+                }}
               >
-                {pending ? 'กำลังบันทึก…' : 'บันทึกการแก้ไข'}
+                <ShellIcon name="refresh" width={15} height={15} />
+                ลองโหลดอีกครั้ง
               </button>
-            ) : (
-              error && (
-                <button
-                  type="button"
-                  className={styles.primary}
-                  onClick={() => {
-                    setError('');
-                    setAttempt((value) => value + 1);
-                  }}
-                >
-                  ลองโหลดอีกครั้ง
-                </button>
-              )
-            )}
-          </div>
+            </div>
+          )}
         </form>
       )}
-      {panel === 'close' && (
-        <div className={styles.manageForm}>
-          <h3 ref={closeHeading} tabIndex={-1}>
-            ยืนยันการปิดประกาศ
-          </h3>
-          <p>เมื่อยืนยัน ระบบจะเปลี่ยนสถานะประกาศเป็น “ปิดแล้ว”</p>
-          <div className={styles.manageActions}>
-            <button
-              type="button"
-              className={styles.secondary}
-              onClick={finish}
-              disabled={pending}
-            >
-              ยกเลิก
-            </button>
-            <button
-              type="button"
-              className={styles.primary}
-              disabled={pending}
-              onClick={() =>
-                void save(
-                  async (signal) => ({
-                    ...row,
-                    ...(await closeReport(row.reportId, signal)),
-                  }),
-                  'ปิดประกาศแล้ว',
-                )
-              }
-            >
-              {pending ? 'กำลังปิด…' : 'ยืนยันปิดประกาศ'}
-            </button>
+      {mode === 'close' && (
+        <form
+          id={formId}
+          className={styles.manageForm}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void save(
+              async (signal) => ({
+                ...row,
+                ...(await closeReport(row.reportId, signal)),
+              }),
+              'ปิดประกาศแล้ว',
+            );
+          }}
+        >
+          <div className={styles.dangerHeader}>
+            <span className={styles.dangerIcon}>
+              <ShellIcon name="alert" width={20} height={20} />
+            </span>
+            <div>
+              <h3 ref={closeHeading} tabIndex={-1}>
+                ยืนยันการปิดประกาศ
+              </h3>
+              <p>เมื่อยืนยัน ระบบจะเปลี่ยนสถานะประกาศเป็น “ปิดแล้ว”</p>
+            </div>
           </div>
-        </div>
+          <div className={styles.dangerItemSummary}>
+            <strong>{row.title}</strong>
+            <span>{row.locationName}</span>
+          </div>
+        </form>
       )}
       {error && (
         <p className={styles.formError} role="alert">
           {error}
-        </p>
-      )}
-      {notice && (
-        <p className={styles.saved} role="status">
-          {notice}
         </p>
       )}
     </section>

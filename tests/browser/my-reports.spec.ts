@@ -115,7 +115,23 @@ test('searches the full board while typing and lets an owner edit and close only
     ).toHaveCount(0);
     await page.getByRole('button', { name: title, exact: true }).click();
     const dialog = page.getByRole('dialog');
+    const footer = dialog.locator('footer');
+    await expect(
+      footer.getByRole('button', { name: 'แก้ไขรายการ', exact: true }),
+    ).toBeVisible();
+    await expect(
+      footer.getByRole('button', { name: 'ปิดประกาศ', exact: true }),
+    ).toBeVisible();
+    await expect(
+      footer.getByRole('button', { name: 'กลับไปดูรายการ', exact: true }),
+    ).toBeVisible();
     await dialog.getByRole('button', { name: 'แก้ไขรายการ' }).click();
+    await expect(
+      footer.getByRole('button', { name: 'บันทึกการแก้ไข', exact: true }),
+    ).toBeVisible();
+    await expect(
+      footer.getByRole('button', { name: 'ยกเลิก', exact: true }),
+    ).toBeVisible();
     const titleField = dialog.getByLabel('ชื่อสิ่งของ', { exact: true });
     await expect(titleField).toBeFocused();
     await titleField.fill(newTitle);

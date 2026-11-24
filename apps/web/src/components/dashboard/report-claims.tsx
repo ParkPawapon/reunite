@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { ShellIcon } from '@/components/shell/shell-icon';
 import {
   ClaimRequestError,
   loadReportClaims,
@@ -102,31 +103,56 @@ export function ReportClaims({
 
   return (
     <section
-      className={`${styles.management} ${styles.manageForm}`}
+      className={owner ? styles.sectionCard : styles.claimBannerCard}
       aria-label={owner ? 'คำร้องขอรับของ' : 'ขอรับของ'}
     >
-      <div className={styles.manageActions}>
-        <button
-          className={styles.secondary}
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={headingId}
-          disabled={pending}
-          onClick={() => {
-            if (!expanded) setRevision((value) => value + 1);
-            setExpanded(!expanded);
-          }}
-        >
-          {owner ? 'คำร้องขอรับของ' : 'ขอรับของและดูคำร้อง'}
-        </button>
+      <div className={styles.sectionHeader}>
+        <span className={owner ? styles.sectionIcon : styles.sectionIconStrong}>
+          <ShellIcon name="box" />
+        </span>
+        <div className={styles.sectionCopy}>
+          <strong>
+            {owner ? 'คำร้องขอรับของจากผู้ติดต่อ' : 'นี่คือของของคุณใช่ไหม?'}
+          </strong>
+          <p>
+            {owner
+              ? 'ตรวจสอบหลักฐานและอนุมัติหรือปฏิเสธคำร้องขอรับสิ่งของ'
+              : 'ส่งหลักฐานลักษณะจำเพาะเพื่อให้ผู้แจ้งตรวจสอบและติดต่อกลับ'}
+          </p>
+        </div>
+        <div className={styles.sectionHeaderAction}>
+          <button
+            className={
+              !owner && !expanded && claimable
+                ? styles.primaryBtn
+                : styles.outlineBtn
+            }
+            type="button"
+            aria-expanded={expanded}
+            aria-controls={headingId}
+            disabled={pending}
+            onClick={() => {
+              if (!expanded) setRevision((value) => value + 1);
+              setExpanded(!expanded);
+            }}
+          >
+            {owner ? 'คำร้องขอรับของ' : 'ขอรับของและดูคำร้อง'}
+            <ShellIcon
+              name="chevron"
+              width={16}
+              height={16}
+              className={expanded ? styles.chevronOpen : styles.chevron}
+            />
+          </button>
+        </div>
       </div>
       <div
         id={headingId}
         hidden={!expanded}
-        className={expanded ? styles.manageForm : undefined}
+        className={expanded ? styles.claimsPanel : undefined}
       >
         {notice && (
-          <p className={styles.saved} role="status">
+          <p className={styles.noticeInline} role="status">
             {notice}
           </p>
         )}
@@ -137,13 +163,15 @@ export function ReportClaims({
         )}
         {expanded &&
           (!current ? (
-            <p role="status">กำลังโหลดคำร้อง…</p>
+            <p className={styles.mutedText} role="status">
+              กำลังโหลดคำร้อง…
+            </p>
           ) : !current.data ? (
-            <div>
+            <div className={styles.claimsEmpty}>
               <p role="alert">โหลดคำร้องไม่สำเร็จ</p>
               <button
                 type="button"
-                className={styles.secondary}
+                className={styles.outlineBtn}
                 onClick={() => setRevision((value) => value + 1)}
               >
                 ลองโหลดคำร้องอีกครั้ง
@@ -171,7 +199,9 @@ export function ReportClaims({
                       </div>
                       <p>{claim.evidence}</p>
                       {claim.resolutionNote && (
-                        <p>ข้อความจากผู้แจ้งประกาศ · {claim.resolutionNote}</p>
+                        <p className={styles.claimNote}>
+                          ข้อความจากผู้แจ้งประกาศ · {claim.resolutionNote}
+                        </p>
                       )}
                       {owner &&
                         claim.status === 'PENDING' &&
@@ -196,25 +226,14 @@ export function ReportClaims({
                             </label>
                             <div className={styles.manageActions}>
                               <button
-                                className={styles.primary}
+                                className={styles.ghostBtn}
                                 type="button"
-                                onClick={() =>
-                                  void save(
-                                    (signal) =>
-                                      reviewClaim(
-                                        claim.claimId,
-                                        'APPROVED',
-                                        review.note.trim(),
-                                        signal,
-                                      ),
-                                    'อนุมัติคำร้องแล้ว',
-                                  )
-                                }
+                                onClick={() => setReview(null)}
                               >
-                                อนุมัติคำร้อง
+                                ยกเลิกการพิจารณา
                               </button>
                               <button
-                                className={styles.secondary}
+                                className={styles.dangerOutlineBtn}
                                 type="button"
                                 onClick={() =>
                                   void save(
@@ -232,11 +251,22 @@ export function ReportClaims({
                                 ไม่อนุมัติคำร้อง
                               </button>
                               <button
-                                className={styles.secondary}
+                                className={styles.primaryBtn}
                                 type="button"
-                                onClick={() => setReview(null)}
+                                onClick={() =>
+                                  void save(
+                                    (signal) =>
+                                      reviewClaim(
+                                        claim.claimId,
+                                        'APPROVED',
+                                        review.note.trim(),
+                                        signal,
+                                      ),
+                                    'อนุมัติคำร้องแล้ว',
+                                  )
+                                }
                               >
-                                ยกเลิกการพิจารณา
+                                อนุมัติคำร้อง
                               </button>
                             </div>
                           </fieldset>
@@ -244,7 +274,7 @@ export function ReportClaims({
                           <div className={styles.manageActions}>
                             <button
                               type="button"
-                              className={styles.secondary}
+                              className={styles.outlineBtn}
                               disabled={pending}
                               onClick={() =>
                                 setReview({ id: claim.claimId, note: '' })
@@ -258,7 +288,7 @@ export function ReportClaims({
                   ))}
                 </ul>
               ) : (
-                <p>
+                <p className={styles.mutedText}>
                   {owner
                     ? 'ยังไม่มีคำร้องสำหรับประกาศนี้'
                     : 'คุณยังไม่มีคำร้องสำหรับประกาศนี้'}
@@ -268,7 +298,7 @@ export function ReportClaims({
                 <div className={styles.manageActions}>
                   <button
                     type="button"
-                    className={styles.secondary}
+                    className={styles.outlineBtn}
                     disabled={pending || page === 0}
                     onClick={() => {
                       setReview(null);
@@ -279,7 +309,7 @@ export function ReportClaims({
                   </button>
                   <button
                     type="button"
-                    className={styles.secondary}
+                    className={styles.outlineBtn}
                     disabled={pending || !current.data.hasNext}
                     onClick={() => {
                       setReview(null);
@@ -318,9 +348,11 @@ export function ReportClaims({
                         onChange={(event) => setEvidence(event.target.value)}
                       />
                     </label>
-                    <p>ผู้แจ้งประกาศจะเห็นหลักฐานนี้เพื่อพิจารณาคำร้อง</p>
+                    <p className={styles.mutedText}>
+                      ผู้แจ้งประกาศจะเห็นหลักฐานนี้เพื่อพิจารณาคำร้อง
+                    </p>
                     <div className={styles.manageActions}>
-                      <button className={styles.primary} type="submit">
+                      <button className={styles.primaryBtn} type="submit">
                         {pending ? 'กำลังส่ง…' : 'ส่งคำร้องขอรับของ'}
                       </button>
                     </div>

@@ -50,7 +50,7 @@ export function ReportPhoto({
             <p>เปิดรูปไม่สำเร็จ</p>
             <button
               type="button"
-              className={styles.secondary}
+              className={styles.outlineBtn}
               onClick={() =>
                 setStates((current) => ({
                   ...current,
@@ -80,38 +80,47 @@ export function ReportPhoto({
           />
         )}
       </div>
-      {hrefs.length > 1 && (
-        <div
-          className={styles.galleryStrip}
-          role="group"
-          aria-label="เลือกรูปสิ่งของ"
-        >
-          {hrefs.map((href, index) => (
-            <button
-              key={href}
-              type="button"
-              className={styles.galleryThumb}
-              aria-pressed={index === safeIndex}
-              aria-label={`ดูรูปที่ ${index + 1}`}
-              onClick={() => setSelectedIndex(index)}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element -- bounded authenticated report thumbnail */}
-              <img src={href} alt="" />
-              <span>{index + 1}</span>
-            </button>
-          ))}
+      <figcaption className={styles.photoToolbar}>
+        {hrefs.length > 1 ? (
+          <div
+            className={styles.galleryStrip}
+            role="group"
+            aria-label="เลือกรูปสิ่งของ"
+          >
+            {hrefs.map((href, index) => (
+              <button
+                key={href}
+                type="button"
+                className={styles.galleryThumb}
+                aria-pressed={index === safeIndex}
+                aria-label={`ดูรูปที่ ${index + 1}`}
+                onClick={() => setSelectedIndex(index)}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- bounded authenticated report thumbnail */}
+                <img src={href} alt="" />
+                <span>{index + 1}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span className={styles.photoCaption}>ภาพประกอบหลัก</span>
+        )}
+        <div className={styles.photoMetaActions}>
+          {hrefs.length > 1 && (
+            <span className={styles.photoCounter}>
+              รูปที่ {safeIndex + 1}/{hrefs.length}
+            </span>
+          )}
+          <a
+            href={activeHref}
+            className={styles.imageLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ดูรูปเต็ม <ShellIcon name="external" width={14} height={14} />
+            <span className={styles.srOnly}>ในแท็บใหม่</span>
+          </a>
         </div>
-      )}
-      <figcaption>
-        <a
-          href={activeHref}
-          className={styles.imageLink}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          ดูรูปเต็ม <ShellIcon name="external" width={14} height={14} />
-          <span className={styles.srOnly}>ในแท็บใหม่</span>
-        </a>
       </figcaption>
     </figure>
   );

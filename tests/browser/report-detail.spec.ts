@@ -343,6 +343,32 @@ test('keeps photo upload errors actionable, renders the full item photo and retr
   await expect(
     dialog.getByRole('button', { name: 'ดูรูปที่ 2', exact: true }),
   ).toBeVisible();
+  const [del1Box, del2Box, thumbBox, fullLinkBox] = await Promise.all([
+    dialog
+      .getByRole('button', { name: 'ลบรูปที่ 1', exact: true })
+      .boundingBox(),
+    dialog
+      .getByRole('button', { name: 'ลบรูปที่ 2', exact: true })
+      .boundingBox(),
+    dialog
+      .getByRole('button', { name: 'ดูรูปที่ 2', exact: true })
+      .boundingBox(),
+    dialog.getByRole('link', { name: /ดูรูปเต็ม/ }).boundingBox(),
+  ]);
+  if (!del1Box || !del2Box || !thumbBox || !fullLinkBox) {
+    throw new Error('Expected photo slot buttons and toolbar links to render');
+  }
+  expect(
+    Math.abs(del1Box.x + del1Box.width - (del2Box.x + del2Box.width)),
+  ).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(
+      thumbBox.y +
+        thumbBox.height / 2 -
+        (fullLinkBox.y + fullLinkBox.height / 2),
+    ),
+  ).toBeLessThan(24);
+  expect(fullLinkBox.x).toBeGreaterThan(thumbBox.x + thumbBox.width);
   await dialog.getByRole('button', { name: 'ลบรูปที่ 2', exact: true }).click();
   await expect(
     dialog.getByRole('button', { name: 'ดูรูปที่ 2', exact: true }),
