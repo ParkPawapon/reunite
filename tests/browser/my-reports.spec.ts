@@ -134,7 +134,10 @@ test('searches the full board while typing and lets an owner edit and close only
     ).toBeVisible();
     const titleField = dialog.getByLabel('ชื่อสิ่งของ', { exact: true });
     await expect(titleField).toBeFocused();
-    const categorySelect = dialog.getByLabel('หมวดหมู่', { exact: true });
+    const categorySelect = dialog.getByRole('combobox', {
+      name: 'หมวดหมู่',
+      exact: true,
+    });
     const location = dialog.getByRole('combobox', { name: /สถานที่หาย/ });
     const locationOutline = location.locator('xpath=..');
     const datetimeTrigger = dialog.getByRole('button', {
