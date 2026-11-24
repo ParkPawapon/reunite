@@ -221,12 +221,23 @@ it('creates one account under concurrent sign-in and uses the existing session l
   expect(
     (await account.profile(request('/profile', 'GET', first.token))).status,
   ).toBe(200);
+  for (const forbidden of [
+    { ...details, email: 'other@kmutt.ac.th' },
+    { ...details, firstName: 'Changed' },
+    { ...details, lastName: 'Changed' },
+  ]) {
+    await expect(
+      application.profile.update(userId, forbidden),
+    ).rejects.toMatchObject({ status: 403 });
+  }
   await expect(
-    application.profile.update(userId, {
-      ...details,
-      email: 'other@kmutt.ac.th',
-    }),
-  ).rejects.toMatchObject({ status: 403 });
+    application.profile.update(userId, { ...details, phone: '0812345678' }),
+  ).resolves.toMatchObject({
+    firstName: details.firstName,
+    lastName: details.lastName,
+    email: details.email,
+    phone: '0812345678',
+  });
   const rotated = await application.auth.loginWithMicrosoft(
     {
       ...identity,

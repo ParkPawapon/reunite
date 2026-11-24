@@ -1,6 +1,8 @@
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { test, expect, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import sharp from 'sharp';
+import { isolatedServerDatabase } from './isolated-server-database';
 import { browserAccount } from './test-account';
 
 async function settleMotion(page: import('@playwright/test').Page) {
@@ -302,4 +304,80 @@ test('edits a real private profile, uploads a photo and reads account notificati
   await page.keyboard.press('Escape');
   await expect(page.locator('#notification-panel')).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('disables Entra identity fields on profile while keeping contact details editable and topbar motion toggle removed', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const pool = await isolatedServerDatabase();
+  const token = randomBytes(32).toString('base64url');
+  const objectId = randomUUID();
+  try {
+    await pool.query(
+      `WITH account AS (
+        INSERT INTO users (
+          name, email, microsoft_tenant_id, microsoft_object_id,
+          first_name, last_name, student_id, faculty, department, major,
+          profile_completed_at
+        )
+        VALUES (
+          'Pawapon Thammalangka', $1, $2, $3,
+          'Pawapon', 'Thammalangka', '65070500001',
+          'คณะเทคโนโลยีสารสนเทศ', NULL, 'วิทยาการคอมพิวเตอร์ (หลักสูตรภาษาอังกฤษ)',
+          CURRENT_TIMESTAMP
+        )
+        RETURNING user_id
+      )
+      INSERT INTO auth_sessions (user_id, token_hash, expires_at)
+      SELECT user_id, $4, CURRENT_TIMESTAMP + INTERVAL '1 day' FROM account`,
+      [
+        `${objectId}@kmutt.ac.th`,
+        randomUUID(),
+        objectId,
+        createHash('sha256').update(token).digest('hex'),
+      ],
+    );
+    await context.addCookies([
+      { name: 'browser_test_session', value: token, url: baseURL },
+    ]);
+    await page.goto('/profile');
+    await expect(
+      page.getByRole('heading', { name: 'โปรไฟล์ของฉัน', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator('[data-topbar]')
+        .getByRole('button', { name: /ภาพเคลื่อนไหว/ }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('textbox', { name: 'ชื่อจริง', exact: false }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole('textbox', { name: 'นามสกุล', exact: false }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole('textbox', { name: 'อีเมล', exact: false }),
+    ).toBeDisabled();
+    const phone = page.getByLabel('เบอร์โทรศัพท์', { exact: true });
+    await expect(phone).toBeEnabled();
+    await phone.fill('0899999999');
+    await page
+      .getByRole('button', { name: 'บันทึกการเปลี่ยนแปลง', exact: true })
+      .click();
+    await expect(page.getByRole('status')).toContainText(
+      'บันทึกข้อมูลเรียบร้อยแล้ว',
+    );
+    await expect(phone).toHaveValue('0899999999');
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+  } finally {
+    await pool.end();
+  }
 });

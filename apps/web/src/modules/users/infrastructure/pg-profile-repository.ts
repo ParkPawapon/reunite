@@ -51,13 +51,19 @@ export class PgProfileRepository implements ProfileRepository {
     const [row] = await query<{
       email: string;
       password_hash: string | null;
-    }>(this.db, 'SELECT email, password_hash FROM users WHERE user_id=$1', [
-      userId,
-    ]);
+      first_name: string | null;
+      last_name: string | null;
+    }>(
+      this.db,
+      'SELECT email, password_hash, first_name, last_name FROM users WHERE user_id=$1',
+      [userId],
+    );
     return row
       ? {
           email: row.email,
           hash: row.password_hash,
+          firstName: row.first_name,
+          lastName: row.last_name,
         }
       : null;
   }
@@ -91,7 +97,11 @@ export class PgProfileRepository implements ProfileRepository {
       UPDATE users SET name=$2, first_name=$3, last_name=$4, email=$5,
         student_id=$6, faculty=$7, department=$8, major=$9, phone=$10
       WHERE user_id=$1 AND password_hash IS NOT DISTINCT FROM $11
-        AND ($11 IS NOT NULL OR email=$5)
+        AND ($11 IS NOT NULL OR (
+          email=$5
+          AND (first_name IS NULL OR first_name=$3)
+          AND (last_name IS NULL OR last_name=$4)
+        ))
         AND ROW(first_name,last_name,email,student_id,faculty,department,major,phone)
           IS DISTINCT FROM ROW($3::varchar,$4::varchar,$5::varchar,$6::varchar,$7::varchar,$8::varchar,$9::varchar,$10::varchar)
       RETURNING ${columns}
@@ -99,7 +109,11 @@ export class PgProfileRepository implements ProfileRepository {
       INSERT INTO notifications (user_id,kind) SELECT user_id,'PROFILE_UPDATED' FROM changed
     ) SELECT ${columns} FROM changed UNION ALL
       SELECT ${columns} FROM users WHERE user_id=$1 AND password_hash IS NOT DISTINCT FROM $11
-        AND ($11 IS NOT NULL OR email=$5)
+        AND ($11 IS NOT NULL OR (
+          email=$5
+          AND (first_name IS NULL OR first_name=$3)
+          AND (last_name IS NULL OR last_name=$4)
+        ))
         AND NOT EXISTS (SELECT 1 FROM changed)`,
       [
         userId,

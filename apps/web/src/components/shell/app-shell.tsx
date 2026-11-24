@@ -24,9 +24,8 @@ export function AppShell({
   const desktop = useMediaQuery('(min-width: 1000px)');
   const [compact, setCompact] = useState(false);
   const [drawer, setDrawer] = useState(false);
-  const [paused, setPaused] = useState(false);
   const { visible, reducedMotion } = useMotionPolicy();
-  const running = visible && !reducedMotion && !paused;
+  const running = visible && !reducedMotion;
   const navigationPage = page === 'matches' ? 'dashboard' : page;
   const title = {
     campus: 'แผนที่บางมด',
@@ -82,7 +81,6 @@ export function AppShell({
         <div className={styles.workspace}>
           <Topbar
             title={title}
-            showMotionControl={page !== 'campus'}
             user={user}
             menuExpanded={desktop ? !compact : drawer}
             menuId={desktop ? 'desktop-navigation' : 'mobile-navigation'}
@@ -100,8 +98,6 @@ export function AppShell({
               if (desktop) setCompact((value) => !value);
               else setDrawer((value) => !value);
             }}
-            paused={paused}
-            onPause={() => setPaused((value) => !value)}
           />
           {loading && (
             <p role="status" className={styles.srOnly}>

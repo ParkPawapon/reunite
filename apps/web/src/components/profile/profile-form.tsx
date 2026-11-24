@@ -48,6 +48,9 @@ export function ProfileForm({
   const majors = Object.hasOwn(programs, values.department)
     ? (programs[values.department] ?? [])
     : [];
+  const emailLocked = !canChangeEmail;
+  const firstNameLocked = !canChangeEmail && Boolean(profile.firstName);
+  const lastNameLocked = !canChangeEmail && Boolean(profile.lastName);
 
   function educationSelect(
     key: 'faculty' | 'department' | 'major',
@@ -90,7 +93,12 @@ export function ProfileForm({
   function field(
     key: keyof ProfileFields,
     max: number,
-    options: { required?: boolean; autoComplete?: string; type?: string } = {},
+    options: {
+      required?: boolean;
+      autoComplete?: string;
+      type?: string;
+      disabled?: boolean;
+    } = {},
   ) {
     return (
       <TextField
@@ -98,6 +106,7 @@ export function ProfileForm({
         label={labels[key]}
         value={values[key]}
         required={options.required}
+        disabled={options.disabled}
         fullWidth
         type={options.type ?? 'text'}
         autoComplete={options.autoComplete ?? 'off'}
@@ -107,7 +116,7 @@ export function ProfileForm({
         slotProps={{
           htmlInput: {
             maxLength: max,
-            readOnly: pending || (key === 'email' && !canChangeEmail),
+            readOnly: pending,
             ...(key === 'studentId' ? { inputMode: 'numeric' } : {}),
           },
         }}
@@ -129,10 +138,12 @@ export function ProfileForm({
           {field('firstName', 100, {
             required: true,
             autoComplete: 'given-name',
+            disabled: firstNameLocked,
           })}
           {field('lastName', 100, {
             required: true,
             autoComplete: 'family-name',
+            disabled: lastNameLocked,
           })}
         </div>
       </section>
@@ -157,6 +168,7 @@ export function ProfileForm({
             required: true,
             type: 'email',
             autoComplete: 'email',
+            disabled: emailLocked,
           })}
           <AnimatePresence initial={false}>
             {canChangeEmail &&

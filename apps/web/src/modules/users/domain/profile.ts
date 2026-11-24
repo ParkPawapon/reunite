@@ -38,6 +38,8 @@ export interface ProfileRepository {
   credentials(userId: number): Promise<{
     email: string;
     hash: string | null;
+    firstName: string | null;
+    lastName: string | null;
   } | null>;
   complete(userId: number, input: ProfileCompletionInput): Promise<void>;
   update(

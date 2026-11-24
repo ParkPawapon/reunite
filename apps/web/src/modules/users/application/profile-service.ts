@@ -29,13 +29,25 @@ export class ProfileService {
     const credentials = await this.repository.credentials(userId);
     if (!credentials)
       throw new AppError('NOT_FOUND', 404, 'Account unavailable');
-    if (input.email !== credentials.email) {
-      if (!credentials.hash)
+    if (!credentials.hash) {
+      if (input.email !== credentials.email)
         throw new AppError(
           'FORBIDDEN',
           403,
           'Microsoft sign-in accounts cannot change their email here',
         );
+      if (
+        (credentials.firstName !== null &&
+          input.firstName !== credentials.firstName) ||
+        (credentials.lastName !== null &&
+          input.lastName !== credentials.lastName)
+      )
+        throw new AppError(
+          'FORBIDDEN',
+          403,
+          'Microsoft sign-in accounts cannot change their Entra name here',
+        );
+    } else if (input.email !== credentials.email) {
       if (
         !input.currentPassword ||
         !(await this.confirmPassword(
