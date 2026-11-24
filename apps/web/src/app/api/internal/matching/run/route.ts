@@ -6,6 +6,9 @@ import { createMatchingWorker } from '@/modules/matching/infrastructure/create-m
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
+const MAX_JOBS_PER_RUN = 4;
+const BATCH_BUDGET_MS = 42_000;
+
 export async function POST(request: Request) {
   return api(request, async () => {
     const secret = process.env.MATCHING_RUNNER_SECRET;
@@ -19,6 +22,16 @@ export async function POST(request: Request) {
     )
       throw new AppError('UNAUTHORIZED', 401, 'Authentication required');
     const worker = createMatchingWorker();
-    return success({ processed: worker ? await worker.runOnce() : false });
+    if (!worker) return success({ processed: false });
+
+    const startedAt = Date.now();
+    let processedCount = 0;
+    for (let i = 0; i < MAX_JOBS_PER_RUN; i++) {
+      if (i > 0 && Date.now() - startedAt >= BATCH_BUDGET_MS) break;
+      const didProcess = await worker.runOnce();
+      if (!didProcess) break;
+      processedCount++;
+    }
+    return success({ processed: processedCount > 0 });
   });
 }

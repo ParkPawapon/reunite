@@ -1,10 +1,11 @@
 import { getPool } from '@campus/database';
 import {
+  isFreeMatchingProvider,
   matchingConfig,
   MATCHING_MODEL,
-  CLOUDFLARE_MATCHING_MODEL,
   MATCHING_RESERVATION_USD_MICROS,
 } from '../apps/web/src/config/matching';
+
 const pool = getPool();
 try {
   const config = matchingConfig();
@@ -21,17 +22,22 @@ try {
     'SELECT state,count(*)::integer AS count FROM report_matches GROUP BY state ORDER BY state',
   );
   const reserved = Number(totals.rows[0]?.reserved ?? 0);
+  const freeMode = isFreeMatchingProvider(config.provider);
+  const leadFree = config.freeProviders[0];
   process.stdout.write(
     `${JSON.stringify(
       {
         enabled: config.enabled,
-        keyConfigured: !!config.apiKey,
+        keyConfigured: freeMode
+          ? config.freeProviders.length > 0
+          : !!config.apiKey,
         provider: config.provider,
-        model:
-          config.provider === 'cloudflare'
-            ? CLOUDFLARE_MATCHING_MODEL
-            : MATCHING_MODEL,
-        ...(config.provider === 'cloudflare' && {
+        model: freeMode ? (leadFree?.model ?? null) : MATCHING_MODEL,
+        ...(freeMode && {
+          freeProviders: config.freeProviders.map((entry) => ({
+            provider: entry.provider,
+            model: entry.model,
+          })),
           freeDailyLimit: config.freeDailyLimit,
           freeAttemptsToday: totals.rows[0]?.free_attempts ?? 0,
         }),
