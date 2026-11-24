@@ -7,6 +7,7 @@ import {
 } from '@/lib/composition';
 import { serverConfig } from '@/config/server';
 import {
+  isFreeMatchingProvider,
   matchingConfig,
   MATCHING_RESERVATION_USD_MICROS,
 } from '@/config/matching';
@@ -78,11 +79,10 @@ export function createMatchingHandlers(
         const { reservedUsdMicros, freeAttemptsToday, ...page } =
           await resolve().matching.list(identity.userId, before);
         const config = matchingConfig();
-        const quotaExhausted =
-          config.provider === 'cloudflare'
-            ? freeAttemptsToday >= config.freeDailyLimit
-            : reservedUsdMicros + MATCHING_RESERVATION_USD_MICROS >
-              config.budgetUsdMicros;
+        const quotaExhausted = isFreeMatchingProvider(config.provider)
+          ? freeAttemptsToday >= config.freeDailyLimit
+          : reservedUsdMicros + MATCHING_RESERVATION_USD_MICROS >
+            config.budgetUsdMicros;
         return success({
           ...page,
           serviceStatus: !config.enabled

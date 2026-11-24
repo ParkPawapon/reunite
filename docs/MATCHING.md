@@ -16,12 +16,16 @@ Both providers receive report fields and normalized item photos, with structured
 
 ## Configuration and costs
 
-### Cloudflare Workers Free on Vercel
+### Free Multi-Provider Mode on Vercel (`auto` / `gemini` / `groq` / `cloudflare`)
 
-1. Apply migration `0010`. Use a Cloudflare Workers Free account and a token scoped to that account's Workers AI inference. Store `CLOUDFLARE_WORKERS_AI_TOKEN` as a Sensitive Production variable in Vercel and set `CLOUDFLARE_ACCOUNT_ID` to the corresponding account ID.
-2. Set `MATCHING_PROVIDER=cloudflare`, `MATCHING_BUDGET_USD=0`, and `MATCHING_FREE_DAILY_LIMIT` between 1 and 10. The database reserves attempts centrally using UTC dates, including retries. A provider throttle pauses queue claims according to `Retry-After`, or for 15 minutes if the provider omits a valid delay. The Cloudflare account's own free allocation also applies.
-3. Generate a 32-byte random lowercase hex secret. Set it as Sensitive Production `MATCHING_RUNNER_SECRET` in Vercel and in Supabase Vault as `reunite_matching_runner_secret`. Assign read access to the release operator only. Deploy with `MATCHING_ENABLED=true`, then run [schedule-matching.sql](../infra/supabase/schedule-matching.sql) as the Supabase release operator. The scheduler invokes the protected `POST /api/internal/matching/run` once per minute and logs only execution status. Keep the Data API disabled.
-4. Verify a real inference and both return confirmations using disposable reports without personal data. Check `cron.job_run_details`, the API's matching status and the Cloudflare Free usage dashboard. To stop scheduling, run `SELECT cron.unschedule('reunite-match-items');` as the release operator. A redeploy with `MATCHING_ENABLED=false` stops inference.
+1. Apply migration `0010` and keep `MATCHING_BUDGET_USD=0` (with no paid OpenAI fallback).
+2. Configure any subset of free provider credentials you want in the fallback chain:
+   - **Gemini API:** `GEMINI_API_KEY` (and optional `GEMINI_MODEL`, default `gemini-flash-latest`). Note: Gemini Free Tier permits Google product improvement under Unpaid terms; prefer Paid billing or redact personal IDs before sending real student photos.
+   - **GroqCloud Free:** `GROQ_API_KEY` (and optional `GROQ_MODEL`, default `qwen/qwen3.8-27b`, capped cleanly at 3 balanced images per pair).
+   - **Cloudflare Workers AI Free:** `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_WORKERS_AI_TOKEN` (`@cf/google/gemma-4-26b-a4b-it`).
+3. Set `MATCHING_PROVIDER=auto` (or set a specific primary such as `gemini`, `groq`, or `cloudflare` with `MATCHING_FREE_FALLBACK=true` and `MATCHING_FREE_ORDER=gemini,groq,cloudflare`). If a primary hits `429` rate limit or temporary `5xx`, the worker automatically cools it down and falls back to the next configured free provider on the same job. Set `MATCHING_FREE_DAILY_LIMIT` between `1` and `1000` (default `10`).
+4. Generate a 32-byte random lowercase hex secret. Set it as Sensitive Production `MATCHING_RUNNER_SECRET` in Vercel and in Supabase Vault as `reunite_matching_runner_secret`. Assign read access to the release operator only. Deploy with `MATCHING_ENABLED=true`, then run [schedule-matching.sql](../infra/supabase/schedule-matching.sql) as the Supabase release operator. Each cron tick executes up to 4 comparisons within a bounded time budget and logs only execution status. Keep the Data API disabled.
+5. Verify a real inference and both return confirmations using disposable reports without personal data. Check `cron.job_run_details`, the API's matching status and provider usage dashboards. To stop scheduling, run `SELECT cron.unschedule('reunite-match-items');` as the release operator. A redeploy with `MATCHING_ENABLED=false` stops inference.
 
 ### Existing OpenAI configuration
 
