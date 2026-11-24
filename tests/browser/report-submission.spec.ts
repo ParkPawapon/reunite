@@ -286,11 +286,36 @@ test('attaches multiple angles/damage photos on a new report and uploads all of 
   await openForm(page);
   await fillForm(page, title, false);
   await page.locator('input[type=file]').setInputFiles([
-    { name: 'angle1.png', mimeType: 'image/png', buffer: photo },
-    { name: 'damage2.png', mimeType: 'image/png', buffer: photo },
+    { name: 'a.png', mimeType: 'image/png', buffer: photo },
+    {
+      name: 'very-long-second-angle-damage-photo.png',
+      mimeType: 'image/png',
+      buffer: photo,
+    },
   ]);
-  await expect(page.getByText('angle1.png')).toBeVisible();
-  await expect(page.getByText('damage2.png')).toBeVisible();
+  await expect(page.getByText('a.png')).toBeVisible();
+  await expect(
+    page.getByText('very-long-second-angle-damage-photo.png'),
+  ).toBeVisible();
+  const listItems = page
+    .getByRole('list', { name: 'รูปสิ่งของที่แนบ' })
+    .locator('li');
+  const [row1Box, row2Box, del1Box, del2Box] = await Promise.all([
+    listItems.nth(0).boundingBox(),
+    listItems.nth(1).boundingBox(),
+    page.getByRole('button', { name: 'ลบรูปที่ 1' }).boundingBox(),
+    page.getByRole('button', { name: 'ลบรูปที่ 2' }).boundingBox(),
+  ]);
+  if (!row1Box || !row2Box || !del1Box || !del2Box) {
+    throw new Error(
+      'Expected photo rows and delete buttons to have bounding boxes',
+    );
+  }
+  const del1Right = del1Box.x + del1Box.width;
+  const del2Right = del2Box.x + del2Box.width;
+  expect(Math.abs(del1Right - del2Right)).toBeLessThanOrEqual(1);
+  expect(row1Box.x + row1Box.width - del1Right).toBeLessThan(24);
+  expect(row2Box.x + row2Box.width - del2Right).toBeLessThan(24);
   await submitLost(page).click();
   await expect(
     page.getByRole('heading', { name: 'แจ้งรายการแล้ว' }),
