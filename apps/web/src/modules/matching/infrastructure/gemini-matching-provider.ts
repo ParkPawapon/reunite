@@ -8,6 +8,7 @@ import {
   assessmentSchema,
   ensureProviderResponseOk,
   matchingInstructions,
+  parseJsonPayload,
   prepareInlineMatchMedia,
   readProviderResponse,
 } from './matching-provider-contract';
@@ -23,7 +24,14 @@ const responseSchema = z.object({
       z.object({
         finishReason: z.literal('STOP'),
         content: z.object({
-          parts: z.array(z.object({ text: z.string().optional() })).min(1),
+          parts: z
+            .array(
+              z.object({
+                text: z.string().optional(),
+                thought: z.boolean().optional(),
+              }),
+            )
+            .min(1),
         }),
       }),
     )
@@ -32,6 +40,26 @@ const responseSchema = z.object({
 
 type GeminiPart =
   { text: string } | { inlineData: { mimeType: string; data: string } };
+
+function buildGeminiGenerationConfig(model: string) {
+  const isLegacyV2 = model.toLowerCase().startsWith('gemini-2.');
+  const supportsThinkingLevel = /^gemini-(?:3|4)/i.test(model);
+  return {
+    ...(isLegacyV2 ? { temperature: 0 } : {}),
+    ...(supportsThinkingLevel
+      ? {
+          thinkingConfig: {
+            thinkingLevel: model.toLowerCase().includes('flash-lite')
+              ? 'minimal'
+              : 'low',
+          },
+        }
+      : {}),
+    maxOutputTokens: isLegacyV2 ? 4096 : 8192,
+    responseMimeType: 'application/json',
+    responseJsonSchema: assessmentJsonSchema(false, false),
+  };
+}
 
 export class GeminiMatchingProvider implements MatchingProvider {
   private readonly endpoint: string;
@@ -47,7 +75,8 @@ export class GeminiMatchingProvider implements MatchingProvider {
   }
 
   async compare(job: MatchJob) {
-    const { itemText, photos } = await prepareInlineMatchMedia(job);
+    const { expectedImageComparison, itemText, photos } =
+      await prepareInlineMatchMedia(job);
     const parts: GeminiPart[] = [{ text: itemText }];
     for (const photo of photos) {
       parts.push({ text: photo.label });
@@ -70,50 +99,84 @@ export class GeminiMatchingProvider implements MatchingProvider {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: matchingInstructions }] },
           contents: [{ role: 'user', parts }],
-          generationConfig: {
-            temperature: 0,
-            maxOutputTokens: 4096,
-            responseMimeType: 'application/json',
-            responseJsonSchema: assessmentJsonSchema(false),
-          },
+          generationConfig: buildGeminiGenerationConfig(this.model),
         }),
       });
     } catch {
-      throw new MatchingFailure('PROVIDER_UNAVAILABLE', true);
+      throw new MatchingFailure('PROVIDER_UNAVAILABLE', true, undefined, {
+        stage: 'network',
+      });
     }
 
     await ensureProviderResponseOk(response);
-    const parsed = responseSchema.safeParse(
-      await readProviderResponse(response),
-    );
-    if (!parsed.success)
-      throw new MatchingFailure('INVALID_PROVIDER_RESPONSE', false);
+    const body = await readProviderResponse(response);
+    const parsed = responseSchema.safeParse(body);
+    if (!parsed.success) {
+      const candidateFinish =
+        body &&
+        typeof body === 'object' &&
+        Array.isArray((body as { candidates?: unknown[] }).candidates)
+          ? (body as { candidates: { finishReason?: unknown }[] }).candidates[0]
+              ?.finishReason
+          : undefined;
+      throw new MatchingFailure('INVALID_PROVIDER_RESPONSE', false, undefined, {
+        stage: 'response_shape',
+        detail:
+          typeof candidateFinish === 'string'
+            ? `finishReason:${candidateFinish}`
+            : parsed.error.issues[0]?.path.join('.') || 'invalid_envelope',
+      });
+    }
 
     const modelVersion = parsed.data.modelVersion ?? this.model;
     if (
       this.model !== GEMINI_MATCHING_MODEL &&
+      this.model !== 'gemini-flash-latest' &&
       !modelVersion.toLowerCase().startsWith(this.model.toLowerCase())
     ) {
-      throw new MatchingFailure('INVALID_PROVIDER_RESPONSE', false);
+      throw new MatchingFailure('INVALID_PROVIDER_RESPONSE', false, undefined, {
+        stage: 'model_mismatch',
+      });
     }
 
     const rawText = parsed.data.candidates[0]?.content.parts
+      .filter((part) => !part.thought)
       .map((part) => part.text ?? '')
       .join('')
       .trim();
-    if (!rawText) throw new MatchingFailure('INVALID_PROVIDER_RESPONSE', false);
-
-    try {
-      const assessment = assessmentSchema.parse(JSON.parse(rawText));
-      return {
-        assessment,
-        model: modelVersion,
-        responseId:
-          parsed.data.responseId ?? `gemini-${job.matchId}-${Date.now()}`,
-        estimatedUsdMicros: 0,
-      };
-    } catch {
-      throw new MatchingFailure('INVALID_ASSESSMENT', false);
+    if (!rawText) {
+      throw new MatchingFailure('INVALID_PROVIDER_RESPONSE', false, undefined, {
+        stage: 'empty_output',
+      });
     }
+
+    let assessment: z.infer<typeof assessmentSchema>;
+    try {
+      assessment = assessmentSchema.parse(parseJsonPayload(rawText));
+    } catch (error) {
+      throw new MatchingFailure('INVALID_ASSESSMENT', false, undefined, {
+        stage: 'assessment_schema',
+        detail:
+          error instanceof z.ZodError
+            ? error.issues
+                .slice(0, 2)
+                .map((i) => `${i.path.join('.') || 'root'}:${i.code}`)
+                .join(',')
+            : 'json_parse',
+      });
+    }
+    if (assessment.imageComparison !== expectedImageComparison) {
+      throw new MatchingFailure('INVALID_IMAGE_ASSESSMENT', false, undefined, {
+        stage: 'image_flag',
+        detail: `${assessment.imageComparison}!=${expectedImageComparison}`,
+      });
+    }
+    return {
+      assessment,
+      model: modelVersion,
+      responseId:
+        parsed.data.responseId ?? `gemini-${job.matchId}-${Date.now()}`,
+      estimatedUsdMicros: 0,
+    };
   }
 }

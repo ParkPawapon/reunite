@@ -23,7 +23,12 @@ export class GroqMatchingProvider implements MatchingProvider {
       strictSchema: false,
       includeStoreFalse: false,
       ...(this.model.startsWith('qwen/qwen3')
-        ? { extraBody: { reasoning_effort: 'none' } }
+        ? {
+            extraBody: {
+              reasoning_effort: 'low',
+              reasoning_format: 'parsed',
+            },
+          }
         : {}),
       transport: this.transport,
     });

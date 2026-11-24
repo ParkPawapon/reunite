@@ -14,7 +14,7 @@ export type MatchingProviderName = 'openai' | 'auto' | FreeMatchingProviderName;
 
 export const MATCHING_MODEL = 'gpt-5.4-mini-2026-03-17';
 export const CLOUDFLARE_MATCHING_MODEL = '@cf/google/gemma-4-26b-a4b-it';
-export const GEMINI_MATCHING_MODEL = 'gemini-flash-latest';
+export const GEMINI_MATCHING_MODEL = 'gemini-3.8-flash';
 export const GROQ_MATCHING_MODEL = 'qwen/qwen3.8-27b';
 export const MATCHING_RESERVATION_USD_MICROS = 100_000;
 

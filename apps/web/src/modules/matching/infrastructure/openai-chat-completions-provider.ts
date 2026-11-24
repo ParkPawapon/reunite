@@ -7,6 +7,7 @@ import {
   assessmentSchema,
   ensureProviderResponseOk,
   matchingInstructions,
+  parseJsonPayload,
   prepareInlineMatchMedia,
   readProviderResponse,
 } from './matching-provider-contract';
@@ -27,22 +28,12 @@ type ChatContent =
   | { type: 'text'; text: string }
   | { type: 'image_url'; image_url: { url: string } };
 
-function parseJsonPayload(raw: string): unknown {
-  const trimmed = raw.trim();
-  const unwrapped = trimmed.startsWith('```')
-    ? trimmed.replace(/^```(?:json)?\s*\r?\n?|\r?\n?```$/g, '').trim()
-    : trimmed;
-  return JSON.parse(unwrapped) as unknown;
-}
-
 export async function compareWithChatCompletions(
   job: MatchJob,
   options: ChatCompletionsOptions,
 ): Promise<ProviderResult> {
-  const { itemText, photos } = await prepareInlineMatchMedia(
-    job,
-    options.maxImages,
-  );
+  const { expectedImageComparison, itemText, photos } =
+    await prepareInlineMatchMedia(job, options.maxImages);
   const content: ChatContent[] = [{ type: 'text', text: itemText }];
   for (const photo of photos) {
     content.push({ type: 'text', text: photo.label });
@@ -90,7 +81,7 @@ export async function compareWithChatCompletions(
           json_schema: {
             name: 'item_match_assessment',
             strict: options.strictSchema,
-            schema: assessmentJsonSchema(true),
+            schema: assessmentJsonSchema(true, options.strictSchema),
           },
         },
         ...(options.includeStoreFalse ? { store: false } : {}),
@@ -99,25 +90,46 @@ export async function compareWithChatCompletions(
       }),
     });
   } catch {
-    throw new MatchingFailure('PROVIDER_UNAVAILABLE', true);
+    throw new MatchingFailure('PROVIDER_UNAVAILABLE', true, undefined, {
+      stage: 'network',
+    });
   }
 
   await ensureProviderResponseOk(response);
   const parsed = responseSchema.safeParse(await readProviderResponse(response));
-  if (!parsed.success || parsed.data.model !== options.model)
-    throw new MatchingFailure('INVALID_PROVIDER_RESPONSE', false);
+  if (!parsed.success || parsed.data.model !== options.model) {
+    throw new MatchingFailure('INVALID_PROVIDER_RESPONSE', false, undefined, {
+      stage: 'response_shape',
+    });
+  }
 
+  let assessment: z.infer<typeof assessmentSchema>;
   try {
-    const assessment = assessmentSchema.parse(
+    assessment = assessmentSchema.parse(
       parseJsonPayload(parsed.data.choices[0].message.content),
     );
-    return {
-      assessment,
-      model: parsed.data.model,
-      responseId: parsed.data.id,
-      estimatedUsdMicros: 0,
-    };
-  } catch {
-    throw new MatchingFailure('INVALID_ASSESSMENT', false);
+  } catch (error) {
+    throw new MatchingFailure('INVALID_ASSESSMENT', false, undefined, {
+      stage: 'assessment_schema',
+      detail:
+        error instanceof z.ZodError
+          ? error.issues
+              .slice(0, 2)
+              .map((i) => `${i.path.join('.') || 'root'}:${i.code}`)
+              .join(',')
+          : 'json_parse',
+    });
   }
+  if (assessment.imageComparison !== expectedImageComparison) {
+    throw new MatchingFailure('INVALID_IMAGE_ASSESSMENT', false, undefined, {
+      stage: 'image_flag',
+      detail: `${assessment.imageComparison}!=${expectedImageComparison}`,
+    });
+  }
+  return {
+    assessment,
+    model: parsed.data.model,
+    responseId: parsed.data.id,
+    estimatedUsdMicros: 0,
+  };
 }

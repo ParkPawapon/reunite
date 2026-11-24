@@ -20,7 +20,7 @@ Both providers receive report fields and normalized item photos, with structured
 
 1. Apply migration `0010` and keep `MATCHING_BUDGET_USD=0` (with no paid OpenAI fallback).
 2. Configure any subset of free provider credentials you want in the fallback chain:
-   - **Gemini API:** `GEMINI_API_KEY` (and optional `GEMINI_MODEL`, default `gemini-flash-latest`). Note: Gemini Free Tier permits Google product improvement under Unpaid terms; prefer Paid billing or redact personal IDs before sending real student photos.
+   - **Gemini API:** `GEMINI_API_KEY` (and optional `GEMINI_MODEL`, default `gemini-3.8-flash`). Note: Gemini Free Tier permits Google product improvement under Unpaid terms; prefer Paid billing or redact personal IDs before sending real student photos.
    - **GroqCloud Free:** `GROQ_API_KEY` (and optional `GROQ_MODEL`, default `qwen/qwen3.8-27b`, capped cleanly at 3 balanced images per pair).
    - **Cloudflare Workers AI Free:** `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_WORKERS_AI_TOKEN` (`@cf/google/gemma-4-26b-a4b-it`).
 3. Set `MATCHING_PROVIDER=auto` (or set a specific primary such as `gemini`, `groq`, or `cloudflare` with `MATCHING_FREE_FALLBACK=true` and `MATCHING_FREE_ORDER=gemini,groq,cloudflare`). If a primary hits `429` rate limit or temporary `5xx`, the worker automatically cools it down and falls back to the next configured free provider on the same job. Set `MATCHING_FREE_DAILY_LIMIT` between `1` and `1000` (default `10`).
