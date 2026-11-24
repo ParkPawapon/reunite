@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+import IconButton from '@mui/material/IconButton';
 import Skeleton from '@mui/material/Skeleton';
+import Tooltip from '@mui/material/Tooltip';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
 import {
@@ -253,7 +255,7 @@ export function ReportImageUpload({
   if (access.kind === 'loading')
     return (
       <section
-        className={styles.sectionCard}
+        className={styles.sectionBlock}
         role="status"
         aria-label="กำลังโหลดตัวเลือกรูป"
       >
@@ -266,7 +268,7 @@ export function ReportImageUpload({
     );
   if (access.kind === 'error')
     return (
-      <section className={styles.sectionCard} role="alert">
+      <section className={styles.sectionBlock} role="alert">
         <div className={styles.sectionHeader}>
           <p className={styles.feedback}>ตรวจตัวเลือกแนบรูปไม่สำเร็จ</p>
           <button
@@ -288,7 +290,10 @@ export function ReportImageUpload({
   const canAddMore = count < maxImages;
 
   return (
-    <section className={styles.sectionCard} aria-label="รูปของรายการนี้">
+    <section
+      className={styles.sectionBlock}
+      aria-label={count > 0 ? 'จัดการรูปภาพ' : 'รูปช่วยให้จำง่าย'}
+    >
       <input
         ref={input}
         type="file"
@@ -311,14 +316,14 @@ export function ReportImageUpload({
       />
       <div className={styles.sectionHeader}>
         <span className={styles.sectionIcon}>
-          <ShellIcon name="camera" />
+          <ShellIcon
+            name={count > 0 ? 'image' : 'camera'}
+            width={18}
+            height={18}
+          />
         </span>
         <div className={styles.sectionCopy}>
-          <strong>
-            {count > 0
-              ? `รูปของรายการนี้ (${count}/${maxImages} รูป)`
-              : 'รูปช่วยให้จำง่าย'}
-          </strong>
+          <strong>{count > 0 ? 'จัดการรูปภาพ' : 'รูปช่วยให้จำง่าย'}</strong>
           <p>
             สูงสุด {maxImages} รูป · JPG, PNG หรือ WebP · ไม่เกิน{' '}
             {MAX_REPORT_IMAGE_MIB} MiB ต่อรูป
@@ -352,6 +357,10 @@ export function ReportImageUpload({
           {access.slots.map((slot) => {
             const single = count === 1;
             const slotNumber = slot === 2 ? 2 : slot === 3 ? 3 : 1;
+            const replaceLabel = single
+              ? 'เปลี่ยนรูปสิ่งของ'
+              : `เปลี่ยนรูปที่ ${slot}`;
+            const removeLabel = single ? 'ลบรูป' : `ลบรูปที่ ${slot}`;
             return (
               <li key={slot} className={styles.slotItem}>
                 <span className={styles.slotIdentity}>
@@ -361,27 +370,32 @@ export function ReportImageUpload({
                   <span className={styles.slotLabel}>รูปที่ {slot}</span>
                 </span>
                 <div className={styles.slotActions}>
-                  <button
-                    type="button"
-                    className={styles.outlineBtn}
-                    disabled={busy || refreshing}
-                    onClick={() => {
-                      targetRef.current = { mode: 'replace', slot: slotNumber };
-                      input.current?.click();
-                    }}
-                  >
-                    <ShellIcon name="edit" width={15} height={15} />
-                    {single ? 'เปลี่ยนรูปสิ่งของ' : `เปลี่ยนรูปที่ ${slot}`}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.dangerOutlineBtn}
-                    disabled={busy || refreshing}
-                    onClick={() => void removeSlot(slotNumber)}
-                  >
-                    <ShellIcon name="trash" width={15} height={15} />
-                    {single ? 'ลบรูป' : `ลบรูปที่ ${slot}`}
-                  </button>
+                  <Tooltip title={replaceLabel}>
+                    <IconButton
+                      className={styles.slotIconBtn}
+                      aria-label={replaceLabel}
+                      disabled={busy || refreshing}
+                      onClick={() => {
+                        targetRef.current = {
+                          mode: 'replace',
+                          slot: slotNumber,
+                        };
+                        input.current?.click();
+                      }}
+                    >
+                      <ShellIcon name="edit" width={17} height={17} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={removeLabel}>
+                    <IconButton
+                      className={styles.slotDeleteBtn}
+                      aria-label={removeLabel}
+                      disabled={busy || refreshing}
+                      onClick={() => void removeSlot(slotNumber)}
+                    >
+                      <ShellIcon name="trash" width={17} height={17} />
+                    </IconButton>
+                  </Tooltip>
                 </div>
               </li>
             );

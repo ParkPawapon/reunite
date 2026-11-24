@@ -108,7 +108,7 @@ export function ReportPhoto({
         <div className={styles.photoMetaActions}>
           {hrefs.length > 1 && (
             <span className={styles.photoCounter}>
-              รูปที่ {safeIndex + 1}/{hrefs.length}
+              {safeIndex + 1}/{hrefs.length} รูป
             </span>
           )}
           <a
@@ -117,7 +117,7 @@ export function ReportPhoto({
             target="_blank"
             rel="noopener noreferrer"
           >
-            ดูรูปเต็ม <ShellIcon name="external" width={14} height={14} />
+            <ShellIcon name="external" width={14} height={14} /> ดูรูปเต็ม
             <span className={styles.srOnly}>ในแท็บใหม่</span>
           </a>
         </div>

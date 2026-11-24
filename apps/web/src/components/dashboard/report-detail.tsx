@@ -237,71 +237,103 @@ export function ReportDetail({
           </div>
         ) : (
           <div className={styles.viewStack} hidden={mode !== null}>
-            {managedImage && photoHrefs.length > 0 && (
-              <ReportPhoto
-                key={`${reportId}:${revision}`}
-                hrefs={photoHrefs}
-                title={state.row.title}
-                motion={motion}
-              />
-            )}
-            <section className={styles.overviewCard} aria-label="ข้อมูลสิ่งของ">
-              <p
-                className={styles.description}
-                data-empty={!state.row.description}
-              >
-                {state.row.description || 'ไม่ได้ระบุรายละเอียดเพิ่มเติม'}
-              </p>
-              <dl className={styles.details}>
-                <div className={styles.location}>
-                  <dt>
-                    <span className={styles.locationBadge} aria-hidden="true">
-                      <ShellIcon name="pin" width={18} height={18} />
-                    </span>
-                    {state.row.type === 'LOST' ? 'สถานที่หาย' : 'สถานที่พบ'}
-                  </dt>
-                  <dd>{state.row.locationName}</dd>
+            <div
+              className={styles.overviewGrid}
+              data-has-media={managedImage && photoHrefs.length > 0}
+            >
+              {managedImage && photoHrefs.length > 0 && (
+                <div className={styles.overviewMedia}>
+                  <ReportPhoto
+                    key={`${reportId}:${revision}`}
+                    hrefs={photoHrefs}
+                    title={state.row.title}
+                    motion={motion}
+                  />
                 </div>
-                <div className={`${styles.metaTile} ${styles.category}`}>
-                  <dt>หมวดหมู่</dt>
-                  <dd>{state.row.categoryName}</dd>
-                </div>
-                <div className={styles.metaTile}>
-                  <dt>
-                    {state.row.type === 'LOST' ? 'วันที่หาย' : 'วันที่พบ'}
-                  </dt>
-                  <dd>
-                    <time dateTime={state.row.eventDatetime}>
-                      {reportDate.format(new Date(state.row.eventDatetime))}
-                      {' · '}
-                      {formatEventTime(
-                        bangkokEventFields(state.row.eventDatetime).time,
-                      )}
-                    </time>
-                  </dd>
-                </div>
-                <div className={styles.metaTile}>
-                  <dt>วันที่แจ้ง</dt>
-                  <dd>
-                    <time dateTime={state.row.createdAt}>
-                      {reportDate.format(new Date(state.row.createdAt))}
-                    </time>
-                  </dd>
-                </div>
-              </dl>
-              {imageHref && !managedImage && (
-                <a
-                  href={imageHref}
-                  className={styles.imageLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  เปิดรูปประกอบ{' '}
-                  <ShellIcon name="external" width={14} height={14} />
-                  <span className={styles.srOnly}>ในแท็บใหม่</span>
-                </a>
               )}
-            </section>
+              <section
+                className={styles.overviewDetails}
+                aria-label="ข้อมูลสิ่งของ"
+              >
+                <div className={styles.detailsHeading}>
+                  <span
+                    className={styles.detailsHeadingIcon}
+                    aria-hidden="true"
+                  >
+                    <ShellIcon name="list" width={16} height={16} />
+                  </span>
+                  <h3>รายละเอียด</h3>
+                </div>
+                <p
+                  className={styles.description}
+                  data-empty={!state.row.description}
+                >
+                  {state.row.description || 'ไม่ได้ระบุรายละเอียดเพิ่มเติม'}
+                </p>
+                <dl className={styles.metaList}>
+                  <div className={styles.metaRow}>
+                    <dt>
+                      <span className={styles.metaIcon} aria-hidden="true">
+                        <ShellIcon name="pin" width={16} height={16} />
+                      </span>
+                      {state.row.type === 'LOST' ? 'สถานที่หาย' : 'สถานที่พบ'}
+                    </dt>
+                    <dd>{state.row.locationName}</dd>
+                  </div>
+                  <div className={styles.metaRow}>
+                    <dt>
+                      <span className={styles.metaIcon} aria-hidden="true">
+                        <ShellIcon name="tag" width={16} height={16} />
+                      </span>
+                      หมวดหมู่
+                    </dt>
+                    <dd>{state.row.categoryName}</dd>
+                  </div>
+                  <div className={styles.metaRow}>
+                    <dt>
+                      <span className={styles.metaIcon} aria-hidden="true">
+                        <ShellIcon name="clock" width={16} height={16} />
+                      </span>
+                      {state.row.type === 'LOST' ? 'วันที่หาย' : 'วันที่พบ'}
+                    </dt>
+                    <dd>
+                      <time dateTime={state.row.eventDatetime}>
+                        {reportDate.format(new Date(state.row.eventDatetime))}
+                        {' · '}
+                        {formatEventTime(
+                          bangkokEventFields(state.row.eventDatetime).time,
+                        )}
+                      </time>
+                    </dd>
+                  </div>
+                  <div className={styles.metaRow}>
+                    <dt>
+                      <span className={styles.metaIcon} aria-hidden="true">
+                        <ShellIcon name="calendar" width={16} height={16} />
+                      </span>
+                      วันที่แจ้ง
+                    </dt>
+                    <dd>
+                      <time dateTime={state.row.createdAt}>
+                        {reportDate.format(new Date(state.row.createdAt))}
+                      </time>
+                    </dd>
+                  </div>
+                </dl>
+                {imageHref && !managedImage && (
+                  <a
+                    href={imageHref}
+                    className={styles.imageLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    เปิดรูปประกอบ{' '}
+                    <ShellIcon name="external" width={14} height={14} />
+                    <span className={styles.srOnly}>ในแท็บใหม่</span>
+                  </a>
+                )}
+              </section>
+            </div>
           </div>
         )}
         {row && canManage && mode !== null && (
@@ -328,7 +360,7 @@ export function ReportDetail({
             }}
           />
         )}
-        <div hidden={mode !== null}>
+        <div className={styles.sectionStack} hidden={mode !== null}>
           <ReportImageUpload
             reportId={reportId}
             shown={state.kind === 'ready'}
@@ -411,32 +443,37 @@ export function ReportDetail({
           </>
         ) : canManage && row ? (
           <>
-            <button
-              type="button"
-              className={styles.backBtn}
-              onClick={close}
-              disabled={saving}
-            >
-              <ShellIcon
-                name="arrow"
-                width={14}
-                height={14}
-                className={styles.backIcon}
-              />
-              กลับไปดูรายการ
-            </button>
-            <div className={styles.footerActions}>
+            <div className={styles.footerLeft}>
+              <button
+                type="button"
+                className={styles.backBtn}
+                onClick={close}
+                disabled={saving}
+              >
+                <ShellIcon
+                  name="arrow"
+                  width={14}
+                  height={14}
+                  className={styles.backIcon}
+                />
+                กลับไปดูรายการ
+              </button>
               {row.status === 'OPEN' && (
-                <button
-                  type="button"
-                  ref={closeBtn}
-                  className={styles.quietDangerBtn}
-                  onClick={() => openManagement('close')}
-                  disabled={saving}
-                >
-                  ปิดประกาศ
-                </button>
+                <>
+                  <span className={styles.footerSep} aria-hidden="true" />
+                  <button
+                    type="button"
+                    ref={closeBtn}
+                    className={styles.quietDangerBtn}
+                    onClick={() => openManagement('close')}
+                    disabled={saving}
+                  >
+                    ปิดประกาศ
+                  </button>
+                </>
               )}
+            </div>
+            <div className={styles.footerActions}>
               <button
                 type="button"
                 ref={editBtn}

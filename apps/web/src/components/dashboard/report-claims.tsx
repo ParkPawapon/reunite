@@ -103,7 +103,7 @@ export function ReportClaims({
 
   return (
     <section
-      className={owner ? styles.sectionCard : styles.claimBannerCard}
+      className={owner ? styles.sectionBlock : styles.claimBannerCard}
       aria-label={owner ? 'คำร้องขอรับของ' : 'ขอรับของ'}
     >
       <div className={styles.sectionHeader}>

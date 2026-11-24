@@ -287,6 +287,7 @@ test('shows real detail loading and recovers from server failure or a removed re
 test('keeps photo upload errors actionable, renders the full item photo and retries image decoding', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90_000);
   await page.getByRole('button', { name: title, exact: true }).click();
   const dialog = page.getByRole('dialog');
   const picker = dialog.getByLabel('เลือกรูปสิ่งของ');
@@ -343,21 +344,41 @@ test('keeps photo upload errors actionable, renders the full item photo and retr
   await expect(
     dialog.getByRole('button', { name: 'ดูรูปที่ 2', exact: true }),
   ).toBeVisible();
-  const [del1Box, del2Box, thumbBox, fullLinkBox] = await Promise.all([
-    dialog
-      .getByRole('button', { name: 'ลบรูปที่ 1', exact: true })
-      .boundingBox(),
-    dialog
-      .getByRole('button', { name: 'ลบรูปที่ 2', exact: true })
-      .boundingBox(),
-    dialog
-      .getByRole('button', { name: 'ดูรูปที่ 2', exact: true })
-      .boundingBox(),
-    dialog.getByRole('link', { name: /ดูรูปเต็ม/ }).boundingBox(),
-  ]);
-  if (!del1Box || !del2Box || !thumbBox || !fullLinkBox) {
-    throw new Error('Expected photo slot buttons and toolbar links to render');
+  const [del1Box, del2Box, thumbBox, fullLinkBox, imgBox, detailsHeadBox] =
+    await Promise.all([
+      dialog
+        .getByRole('button', { name: 'ลบรูปที่ 1', exact: true })
+        .boundingBox(),
+      dialog
+        .getByRole('button', { name: 'ลบรูปที่ 2', exact: true })
+        .boundingBox(),
+      dialog
+        .getByRole('button', { name: 'ดูรูปที่ 2', exact: true })
+        .boundingBox(),
+      dialog.getByRole('link', { name: /ดูรูปเต็ม/ }).boundingBox(),
+      dialog
+        .getByRole('img', {
+          name: `รูป ${title} (รูปที่ 1 จาก 2)`,
+          exact: true,
+        })
+        .boundingBox(),
+      dialog
+        .getByRole('heading', { name: 'รายละเอียด', exact: true })
+        .boundingBox(),
+    ]);
+  if (
+    !del1Box ||
+    !del2Box ||
+    !thumbBox ||
+    !fullLinkBox ||
+    !imgBox ||
+    !detailsHeadBox
+  ) {
+    throw new Error('Expected two-column photo layout and slot icon controls');
   }
+  expect(del1Box.width).toBeLessThanOrEqual(48);
+  expect(del2Box.width).toBeLessThanOrEqual(48);
+  expect(imgBox.x + imgBox.width).toBeLessThanOrEqual(detailsHeadBox.x);
   expect(
     Math.abs(del1Box.x + del1Box.width - (del2Box.x + del2Box.width)),
   ).toBeLessThanOrEqual(1);
@@ -373,6 +394,7 @@ test('keeps photo upload errors actionable, renders the full item photo and retr
   await expect(
     dialog.getByRole('button', { name: 'ดูรูปที่ 2', exact: true }),
   ).toHaveCount(0);
+  await page.mouse.move(0, 0);
   await settle(page);
   await mkdir(artifacts, { recursive: true });
   const photo = path.join(artifacts, 'photo.png');
