@@ -252,8 +252,8 @@ export function ReportImageUpload({
   if (!shown || access.kind === 'unavailable') return null;
   if (access.kind === 'loading')
     return (
-      <div
-        className={styles.upload}
+      <section
+        className={styles.sectionCard}
         role="status"
         aria-label="กำลังโหลดตัวเลือกรูป"
       >
@@ -262,23 +262,25 @@ export function ReportImageUpload({
           height={44}
           animation={motion ? 'wave' : false}
         />
-      </div>
+      </section>
     );
   if (access.kind === 'error')
     return (
-      <div className={styles.upload} role="alert">
-        <p className={styles.feedback}>ตรวจตัวเลือกแนบรูปไม่สำเร็จ</p>
-        <button
-          type="button"
-          className={styles.secondary}
-          onClick={() => {
-            setAccess({ kind: 'loading' });
-            setAccessRevision((value) => value + 1);
-          }}
-        >
-          ลองอีกครั้ง
-        </button>
-      </div>
+      <section className={styles.sectionCard} role="alert">
+        <div className={styles.sectionHeader}>
+          <p className={styles.feedback}>ตรวจตัวเลือกแนบรูปไม่สำเร็จ</p>
+          <button
+            type="button"
+            className={styles.outlineBtn}
+            onClick={() => {
+              setAccess({ kind: 'loading' });
+              setAccessRevision((value) => value + 1);
+            }}
+          >
+            ลองอีกครั้ง
+          </button>
+        </div>
+      </section>
     );
 
   const count = access.slots.length;
@@ -286,7 +288,7 @@ export function ReportImageUpload({
   const canAddMore = count < maxImages;
 
   return (
-    <div className={styles.upload}>
+    <section className={styles.sectionCard} aria-label="รูปของรายการนี้">
       <input
         ref={input}
         type="file"
@@ -307,11 +309,11 @@ export function ReportImageUpload({
           }
         }}
       />
-      <div className={styles.uploadRow}>
-        <span className={styles.uploadIcon}>
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionIcon}>
           <ShellIcon name="camera" />
         </span>
-        <div className={styles.uploadCopy}>
+        <div className={styles.sectionCopy}>
           <strong>
             {count > 0
               ? `รูปของรายการนี้ (${count}/${maxImages} รูป)`
@@ -322,11 +324,11 @@ export function ReportImageUpload({
             {MAX_REPORT_IMAGE_MIB} MiB ต่อรูป
           </p>
         </div>
-        <div className={styles.uploadActions}>
-          {canAddMore && (
+        {canAddMore && (
+          <div className={styles.sectionHeaderAction}>
             <button
               type="button"
-              className={styles.primary}
+              className={styles.tonalBtn}
               disabled={busy || refreshing}
               onClick={() => {
                 targetRef.current = { mode: 'add' };
@@ -342,8 +344,8 @@ export function ReportImageUpload({
                     ? 'แนบรูปสิ่งของ'
                     : `เพิ่มรูป (${count}/${maxImages})`}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
       {count > 0 && (
         <ul className={styles.slotList} aria-label="จัดการรูปที่แนบ">
@@ -352,25 +354,32 @@ export function ReportImageUpload({
             const slotNumber = slot === 2 ? 2 : slot === 3 ? 3 : 1;
             return (
               <li key={slot} className={styles.slotItem}>
-                <span className={styles.slotLabel}>รูปที่ {slot}</span>
-                <div className={styles.uploadActions}>
+                <span className={styles.slotIdentity}>
+                  <span className={styles.slotIndex} aria-hidden="true">
+                    {slot}
+                  </span>
+                  <span className={styles.slotLabel}>รูปที่ {slot}</span>
+                </span>
+                <div className={styles.slotActions}>
                   <button
                     type="button"
-                    className={styles.secondary}
+                    className={styles.outlineBtn}
                     disabled={busy || refreshing}
                     onClick={() => {
                       targetRef.current = { mode: 'replace', slot: slotNumber };
                       input.current?.click();
                     }}
                   >
+                    <ShellIcon name="edit" width={15} height={15} />
                     {single ? 'เปลี่ยนรูปสิ่งของ' : `เปลี่ยนรูปที่ ${slot}`}
                   </button>
                   <button
                     type="button"
-                    className={styles.secondary}
+                    className={styles.dangerOutlineBtn}
                     disabled={busy || refreshing}
                     onClick={() => void removeSlot(slotNumber)}
                   >
+                    <ShellIcon name="trash" width={15} height={15} />
                     {single ? 'ลบรูป' : `ลบรูปที่ ${slot}`}
                   </button>
                 </div>
@@ -390,6 +399,6 @@ export function ReportImageUpload({
       <p role="status" className={`${styles.feedback} ${styles.saved}`}>
         {saved}
       </p>
-    </div>
+    </section>
   );
 }
