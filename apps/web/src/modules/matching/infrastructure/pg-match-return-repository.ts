@@ -13,6 +13,9 @@ import type {
   MatchReturnRepository,
   MatchRevision,
 } from '../domain/match-return';
+import { analyzeMatchText } from '../domain/text-similarity';
+import { compareMatchImagesLocally } from './image-comparison';
+import { assessmentSchema } from './matching-provider-contract';
 
 type PairRow = {
   match_id: number;
@@ -21,6 +24,9 @@ type PairRow = {
   found_revision: string;
   lost: MatchItem;
   found: MatchItem;
+  lost_image: Buffer | null;
+  found_image: Buffer | null;
+  raw_assessment: unknown;
   lost_confirmed_at: Date | null;
   found_confirmed_at: Date | null;
   returned_at: Date | null;
@@ -33,20 +39,27 @@ async function ownedPair(db: Sql, matchId: number, userId: number) {
     `SELECT m.match_id, m.lost_revision::text, m.found_revision::text,
       CASE WHEN l.user_id=$2 THEN 'LOST' ELSE 'FOUND' END AS role,
       m.lost_confirmed_at, m.found_confirmed_at, m.returned_at,
+      m.result AS raw_assessment,
+      l.image_data AS lost_image,
+      f.image_data AS found_image,
       COALESCE(m.state='complete' AND m.result->>'decision'='possible_match'
         AND l.matching_revision=m.lost_revision AND f.matching_revision=m.found_revision
         AND l.status='OPEN' AND f.status='OPEN', FALSE) AS current_suggestion,
       json_build_object(
         'reportId', l.report_id, 'title', l.title, 'description', l.description,
-        'location', ll.location_name, 'occurredAt', l.event_datetime, 'hasPhoto', l.image_data IS NOT NULL
+        'category', lc.category_name, 'location', ll.location_name,
+        'occurredAt', l.event_datetime, 'hasPhoto', l.image_data IS NOT NULL
       ) AS lost,
       json_build_object(
         'reportId', f.report_id, 'title', f.title, 'description', f.description,
-        'location', fl.location_name, 'occurredAt', f.event_datetime, 'hasPhoto', f.image_data IS NOT NULL
+        'category', fc.category_name, 'location', fl.location_name,
+        'occurredAt', f.event_datetime, 'hasPhoto', f.image_data IS NOT NULL
       ) AS found
       FROM report_matches m
       JOIN item_reports l ON l.report_id=m.lost_report_id
       JOIN item_reports f ON f.report_id=m.found_report_id
+      JOIN categories lc ON lc.category_id=l.category_id
+      JOIN categories fc ON fc.category_id=f.category_id
       JOIN locations ll ON ll.location_id=l.location_id
       JOIN locations fl ON fl.location_id=f.location_id
       WHERE m.match_id=$1 AND $2 IN (l.user_id,f.user_id)
@@ -56,7 +69,30 @@ async function ownedPair(db: Sql, matchId: number, userId: number) {
   return row;
 }
 
-function toMatchReturn(row: PairRow): MatchReturn {
+async function toMatchReturn(row: PairRow): Promise<MatchReturn> {
+  const lostOccurredAt = new Date(row.lost.occurredAt).toISOString();
+  const foundOccurredAt = new Date(row.found.occurredAt).toISOString();
+  const textComparison = analyzeMatchText(
+    {
+      title: row.lost.title,
+      description: row.lost.description,
+      category: row.lost.category,
+      location: row.lost.location,
+      eventDatetime: lostOccurredAt,
+    },
+    {
+      title: row.found.title,
+      description: row.found.description,
+      category: row.found.category,
+      location: row.found.location,
+      eventDatetime: foundOccurredAt,
+    },
+  );
+  const imageSimilarity = await compareMatchImagesLocally(
+    row.lost_image,
+    row.found_image,
+  );
+  const parsedAssessment = assessmentSchema.safeParse(row.raw_assessment);
   return {
     matchId: row.match_id,
     role: row.role,
@@ -64,15 +100,18 @@ function toMatchReturn(row: PairRow): MatchReturn {
     foundRevision: row.found_revision,
     lost: {
       ...row.lost,
-      occurredAt: new Date(row.lost.occurredAt).toISOString(),
+      occurredAt: lostOccurredAt,
     },
     found: {
       ...row.found,
-      occurredAt: new Date(row.found.occurredAt).toISOString(),
+      occurredAt: foundOccurredAt,
     },
     lostConfirmedAt: row.lost_confirmed_at?.toISOString() ?? null,
     foundConfirmedAt: row.found_confirmed_at?.toISOString() ?? null,
     returnedAt: row.returned_at?.toISOString() ?? null,
+    textComparison,
+    imageSimilarity,
+    assessment: parsedAssessment.success ? parsedAssessment.data : null,
   };
 }
 
@@ -82,7 +121,7 @@ export class PgMatchReturnRepository implements MatchReturnRepository {
   async find(matchId: number, userId: number) {
     const row = await ownedPair(this.pool, matchId, userId);
     return row && (row.current_suggestion || row.returned_at)
-      ? toMatchReturn(row)
+      ? await toMatchReturn(row)
       : null;
   }
 
@@ -115,7 +154,7 @@ export class PgMatchReturnRepository implements MatchReturnRepository {
           const ownConfirmation = isLost
             ? pair.lost_confirmed_at
             : pair.found_confirmed_at;
-          if (ownConfirmation) return toMatchReturn(pair);
+          if (ownConfirmation) return await toMatchReturn(pair);
           const bothConfirmed = Boolean(
             isLost ? pair.found_confirmed_at : pair.lost_confirmed_at,
           );
@@ -155,7 +194,7 @@ export class PgMatchReturnRepository implements MatchReturnRepository {
           const updated = await ownedPair(db, matchId, userId);
           if (!updated)
             throw new Error('Confirmed match missing inside transaction');
-          return toMatchReturn(updated);
+          return await toMatchReturn(updated);
         });
       } catch (error) {
         // A report edit can also invalidate another pair that shares its report.

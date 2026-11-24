@@ -121,6 +121,10 @@ test('opens the match from alerts in one dialog and completes the return on two 
     await expect(
       page.getByRole('heading', { name: 'ของสองชิ้นนี้อาจตรงกัน' }),
     ).toBeFocused();
+    await expect(
+      review.getByRole('region', { name: 'ผลการเทียบภาพและข้อความ' }),
+    ).toBeVisible();
+    await expect(review.getByText('ข้อความที่พิมพ์')).toBeVisible();
     await expect(page.getByText('ไม่มีรูปแนบ')).toBeVisible();
     await expect
       .poll(() =>

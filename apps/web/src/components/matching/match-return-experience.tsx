@@ -353,23 +353,107 @@ export function MatchReturnExperience({
             </div>
           )}
           {pair && stage === 'review' && (
-            <div className={styles.cards}>
-              <ItemCard
-                key={'lost:' + pair.lostRevision}
-                item={pair.lost}
-                label="ของหาย"
-                own={pair.role === 'LOST'}
-              />
-              <ItemCard
-                key={'found:' + pair.foundRevision}
-                item={pair.found}
-                label="ของที่พบ"
-                own={pair.role === 'FOUND'}
-              />
-              <span className={styles.join} aria-hidden="true" data-match-join>
-                <ShellIcon name="target" />
-              </span>
-            </div>
+            <>
+              <div className={styles.cards}>
+                <ItemCard
+                  key={'lost:' + pair.lostRevision}
+                  item={pair.lost}
+                  label="ของหาย"
+                  own={pair.role === 'LOST'}
+                />
+                <ItemCard
+                  key={'found:' + pair.foundRevision}
+                  item={pair.found}
+                  label="ของที่พบ"
+                  own={pair.role === 'FOUND'}
+                />
+                <span
+                  className={styles.join}
+                  aria-hidden="true"
+                  data-match-join
+                >
+                  <ShellIcon name="target" />
+                </span>
+              </div>
+              <section
+                className={styles.analysis}
+                aria-label="ผลการเทียบภาพและข้อความ"
+              >
+                <div className={styles.analysisGrid}>
+                  <div className={styles.analysisBlock}>
+                    <div className={styles.analysisHead}>
+                      <h3>ข้อความที่พิมพ์</h3>
+                      <span
+                        className={styles.levelBadge}
+                        data-level={pair.textComparison.level}
+                      >
+                        {pair.textComparison.label}
+                      </span>
+                    </div>
+                    <p className={styles.analysisSummary}>
+                      {pair.textComparison.summary}
+                    </p>
+                    {pair.textComparison.matchedKeywords.length > 0 && (
+                      <ul
+                        className={styles.keywords}
+                        aria-label="คำสำคัญที่ตรงกัน"
+                      >
+                        {pair.textComparison.matchedKeywords.map((word) => (
+                          <li key={word}>{word}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <ul className={styles.reasonList}>
+                      {pair.textComparison.reasons.map((reason, index) => (
+                        <li key={index} data-relation={reason.relation}>
+                          {reason.detail}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className={styles.analysisBlock}>
+                    <div className={styles.analysisHead}>
+                      <h3>ภาพที่แนบและสรุปผล</h3>
+                      <span
+                        className={styles.levelBadge}
+                        data-level={pair.imageSimilarity.level}
+                      >
+                        {pair.imageSimilarity.label}
+                      </span>
+                    </div>
+                    <p className={styles.analysisSummary}>
+                      {pair.assessment?.summary ?? pair.imageSimilarity.detail}
+                    </p>
+                    {pair.assessment &&
+                      pair.assessment.summary !==
+                        pair.imageSimilarity.detail && (
+                        <p className={styles.analysisNote}>
+                          {pair.imageSimilarity.detail}
+                        </p>
+                      )}
+                    {pair.assessment && pair.assessment.evidence.length > 0 && (
+                      <ul className={styles.reasonList}>
+                        {pair.assessment.evidence.map((ev, index) => (
+                          <li key={index} data-relation={ev.relation}>
+                            {ev.relation === 'agree'
+                              ? 'ตรงกัน: '
+                              : 'ข้อสังเกตต่างกัน: '}
+                            {ev.detail}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {pair.assessment &&
+                      pair.assessment.missingEvidence.length > 0 && (
+                        <p className={styles.analysisMissing}>
+                          ควรตรวจสอบเพิ่มเติม:{' '}
+                          {pair.assessment.missingEvidence.join(', ')}
+                        </p>
+                      )}
+                  </div>
+                </div>
+              </section>
+            </>
           )}
           {pair && stage !== 'review' && (
             <>

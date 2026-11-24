@@ -563,3 +563,66 @@ it('uploads only owner images, strips metadata, sends stored bytes into jobs and
     (await handlers.deleteImage(request('DELETE'), context(lost))).status,
   ).toBe(200);
 });
+
+it('fast-rejects unrelated cross-category pairs with zero quota/budget and exposes text+image analysis in GET /api/v1/matches/:id', async () => {
+  await pool.query(
+    "INSERT INTO categories(category_name) VALUES('เครื่องแต่งกาย')",
+  );
+  const lostPhone = (
+    await pool.query<{ report_id: number }>(
+      `INSERT INTO item_reports(user_id,category_id,location_id,type,title,description,event_datetime)
+      VALUES(1,1,1,'LOST','iPhone 15 Pro สีไทเทเนียม','หน้าจอมีรอยเล็กน้อย','2026-11-24T08:00:00Z') RETURNING report_id`,
+    )
+  ).rows[0]?.report_id;
+  await pool.query(
+    `INSERT INTO item_reports(user_id,category_id,location_id,type,title,description,event_datetime)
+    VALUES(2,2,1,'FOUND','เสื้อกันหนาวสีเขียว','ผ้าฝ้ายแขวนลืมไว้','2026-11-24T09:00:00Z')`,
+  );
+  const foundPhone = (
+    await pool.query<{ report_id: number }>(
+      `INSERT INTO item_reports(user_id,category_id,location_id,type,title,description,event_datetime)
+      VALUES(3,1,1,'FOUND','พบ iPhone 15 Pro สีไทเทเนียม','มีรอยขีดมุมหน้าจอ','2026-11-24T09:30:00Z') RETURNING report_id`,
+    )
+  ).rows[0]?.report_id;
+  if (!lostPhone || !foundPhone) throw new Error('Expected test report IDs');
+
+  const freeQueue = new PgMatchingQueue(pool, 1);
+  const claimed = await freeQueue.claim(0, 0);
+  expect(claimed?.lost.title).toContain('iPhone 15 Pro');
+  expect(claimed?.found.title).toContain('iPhone 15 Pro');
+
+  const rows = (
+    await pool.query<{
+      lost_report_id: number;
+      found_report_id: number;
+      state: string;
+      model: string | null;
+      free_attempts_today: number;
+      reserved_usd_micros: string;
+    }>(
+      'SELECT lost_report_id,found_report_id,state,model,free_attempts_today,reserved_usd_micros FROM report_matches ORDER BY match_id',
+    )
+  ).rows;
+  const skipped = rows.find((r) => r.model === 'local-prefilter-v1');
+  expect(skipped).toMatchObject({
+    lost_report_id: lostPhone,
+    state: 'complete',
+    model: 'local-prefilter-v1',
+    free_attempts_today: 0,
+    reserved_usd_micros: '0',
+  });
+
+  if (!claimed) throw new Error('Expected plausible job to be claimed');
+  await freeQueue.complete(claimed, result);
+  const detail = await handlers.getReturn(request(), context(claimed.matchId));
+  expect(detail.status).toBe(200);
+  const body = (await detail.json()).data;
+  expect(body.lost.reportId).toBe(lostPhone);
+  expect(body.found.reportId).toBe(foundPhone);
+  expect(body.textComparison).toMatchObject({
+    level: 'high',
+    matchedKeywords: expect.arrayContaining(['iphone', '15', 'pro']),
+  });
+  expect(body.imageSimilarity).toMatchObject({ status: 'none' });
+  expect(body.assessment).toMatchObject({ decision: 'possible_match' });
+});
