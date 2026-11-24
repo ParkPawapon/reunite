@@ -10,6 +10,7 @@ import {
 } from '@/components/item-reports/report-format';
 import {
   loadReportDetail,
+  loadReportImages,
   ReportRequestError,
   reportImageHref,
   type ReportRow,
@@ -39,6 +40,11 @@ export function ReportDetail({
   const [refreshing, setRefreshing] = useState(false);
   const [managing, setManaging] = useState(false);
   const [claimPending, setClaimPending] = useState(false);
+  const [gallery, setGallery] = useState<{
+    reportId: number;
+    revision: number;
+    hrefs: string[];
+  } | null>(null);
   const [state, setState] = useState<
     | { kind: 'loading' }
     | { kind: 'error'; missing: boolean }
@@ -78,6 +84,27 @@ export function ReportDetail({
   const row = state.kind === 'ready' ? state.row : null;
   const imageHref = reportImageHref(row?.image ?? null);
   const managedImage = imageHref === `/api/v1/item-reports/${reportId}/image`;
+  useEffect(() => {
+    if (!managedImage) return;
+    const controller = new AbortController();
+    let active = true;
+    void loadReportImages(reportId, controller.signal)
+      .then((hrefs) => {
+        if (active && hrefs.length) setGallery({ reportId, revision, hrefs });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [reportId, managedImage, revision]);
+  const photoHrefs = !managedImage
+    ? []
+    : gallery && gallery.reportId === reportId && gallery.revision === revision
+      ? gallery.hrefs
+      : imageHref
+        ? [imageHref]
+        : [];
   const saving = managing || claimPending;
   const close = () => {
     if (!saving) setOpen(false);
@@ -176,10 +203,10 @@ export function ReportDetail({
           </div>
         ) : (
           <>
-            {managedImage && imageHref && (
+            {managedImage && photoHrefs.length > 0 && (
               <ReportPhoto
                 key={`${reportId}:${revision}`}
-                href={imageHref}
+                hrefs={photoHrefs}
                 title={state.row.title}
                 motion={motion}
               />
@@ -254,8 +281,10 @@ export function ReportDetail({
           reportId={reportId}
           shown={state.kind === 'ready'}
           refreshing={refreshing}
-          onUpdated={(hasImage) => {
-            // The mutation has committed: hide deleted media before revalidating the row.
+          onUpdated={({ hasImage, hrefs }) => {
+            // The mutation has committed: update gallery immediately before revalidating the row.
+            const nextRevision = revision + 1;
+            setGallery({ reportId, revision: nextRevision, hrefs });
             setState((current) =>
               current.kind === 'ready'
                 ? {
@@ -270,7 +299,7 @@ export function ReportDetail({
                 : current,
             );
             setRefreshing(true);
-            setRevision((value) => value + 1);
+            setRevision(nextRevision);
           }}
         />
         {row &&

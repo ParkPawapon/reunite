@@ -103,6 +103,8 @@ export class PgReportRepository implements ReportRepository {
       description = CASE WHEN $5::boolean THEN $6::text ELSE description END,
       image = CASE WHEN $7::boolean THEN $8::varchar ELSE image END,
       image_data = CASE WHEN $7::boolean THEN NULL ELSE image_data END,
+      image_data_2 = CASE WHEN $7::boolean THEN NULL ELSE image_data_2 END,
+      image_data_3 = CASE WHEN $7::boolean THEN NULL ELSE image_data_3 END,
       category_id = CASE WHEN $9::boolean THEN $10::integer ELSE category_id END,
       location_id = CASE WHEN $11::boolean THEN $12::integer ELSE location_id END,
       event_datetime = COALESCE($13::timestamptz, event_datetime)

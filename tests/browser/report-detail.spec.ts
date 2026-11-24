@@ -339,6 +339,14 @@ test('keeps photo upload errors actionable, renders the full item photo and retr
   await expect(
     dialog.getByRole('button', { name: 'เปลี่ยนรูปสิ่งของ', exact: true }),
   ).toBeEnabled();
+  await picker.setInputFiles(file);
+  await expect(
+    dialog.getByRole('button', { name: 'ดูรูปที่ 2', exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'ลบรูปที่ 2', exact: true }).click();
+  await expect(
+    dialog.getByRole('button', { name: 'ดูรูปที่ 2', exact: true }),
+  ).toHaveCount(0);
   await settle(page);
   await mkdir(artifacts, { recursive: true });
   const photo = path.join(artifacts, 'photo.png');

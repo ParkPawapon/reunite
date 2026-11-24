@@ -23,6 +23,17 @@ const confirmReturn = z.strictObject({
   lostRevision: revision,
   foundRevision: revision,
 });
+const readSlot = z.strictObject({
+  slot: z.enum(['1', '2', '3']).optional(),
+});
+const writeSlot = z.strictObject({
+  slot: z.enum(['1', '2', '3', 'next']).optional(),
+});
+const deleteSlot = z.strictObject({
+  slot: z.enum(['1', '2', '3', 'all']).optional(),
+});
+const parseSlotNumber = (slot?: '1' | '2' | '3'): 1 | 2 | 3 =>
+  slot === '2' ? 2 : slot === '3' ? 3 : 1;
 
 export function createMatchingHandlers(
   resolve: () => ReturnType<typeof createServices> = services,
@@ -82,11 +93,21 @@ export function createMatchingHandlers(
           refreshAfterSeconds: 10,
         });
       }),
+    listImages: (request: Request, context: RouteContext) =>
+      api(request, async () => {
+        await user(request);
+        const id = parse(idSchema, (await context.params).id);
+        return success(await resolve().reportImages.listImages(id));
+      }),
     image: (request: Request, context: RouteContext) =>
       api(request, async () => {
         await user(request);
         const id = parse(idSchema, (await context.params).id);
-        const image = await resolve().reportImages.get(id);
+        const { slot } = parse(readSlot, queryInput(request));
+        const image = await resolve().reportImages.get(
+          id,
+          parseSlotNumber(slot),
+        );
         return new Response(new Uint8Array(image), {
           headers: {
             'Content-Type': 'image/webp',
@@ -100,6 +121,7 @@ export function createMatchingHandlers(
         assertSameOrigin(request, serverConfig().APP_BASE_URL);
         const identity = await user(request);
         const id = parse(idSchema, (await context.params).id);
+        const { slot } = parse(writeSlot, queryInput(request));
         await resolve().reportImages.requireOwner(id, identity.userId);
         const image = await normalizeReportImage(
           await binaryBody(request, MAX_REPORT_IMAGE_BYTES),
@@ -109,8 +131,14 @@ export function createMatchingHandlers(
             ?.trim()
             .toLowerCase() ?? '',
         );
+        const writeTarget = slot === 'next' ? 'next' : parseSlotNumber(slot);
         return success(
-          await resolve().reportImages.set(id, identity.userId, image),
+          await resolve().reportImages.set(
+            id,
+            identity.userId,
+            image,
+            writeTarget,
+          ),
         );
       }),
     deleteImage: (request: Request, context: RouteContext) =>
@@ -118,8 +146,15 @@ export function createMatchingHandlers(
         assertSameOrigin(request, serverConfig().APP_BASE_URL);
         const identity = await user(request);
         const id = parse(idSchema, (await context.params).id);
+        const { slot } = parse(deleteSlot, queryInput(request));
+        const deleteTarget = slot === 'all' ? 'all' : parseSlotNumber(slot);
         return success(
-          await resolve().reportImages.set(id, identity.userId, null),
+          await resolve().reportImages.set(
+            id,
+            identity.userId,
+            null,
+            deleteTarget,
+          ),
         );
       }),
   };

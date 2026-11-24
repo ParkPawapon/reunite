@@ -196,16 +196,35 @@ export async function uploadReportImage(
   reportId: number,
   file: File,
   signal: AbortSignal,
+  slot?: 1 | 2 | 3 | 'next',
 ) {
-  const response = await fetch(`/api/v1/item-reports/${reportId}/image`, {
-    method: 'PUT',
-    headers: { 'Content-Type': file.type },
-    credentials: 'same-origin',
-    cache: 'no-store',
-    body: file,
-    signal: AbortSignal.any([signal, AbortSignal.timeout(30_000)]),
-  });
+  const query = slot && slot !== 1 ? `?slot=${slot}` : '';
+  const response = await fetch(
+    `/api/v1/item-reports/${reportId}/image${query}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      credentials: 'same-origin',
+      cache: 'no-store',
+      body: file,
+      signal: AbortSignal.any([signal, AbortSignal.timeout(30_000)]),
+    },
+  );
   if (!response.ok) throw new ReportRequestError(response.status);
+}
+export async function loadReportImages(
+  reportId: number,
+  signal: AbortSignal,
+): Promise<string[]> {
+  const result = await request(
+    `item-reports/${reportId}/images`,
+    z.object({
+      imageCount: z.number().int().min(0),
+      images: z.array(z.string()),
+    }),
+    signal,
+  );
+  return result.images;
 }
 export function reportImageHref(value: string | null): string | null {
   if (!value || /[\u0000-\u0020\\]/.test(value) || value.startsWith('//'))

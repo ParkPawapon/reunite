@@ -626,3 +626,117 @@ it('fast-rejects unrelated cross-category pairs with zero quota/budget and expos
   expect(body.imageSimilarity).toMatchObject({ status: 'none' });
   expect(body.assessment).toMatchObject({ decision: 'possible_match' });
 });
+
+it('stores up to 3 photos per report, compacts on slot delete, and passes all angles into matching jobs', async () => {
+  const { lost } = await pair();
+  const makeImage = async (background: string) =>
+    sharp({
+      create: { width: 40, height: 30, channels: 3, background },
+    })
+      .png()
+      .toBuffer();
+  const [img1, img2, img3, img4] = await Promise.all([
+    makeImage('#ff0000'),
+    makeImage('#00ff00'),
+    makeImage('#0000ff'),
+    makeImage('#ffff00'),
+  ]);
+  const putSlot = (slotQuery: string, body: Buffer) =>
+    handlers.uploadImage(
+      new Request(
+        `http://localhost:3000/api/v1/item-reports/${lost}/image${slotQuery}`,
+        {
+          method: 'PUT',
+          headers: {
+            cookie,
+            origin: 'http://localhost:3000',
+            'content-type': 'image/png',
+          },
+          body: new Uint8Array(body),
+        },
+      ),
+      context(lost),
+    );
+  const res1 = await putSlot('', img1);
+  expect(res1.status).toBe(200);
+  expect((await res1.json()).data).toMatchObject({
+    imageCount: 1,
+    slots: [1],
+  });
+  const res2 = await putSlot('?slot=next', img2);
+  expect(res2.status).toBe(200);
+  expect((await res2.json()).data).toMatchObject({
+    imageCount: 2,
+    slots: [1, 2],
+  });
+  const res3 = await putSlot('?slot=next', img3);
+  expect(res3.status).toBe(200);
+  expect((await res3.json()).data).toMatchObject({
+    imageCount: 3,
+    slots: [1, 2, 3],
+  });
+  expect((await putSlot('?slot=next', img4)).status).toBe(422);
+
+  const listRes = await handlers.listImages(request(), context(lost));
+  expect(listRes.status).toBe(200);
+  expect((await listRes.json()).data).toEqual({
+    imageCount: 3,
+    images: [
+      `/api/v1/item-reports/${lost}/image`,
+      `/api/v1/item-reports/${lost}/image?slot=2`,
+      `/api/v1/item-reports/${lost}/image?slot=3`,
+    ],
+  });
+
+  const job = await queue.claim(1000000, 100000);
+  expect(job?.lost.images).toHaveLength(3);
+
+  const del2 = await handlers.deleteImage(
+    new Request(
+      `http://localhost:3000/api/v1/item-reports/${lost}/image?slot=2`,
+      {
+        method: 'DELETE',
+        headers: { cookie, origin: 'http://localhost:3000' },
+      },
+    ),
+    context(lost),
+  );
+  expect(del2.status).toBe(200);
+  expect((await del2.json()).data).toMatchObject({
+    imageCount: 2,
+    slots: [1, 2],
+  });
+  expect(
+    (
+      await handlers.image(
+        new Request(
+          `http://localhost:3000/api/v1/item-reports/${lost}/image?slot=2`,
+          { headers: { cookie } },
+        ),
+        context(lost),
+      )
+    ).status,
+  ).toBe(200);
+  expect(
+    (
+      await handlers.image(
+        new Request(
+          `http://localhost:3000/api/v1/item-reports/${lost}/image?slot=3`,
+          { headers: { cookie } },
+        ),
+        context(lost),
+      )
+    ).status,
+  ).toBe(404);
+  expect(
+    (
+      await handlers.image(
+        new Request(
+          `http://localhost:3000/api/v1/item-reports/${lost}/image?slot=4`,
+          { headers: { cookie } },
+        ),
+        context(lost),
+      )
+    ).status,
+  ).toBe(422);
+});

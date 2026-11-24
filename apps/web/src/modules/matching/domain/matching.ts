@@ -28,7 +28,13 @@ export type MatchItem = {
   location: string;
   eventDatetime: string;
   image: Uint8Array | null;
+  images?: Uint8Array[];
 };
+
+export function itemImages(item: MatchItem): Uint8Array[] {
+  if (item.images?.length) return item.images;
+  return item.image ? [item.image] : [];
+}
 export type MatchJob = {
   matchId: number;
   leaseToken: string;

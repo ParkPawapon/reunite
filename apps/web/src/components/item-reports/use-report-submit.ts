@@ -12,6 +12,7 @@ export type SubmitSummary = {
   title: string;
   eventDatetime: string;
   withPhoto: boolean;
+  photoCount?: number;
 };
 export type SubmitState =
   | { status: 'idle' }
@@ -76,6 +77,10 @@ export function useReportSubmit() {
     LOST: idle,
     FOUND: idle,
   });
+  const uploadedCounts = useRef<Record<ReportType, number>>({
+    LOST: 0,
+    FOUND: 0,
+  });
   // A ref, not state, so two clicks in the same moment cannot both pass.
   const busy = useRef(false);
   const controller = useRef<AbortController | null>(null);
@@ -84,17 +89,31 @@ export function useReportSubmit() {
     setStates((current) => ({ ...current, [type]: state }));
 
   // Photo step on its own: also used by the retry button, with the same reportId.
-  const attachPhoto = async (
+  const attachPhotos = async (
     type: ReportType,
     reportId: number,
-    photo: File,
+    photos: File[],
     summary: SubmitSummary,
     signal: AbortSignal,
   ) => {
     set(type, { status: 'pending', phase: 'uploading' });
+    const startIndex = Math.min(uploadedCounts.current[type], photos.length);
     try {
-      await uploadReportImage(reportId, photo, signal);
-      set(type, { status: 'created', reportId, summary });
+      for (let i = startIndex; i < photos.length; i++) {
+        const file = photos[i];
+        if (!file) continue;
+        await uploadReportImage(reportId, file, signal, i === 0 ? 1 : 'next');
+        uploadedCounts.current[type] = i + 1;
+      }
+      set(type, {
+        status: 'created',
+        reportId,
+        summary: {
+          ...summary,
+          withPhoto: photos.length > 0,
+          photoCount: photos.length,
+        },
+      });
     } catch (error) {
       if (signal.aborted) return;
       set(type, {
@@ -102,7 +121,11 @@ export function useReportSubmit() {
         reportId,
         reason: photoReason(error),
         expired: statusOf(error) === 401,
-        summary,
+        summary: {
+          ...summary,
+          withPhoto: photos.length > 0,
+          photoCount: photos.length,
+        },
       });
     }
   };
@@ -114,21 +137,24 @@ export function useReportSubmit() {
   const submit = async (
     type: ReportType,
     input: CreateReportInput,
-    photo: File | null,
+    photos: File[],
   ) => {
     const current = states[type].status;
     if (busy.current || current === 'created' || current === 'photoFailed')
       return;
     const signal = start();
+    uploadedCounts.current[type] = 0;
     set(type, { status: 'pending', phase: 'creating' });
     try {
       const reportId = await createReport(input, signal);
-      const summary = {
+      const summary: SubmitSummary = {
         title: input.title,
         eventDatetime: input.eventDatetime,
-        withPhoto: Boolean(photo),
+        withPhoto: photos.length > 0,
+        photoCount: photos.length,
       };
-      if (photo) await attachPhoto(type, reportId, photo, summary, signal);
+      if (photos.length)
+        await attachPhotos(type, reportId, photos, summary, signal);
       else set(type, { status: 'created', reportId, summary });
     } catch (error) {
       if (!signal.aborted) set(type, createFailure(error));
@@ -136,25 +162,33 @@ export function useReportSubmit() {
       busy.current = false;
     }
   };
-  const retryPhoto = async (type: ReportType, photo: File | null) => {
+  const retryPhoto = async (type: ReportType, photos: File[]) => {
     const current = states[type];
     if (busy.current || current.status !== 'photoFailed') return;
-    // The user removed the photo after the failure: the report is complete as is.
-    if (!photo) {
+    // The user removed the photos after the failure: the report is complete as is.
+    if (!photos.length) {
       set(type, {
         status: 'created',
         reportId: current.reportId,
-        summary: { ...current.summary, withPhoto: false },
+        summary: {
+          ...current.summary,
+          withPhoto: uploadedCounts.current[type] > 0,
+          photoCount: uploadedCounts.current[type],
+        },
       });
       return;
     }
     const signal = start();
     try {
-      await attachPhoto(
+      await attachPhotos(
         type,
         current.reportId,
-        photo,
-        { ...current.summary, withPhoto: true },
+        photos,
+        {
+          ...current.summary,
+          withPhoto: true,
+          photoCount: photos.length,
+        },
         signal,
       );
     } finally {

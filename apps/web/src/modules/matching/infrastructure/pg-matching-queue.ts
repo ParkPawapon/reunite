@@ -18,20 +18,28 @@ type ItemRow = {
   location_name: string;
   event_datetime: Date;
   image_data: Buffer | null;
+  image_data_2: Buffer | null;
+  image_data_3: Buffer | null;
 };
-const item = (row: ItemRow): MatchItem => ({
-  title: row.title,
-  description: row.description,
-  category: row.category_name,
-  location: row.location_name,
-  eventDatetime: row.event_datetime.toISOString(),
-  image: row.image_data,
-});
+const item = (row: ItemRow): MatchItem => {
+  const images = [row.image_data, row.image_data_2, row.image_data_3].filter(
+    (entry): entry is Buffer => entry !== null,
+  );
+  return {
+    title: row.title,
+    description: row.description,
+    category: row.category_name,
+    location: row.location_name,
+    eventDatetime: row.event_datetime.toISOString(),
+    image: images[0] ?? null,
+    ...(images.length ? { images } : {}),
+  };
+};
 async function loadItem(db: Sql, id: number) {
   const [row] = await query<ItemRow>(
     db,
     `SELECT r.title,r.description,c.category_name,l.location_name,
-    r.event_datetime,r.image_data FROM item_reports r
+    r.event_datetime,r.image_data,r.image_data_2,r.image_data_3 FROM item_reports r
     JOIN categories c USING(category_id) JOIN locations l USING(location_id) WHERE r.report_id=$1`,
     [id],
   );
@@ -167,10 +175,12 @@ export class PgMatchingQueue implements MatchingQueue {
           `SELECT m.match_id, m.lost_report_id, m.found_report_id,
             l.title AS lost_title, l.description AS lost_description,
             lc.category_name AS lost_category, ll.location_name AS lost_location,
-            l.event_datetime AS lost_event_datetime, (l.image_data IS NOT NULL) AS lost_has_image,
+            l.event_datetime AS lost_event_datetime,
+            (l.image_data IS NOT NULL OR l.image_data_2 IS NOT NULL OR l.image_data_3 IS NOT NULL) AS lost_has_image,
             f.title AS found_title, f.description AS found_description,
             fc.category_name AS found_category, fl.location_name AS found_location,
-            f.event_datetime AS found_event_datetime, (f.image_data IS NOT NULL) AS found_has_image,
+            f.event_datetime AS found_event_datetime,
+            (f.image_data IS NOT NULL OR f.image_data_2 IS NOT NULL OR f.image_data_3 IS NOT NULL) AS found_has_image,
             (l.category_id = f.category_id) AS same_category
           FROM report_matches m
           JOIN item_reports l ON l.report_id = m.lost_report_id

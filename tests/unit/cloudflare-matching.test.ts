@@ -131,3 +131,31 @@ it('rejects scheduler requests without the private bearer secret', async () => {
   expect(disabled.status).toBe(200);
   expect((await disabled.json()).data).toEqual({ processed: false });
 });
+
+it('sends numbered labels when a report attaches multiple angles/damage photos', async () => {
+  const transport = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(completion(assessment)));
+  const provider = new CloudflareMatchingProvider(
+    account,
+    'test-only-token',
+    transport,
+  );
+  await provider.compare({
+    ...job,
+    lost: {
+      ...item,
+      images: [Uint8Array.of(1, 2, 3), Uint8Array.of(4, 5, 6)],
+    },
+    found: { ...item, image: Uint8Array.of(7, 8, 9) },
+  });
+  const body = JSON.parse(String(transport.mock.calls[0]?.[1]?.body));
+  expect(body.messages[1].content.slice(1)).toEqual([
+    { type: 'text', text: 'LOST item photo 1:' },
+    { type: 'image_url', image_url: { url: 'data:image/webp;base64,AQID' } },
+    { type: 'text', text: 'LOST item photo 2:' },
+    { type: 'image_url', image_url: { url: 'data:image/webp;base64,BAUG' } },
+    { type: 'text', text: 'FOUND item photo:' },
+    { type: 'image_url', image_url: { url: 'data:image/webp;base64,BwgJ' } },
+  ]);
+});

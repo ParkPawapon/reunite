@@ -18,6 +18,8 @@ export type MatchItem = {
   location: string;
   occurredAt: string;
   hasPhoto: boolean;
+  photoCount: number;
+  photoUrls: string[];
 };
 
 export type MatchReturn = MatchRevision & {

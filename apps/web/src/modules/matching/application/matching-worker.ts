@@ -1,5 +1,9 @@
-import type { MatchingProvider, MatchingQueue } from '../domain/matching';
-import { reviewAssessment } from '../domain/matching';
+import {
+  itemImages,
+  reviewAssessment,
+  type MatchingProvider,
+  type MatchingQueue,
+} from '../domain/matching';
 
 export class MatchingFailure extends Error {
   constructor(
@@ -27,7 +31,8 @@ export class MatchingWorker {
     try {
       const result = await this.provider.compare(job);
       const images =
-        Number(Boolean(job.lost.image)) + Number(Boolean(job.found.image));
+        Number(itemImages(job.lost).length > 0) +
+        Number(itemImages(job.found).length > 0);
       const expected = images === 2 ? 'both' : images === 1 ? 'one' : 'none';
       if (result.assessment.imageComparison !== expected)
         throw new MatchingFailure('INVALID_IMAGE_ASSESSMENT', false);

@@ -2,7 +2,11 @@ import 'server-only';
 import { z } from 'zod';
 import { MATCHING_MODEL } from '@/config/matching';
 import { MatchingFailure } from '../application/matching-worker';
-import type { MatchJob, MatchingProvider } from '../domain/matching';
+import {
+  itemImages,
+  type MatchJob,
+  type MatchingProvider,
+} from '../domain/matching';
 import { prepareMatchImageForAi } from './image-comparison';
 import {
   assessmentSchema,
@@ -47,13 +51,22 @@ export class OpenAiMatchingProvider implements MatchingProvider {
         }),
       },
     ];
-    for (const [label, entry] of [
-      ['LOST', job.lost],
-      ['FOUND', job.found],
+    const lostPhotos = itemImages(job.lost);
+    const foundPhotos = itemImages(job.found);
+    const totalImages = lostPhotos.length + foundPhotos.length;
+    for (const [label, photos] of [
+      ['LOST', lostPhotos],
+      ['FOUND', foundPhotos],
     ] as const) {
-      if (entry.image) {
-        const prepared = await prepareMatchImageForAi(entry.image);
-        content.push({ type: 'input_text', text: `${label} item photo:` });
+      for (const [index, photo] of photos.entries()) {
+        const prepared = await prepareMatchImageForAi(photo, totalImages);
+        content.push({
+          type: 'input_text',
+          text:
+            photos.length === 1
+              ? `${label} item photo:`
+              : `${label} item photo ${index + 1}:`,
+        });
         content.push({
           type: 'input_image',
           image_url: `data:image/webp;base64,${Buffer.from(prepared).toString('base64')}`,

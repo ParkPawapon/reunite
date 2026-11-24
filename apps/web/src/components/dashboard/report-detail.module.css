@@ -174,6 +174,69 @@
   font-size: 12px;
   text-underline-offset: 4px;
 }
+.galleryStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.galleryThumb {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-background);
+  cursor: pointer;
+}
+.galleryThumb[aria-pressed='true'] {
+  border-color: var(--color-orange-600);
+  box-shadow: 0 0 0 2px var(--color-orange-100);
+}
+.galleryThumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.galleryThumb span {
+  position: absolute;
+  inset: auto 3px 3px auto;
+  min-width: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-orange-950);
+  color: var(--color-neutral-white);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.slotList {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.slotItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-background);
+}
+.slotLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
 .upload {
   margin-top: 26px;
   padding-top: 24px;

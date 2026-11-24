@@ -49,7 +49,11 @@ function Created({
         </p>
         <p className={styles.successLine}>
           {formatEventDatetime(state.summary.eventDatetime)}
-          {state.summary.withPhoto ? ' · แนบรูปแล้ว' : ''}
+          {state.summary.withPhoto
+            ? (state.summary.photoCount ?? 1) > 1
+              ? ` · แนบ ${state.summary.photoCount} รูปแล้ว`
+              : ' · แนบรูปแล้ว'
+            : ''}
         </p>
       </div>
       <Button

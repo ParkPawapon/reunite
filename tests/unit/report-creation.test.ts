@@ -137,20 +137,39 @@ describe('Thai date display', () => {
 });
 
 describe('photo rules', () => {
-  it('accepts one JPG, PNG or WebP up to 4 MiB (the server limit)', () => {
+  it('accepts up to 3 JPG, PNG or WebP images up to 4 MiB each', () => {
     for (const type of ['image/jpeg', 'image/png', 'image/webp'])
       expect(checkPhotos([image('a', type)])).toBeNull();
     expect(checkPhotos([image('a', 'image/png', PHOTO_MAX_BYTES)])).toBeNull();
+    expect(
+      checkPhotos([
+        image('1.png', 'image/png'),
+        image('2.png', 'image/png'),
+        image('3.png', 'image/png'),
+      ]),
+    ).toBeNull();
+    expect(checkPhotos([image('3.png', 'image/png')], 2)).toBeNull();
   });
-  it('rejects other types, empty, oversized and multiple files', () => {
+  it('rejects other types, empty, oversized and exceeding 3 files', () => {
     expect(checkPhotos([image('a.gif', 'image/gif')])).toMatch(/JPG, PNG/);
     expect(checkPhotos([image('a.png', 'image/png', 0)])).toMatch(/ว่างเปล่า/);
     expect(
       checkPhotos([image('a.png', 'image/png', PHOTO_MAX_BYTES + 1)]),
     ).toMatch(/4 MB/);
     expect(
-      checkPhotos([image('a.png', 'image/png'), image('b.png', 'image/png')]),
-    ).toMatch(/ครั้งละ 1 รูป/);
+      checkPhotos([
+        image('a.png', 'image/png'),
+        image('b.png', 'image/png'),
+        image('c.png', 'image/png'),
+        image('d.png', 'image/png'),
+      ]),
+    ).toMatch(/สูงสุด 3 รูป/);
+    expect(
+      checkPhotos(
+        [image('c.png', 'image/png'), image('d.png', 'image/png')],
+        2,
+      ),
+    ).toMatch(/สูงสุด 3 รูป/);
   });
   it('describes size and type for the attached photo', () => {
     expect(formatSize(1)).toBe('1 KB');
@@ -227,6 +246,18 @@ describe('photo upload client', () => {
     expect(url).toBe('/api/v1/item-reports/41/image');
     expect(init?.method).toBe('PUT');
     expect(init?.headers).toEqual({ 'Content-Type': 'image/webp' });
+    expect(init?.body).toBe(file);
+  });
+  it('puts additional photos onto ?slot=next when requested', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      Response.json({ data: { updated: true } }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const file = image('damage.png', 'image/png', 20);
+    await uploadReportImage(41, file, new AbortController().signal, 'next');
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe('/api/v1/item-reports/41/image?slot=next');
+    expect(init?.method).toBe('PUT');
     expect(init?.body).toBe(file);
   });
   it('rejects with the status when the upload fails', async () => {
