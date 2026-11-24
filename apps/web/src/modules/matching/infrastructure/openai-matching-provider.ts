@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { MATCHING_MODEL } from '@/config/matching';
 import { MatchingFailure } from '../application/matching-worker';
 import type { MatchJob, MatchingProvider } from '../domain/matching';
+import { prepareMatchImageForAi } from './image-comparison';
 import {
   assessmentSchema,
   matchingInstructions as instructions,
@@ -36,7 +37,7 @@ export class OpenAiMatchingProvider implements MatchingProvider {
   async compare(job: MatchJob) {
     const content: (
       | { type: 'input_text'; text: string }
-      | { type: 'input_image'; image_url: string; detail: 'high' }
+      | { type: 'input_image'; image_url: string; detail: 'low' }
     )[] = [
       {
         type: 'input_text',
@@ -51,11 +52,12 @@ export class OpenAiMatchingProvider implements MatchingProvider {
       ['FOUND', job.found],
     ] as const) {
       if (entry.image) {
+        const prepared = await prepareMatchImageForAi(entry.image);
         content.push({ type: 'input_text', text: `${label} item photo:` });
         content.push({
           type: 'input_image',
-          image_url: `data:image/webp;base64,${Buffer.from(entry.image).toString('base64')}`,
-          detail: 'high',
+          image_url: `data:image/webp;base64,${Buffer.from(prepared).toString('base64')}`,
+          detail: 'low',
         });
       }
     }

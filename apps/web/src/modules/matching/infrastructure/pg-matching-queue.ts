@@ -3,11 +3,13 @@ import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 import { query, withTransaction, type Sql } from '@campus/database';
 import type {
+  MatchAssessment,
   MatchItem,
   MatchJob,
   MatchingQueue,
   ProviderResult,
 } from '../domain/matching';
+import { scoreTextPairForQueue } from '../domain/text-similarity';
 
 type ItemRow = {
   title: string;
@@ -35,6 +37,43 @@ async function loadItem(db: Sql, id: number) {
   );
   if (!row) throw new Error('Matching report unavailable');
   return item(row);
+}
+
+type CandidateRow = {
+  match_id: number;
+  lost_report_id: number;
+  found_report_id: number;
+  lost_title: string;
+  lost_description: string | null;
+  lost_category: string;
+  lost_location: string;
+  lost_event_datetime: Date;
+  lost_has_image: boolean;
+  found_title: string;
+  found_description: string | null;
+  found_category: string;
+  found_location: string;
+  found_event_datetime: Date;
+  found_has_image: boolean;
+  same_category: boolean;
+};
+
+function prefilterResult(row: CandidateRow, summary: string): MatchAssessment {
+  const imageCount = Number(row.lost_has_image) + Number(row.found_has_image);
+  return {
+    decision: 'different_item',
+    summary,
+    evidence: [
+      {
+        attribute: 'object_type',
+        relation: 'conflict',
+        detail: `คนละหมวดหมู่ (${row.lost_category} / ${row.found_category}) และไม่พบคำสำคัญตรงกัน`,
+      },
+    ],
+    missingEvidence: [],
+    imageComparison:
+      imageCount === 2 ? 'both' : imageCount === 1 ? 'one' : 'none',
+  };
 }
 
 export class PgMatchingQueue implements MatchingQueue {
@@ -117,23 +156,130 @@ export class PgMatchingQueue implements MatchingQueue {
         )
           return null;
       }
-      const [row] = await query<{
+      let row: {
         match_id: number;
         lost_report_id: number;
         found_report_id: number;
-      }>(
-        db,
-        `SELECT m.match_id,m.lost_report_id,m.found_report_id
-        FROM report_matches m JOIN item_reports l ON l.report_id=m.lost_report_id
-        JOIN item_reports f ON f.report_id=m.found_report_id
-        WHERE ((m.state='queued' AND m.available_at<=CURRENT_TIMESTAMP) OR
-          (m.state='processing' AND m.leased_until<CURRENT_TIMESTAMP)) AND m.attempts<3
-          AND l.status='OPEN' AND f.status='OPEN' AND l.type='LOST' AND f.type='FOUND' AND l.user_id<>f.user_id
-          AND l.matching_revision=m.lost_revision AND f.matching_revision=m.found_revision
-        ORDER BY (l.category_id=f.category_id) DESC,m.available_at,m.match_id
-        LIMIT 1 FOR UPDATE OF m SKIP LOCKED`,
-      );
-      if (!row) return null;
+      } | null = null;
+      while (!row) {
+        const candidates = await query<CandidateRow>(
+          db,
+          `SELECT m.match_id, m.lost_report_id, m.found_report_id,
+            l.title AS lost_title, l.description AS lost_description,
+            lc.category_name AS lost_category, ll.location_name AS lost_location,
+            l.event_datetime AS lost_event_datetime, (l.image_data IS NOT NULL) AS lost_has_image,
+            f.title AS found_title, f.description AS found_description,
+            fc.category_name AS found_category, fl.location_name AS found_location,
+            f.event_datetime AS found_event_datetime, (f.image_data IS NOT NULL) AS found_has_image,
+            (l.category_id = f.category_id) AS same_category
+          FROM report_matches m
+          JOIN item_reports l ON l.report_id = m.lost_report_id
+          JOIN categories lc ON lc.category_id = l.category_id
+          JOIN locations ll ON ll.location_id = l.location_id
+          JOIN item_reports f ON f.report_id = m.found_report_id
+          JOIN categories fc ON fc.category_id = f.category_id
+          JOIN locations fl ON fl.location_id = f.location_id
+          WHERE ((m.state = 'queued' AND m.available_at <= CURRENT_TIMESTAMP) OR
+            (m.state = 'processing' AND m.leased_until < CURRENT_TIMESTAMP)) AND m.attempts < 3
+            AND l.status = 'OPEN' AND f.status = 'OPEN' AND l.type = 'LOST' AND f.type = 'FOUND' AND l.user_id <> f.user_id
+            AND l.matching_revision = m.lost_revision AND f.matching_revision = m.found_revision
+          ORDER BY (l.category_id = f.category_id) DESC, m.available_at, m.match_id
+          LIMIT 100`,
+        );
+        if (!candidates.length) return null;
+
+        const rejectedIds: number[] = [];
+        const rejectedResults: string[] = [];
+        const plausible: { candidate: CandidateRow; score: number }[] = [];
+        for (const candidate of candidates) {
+          const scored = scoreTextPairForQueue(
+            {
+              title: candidate.lost_title,
+              description: candidate.lost_description,
+              category: candidate.lost_category,
+              location: candidate.lost_location,
+              eventDatetime: candidate.lost_event_datetime,
+            },
+            {
+              title: candidate.found_title,
+              description: candidate.found_description,
+              category: candidate.found_category,
+              location: candidate.found_location,
+              eventDatetime: candidate.found_event_datetime,
+            },
+          );
+          if (scored.fastReject) {
+            rejectedIds.push(candidate.match_id);
+            rejectedResults.push(
+              JSON.stringify(
+                prefilterResult(candidate, scored.comparison.summary),
+              ),
+            );
+          } else {
+            const visualBonus =
+              candidate.lost_has_image && candidate.found_has_image ? 5 : 0;
+            plausible.push({
+              candidate,
+              score: scored.priorityScore + visualBonus,
+            });
+          }
+        }
+
+        if (rejectedIds.length > 0) {
+          await query(
+            db,
+            `UPDATE report_matches m
+            SET state = 'complete',
+              result = skipped.result,
+              model = 'local-prefilter-v1',
+              completed_at = CURRENT_TIMESTAMP,
+              lease_token = NULL,
+              leased_until = NULL,
+              error_code = NULL
+            FROM unnest($1::integer[], $2::jsonb[]) AS skipped(match_id, result)
+            WHERE m.match_id = skipped.match_id
+              AND ((m.state = 'queued' AND m.available_at <= CURRENT_TIMESTAMP) OR
+                (m.state = 'processing' AND m.leased_until < CURRENT_TIMESTAMP))`,
+            [rejectedIds, rejectedResults],
+          );
+        }
+
+        if (!plausible.length) {
+          if (candidates.length < 100) return null;
+          continue;
+        }
+
+        plausible.sort(
+          (a, b) =>
+            b.score - a.score ||
+            Number(b.candidate.same_category) -
+              Number(a.candidate.same_category) ||
+            a.candidate.match_id - b.candidate.match_id,
+        );
+        const top = plausible[0];
+        if (!top) return null;
+
+        const [locked] = await query<{
+          match_id: number;
+          lost_report_id: number;
+          found_report_id: number;
+        }>(
+          db,
+          `SELECT m.match_id, m.lost_report_id, m.found_report_id
+          FROM report_matches m
+          WHERE m.match_id = $1
+            AND ((m.state = 'queued' AND m.available_at <= CURRENT_TIMESTAMP) OR
+              (m.state = 'processing' AND m.leased_until < CURRENT_TIMESTAMP))
+            AND m.attempts < 3
+          FOR UPDATE OF m SKIP LOCKED`,
+          [top.candidate.match_id],
+        );
+        if (locked) {
+          row = locked;
+        } else if (candidates.length < 100) {
+          return null;
+        }
+      }
       const leaseToken = randomUUID();
       await query(
         db,

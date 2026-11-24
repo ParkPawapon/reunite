@@ -1,9 +1,20 @@
+import type { MatchAssessment } from './matching';
+import type { TextComparison } from './text-similarity';
+
 export type MatchRevision = { lostRevision: string; foundRevision: string };
+
+export type MatchImageComparisonSummary = {
+  status: 'both' | 'one' | 'none';
+  level: 'similar' | 'moderate' | 'different' | 'unavailable';
+  label: string;
+  detail: string;
+};
 
 export type MatchItem = {
   reportId: number;
   title: string;
   description: string | null;
+  category: string;
   location: string;
   occurredAt: string;
   hasPhoto: boolean;
@@ -17,6 +28,9 @@ export type MatchReturn = MatchRevision & {
   lostConfirmedAt: string | null;
   foundConfirmedAt: string | null;
   returnedAt: string | null;
+  textComparison: TextComparison;
+  imageSimilarity: MatchImageComparisonSummary;
+  assessment: MatchAssessment | null;
 };
 
 export interface MatchReturnRepository {

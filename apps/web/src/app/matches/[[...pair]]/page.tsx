@@ -49,6 +49,7 @@ export default async function MatchPage({
                 <Link href={`/matches/${pair.matchId}`}>
                   <strong>{pair.ownTitle}</strong>
                   <span>{pair.candidateTitle}</span>
+                  <span>{pair.assessment.summary}</span>
                   <span className={styles.inboxAction}>ดูทั้งสองประกาศ</span>
                 </Link>
               </li>

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { CLOUDFLARE_MATCHING_MODEL } from '@/config/matching';
 import { MatchingFailure } from '../application/matching-worker';
 import type { MatchJob, MatchingProvider } from '../domain/matching';
+import { prepareMatchImageForAi } from './image-comparison';
 import {
   assessmentSchema,
   matchingInstructions,
@@ -64,13 +65,14 @@ export class CloudflareMatchingProvider implements MatchingProvider {
       ['FOUND', job.found],
     ] as const) {
       if (!item.image) continue;
-      if (item.image.byteLength > maxPhotoBytes)
+      const prepared = await prepareMatchImageForAi(item.image);
+      if (prepared.byteLength > maxPhotoBytes)
         throw new MatchingFailure('INPUT_TOO_LARGE', false);
       content.push({ type: 'text', text: `${label} item photo:` });
       content.push({
         type: 'image_url',
         image_url: {
-          url: `data:image/webp;base64,${Buffer.from(item.image).toString('base64')}`,
+          url: `data:image/webp;base64,${Buffer.from(prepared).toString('base64')}`,
         },
       });
     }
