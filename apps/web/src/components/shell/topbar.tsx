@@ -21,23 +21,17 @@ export function Topbar({
   menuExpanded,
   menuId,
   onMenu,
-  paused,
-  onPause,
   menuLabel,
   reducedMotion,
   title = 'ภาพรวม',
-  showMotionControl = true,
 }: {
   user?: ShellUser;
   menuExpanded: boolean;
   menuId: string;
   onMenu: () => void;
-  paused: boolean;
-  onPause: () => void;
   menuLabel: string;
   reducedMotion: boolean;
   title?: string;
-  showMotionControl?: boolean;
 }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [pending, setPending] = useState(false);
@@ -93,25 +87,6 @@ export function Topbar({
           enabled={Boolean(user)}
           reducedMotion={reducedMotion}
         />
-        {showMotionControl && (
-          <button
-            type="button"
-            className={styles.motionButton}
-            onClick={onPause}
-            aria-label={paused ? 'เล่นภาพเคลื่อนไหว' : 'หยุดภาพเคลื่อนไหว'}
-            aria-pressed={paused || reducedMotion}
-            disabled={reducedMotion}
-            title={
-              reducedMotion ? 'อุปกรณ์เปิดการลดภาพเคลื่อนไหวอยู่' : undefined
-            }
-          >
-            <ShellIcon
-              name={paused || reducedMotion ? 'play' : 'pause'}
-              width={16}
-              height={16}
-            />
-          </button>
-        )}
         {user ? (
           <button
             id="account-button"

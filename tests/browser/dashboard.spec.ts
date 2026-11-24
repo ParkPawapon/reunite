@@ -306,15 +306,17 @@ test('uses real session data, responsive navigation, truthful report loading and
       'aria-busy',
       'true',
     );
-    await page
-      .getByRole('button', { name: 'หยุดภาพเคลื่อนไหว', exact: true })
-      .click();
+    await expect(
+      page
+        .locator('[data-topbar]')
+        .getByRole('button', { name: /ภาพเคลื่อนไหว/ }),
+    ).toHaveCount(0);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(page.locator('[data-shell]')).toHaveAttribute(
       'data-shell-motion',
       'still',
     );
-    // Let the click's finite hover/focus transitions report completion before checking idle.
-    // Continuous animation is excluded from this wait and must still be stopped below.
+    // Let finite transitions settle before verifying infinite skeleton animations stop.
     await page.evaluate(async () => {
       await Promise.all(
         document
@@ -359,6 +361,7 @@ test('uses real session data, responsive navigation, truthful report loading and
     release();
     await pending;
     await page.unroute(imageRequest);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
     await expect(page.getByRole('tabpanel')).toHaveAttribute(
       'aria-busy',
       'false',

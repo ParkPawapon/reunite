@@ -236,29 +236,6 @@
   font-weight: 500;
   color: var(--color-text);
 }
-.motionButton {
-  border: 0;
-  background: transparent;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  flex: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  border-radius: 0.625rem;
-  transition:
-    background 0.16s ease-out,
-    color 0.16s ease-out;
-}
-.motionButton:not(:disabled):hover {
-  background: var(--color-orange-50);
-  color: var(--color-orange-800);
-}
-.motionButton:disabled {
-  cursor: default;
-}
 .accountButton {
   border: 0;
   display: flex;
@@ -591,7 +568,6 @@
   .shell,
   .sidebarContent,
   .topbarMenu,
-  .motionButton,
   .accountButton,
   .chevron {
     transition: none;

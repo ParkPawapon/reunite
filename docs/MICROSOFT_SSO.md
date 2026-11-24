@@ -42,7 +42,7 @@ Existing Microsoft-linked users who already completed setup skip it. Incomplete 
 
 ## Existing accounts
 
-A first Microsoft sign-in creates an account only if the Entra identity is eligible and its normalized UPN is available in `users.email`. A matching email produces a conflict and leaves the existing account untouched. Microsoft-only users can edit profile details while their sign-in email is read-only. Previously linked users retain their existing profile and password method, if present.
+A first Microsoft sign-in creates an account only if the Entra identity is eligible and its normalized UPN is available in `users.email`. A matching email produces a conflict and leaves the existing account untouched. Microsoft-only users can edit their student details, phone, and avatar while their sign-in email and Entra-provided names stay disabled. Previously linked users retain their existing profile and password method, if present.
 
 To link a conflicted legacy account, an authorized operator must verify control of the existing Reunite account and independently confirm the same user's approved identity in the KMUTT tenant directory. Record the verified Reunite user ID and the Entra Directory (tenant) ID and directory **user** Object ID. Email equality and values supplied by the requester are insufficient. With those verified parameters, the operator can use the following parameterized statement on the existing user record.
 

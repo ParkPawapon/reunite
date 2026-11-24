@@ -170,6 +170,13 @@
   background: var(--color-surface);
   transition: background 0.18s ease-out;
 }
+.fields :global(.MuiOutlinedInput-root.Mui-disabled) {
+  background: var(--color-background);
+}
+.fields :global(.MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-input) {
+  cursor: not-allowed;
+  -webkit-text-fill-color: var(--color-text-muted);
+}
 .fields :global(.MuiInputLabel-root) {
   font-size: 0.8125rem;
 }
