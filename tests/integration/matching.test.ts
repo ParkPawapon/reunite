@@ -573,7 +573,7 @@ it('fast-rejects unrelated cross-category pairs with zero quota/budget and expos
       `INSERT INTO item_reports(user_id,category_id,location_id,type,title,description,event_datetime)
       VALUES(1,1,1,'LOST','iPhone 15 Pro สีไทเทเนียม','หน้าจอมีรอยเล็กน้อย','2026-11-24T08:00:00Z') RETURNING report_id`,
     )
-  ).rows[0]!.report_id;
+  ).rows[0]?.report_id;
   await pool.query(
     `INSERT INTO item_reports(user_id,category_id,location_id,type,title,description,event_datetime)
     VALUES(2,2,1,'FOUND','เสื้อกันหนาวสีเขียว','ผ้าฝ้ายแขวนลืมไว้','2026-11-24T09:00:00Z')`,
@@ -583,7 +583,8 @@ it('fast-rejects unrelated cross-category pairs with zero quota/budget and expos
       `INSERT INTO item_reports(user_id,category_id,location_id,type,title,description,event_datetime)
       VALUES(3,1,1,'FOUND','พบ iPhone 15 Pro สีไทเทเนียม','มีรอยขีดมุมหน้าจอ','2026-11-24T09:30:00Z') RETURNING report_id`,
     )
-  ).rows[0]!.report_id;
+  ).rows[0]?.report_id;
+  if (!lostPhone || !foundPhone) throw new Error('Expected test report IDs');
 
   const freeQueue = new PgMatchingQueue(pool, 1);
   const claimed = await freeQueue.claim(0, 0);
