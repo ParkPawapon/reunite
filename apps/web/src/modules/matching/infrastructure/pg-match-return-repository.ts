@@ -13,6 +13,7 @@ import type {
   MatchReturnRepository,
   MatchRevision,
 } from '../domain/match-return';
+import { reportImageSlotHref } from '@/modules/item-reports/domain/report-image-policy';
 import { analyzeMatchText } from '../domain/text-similarity';
 import { compareMatchImagesLocally } from './image-comparison';
 import { assessmentSchema } from './matching-provider-contract';
@@ -22,16 +23,28 @@ type PairRow = {
   role: MatchReturn['role'];
   lost_revision: string;
   found_revision: string;
-  lost: MatchItem;
-  found: MatchItem;
-  lost_image: Buffer | null;
-  found_image: Buffer | null;
+  lost: Omit<MatchItem, 'photoCount' | 'photoUrls'>;
+  found: Omit<MatchItem, 'photoCount' | 'photoUrls'>;
+  lost_image_1: Buffer | null;
+  lost_image_2: Buffer | null;
+  lost_image_3: Buffer | null;
+  found_image_1: Buffer | null;
+  found_image_2: Buffer | null;
+  found_image_3: Buffer | null;
   raw_assessment: unknown;
   lost_confirmed_at: Date | null;
   found_confirmed_at: Date | null;
   returned_at: Date | null;
   current_suggestion: boolean;
 };
+
+function slotUrls(reportId: number, slots: (Buffer | null)[]) {
+  const urls: string[] = [];
+  for (let i = 0; i < slots.length; i++) {
+    if (slots[i]) urls.push(reportImageSlotHref(reportId, i + 1));
+  }
+  return urls;
+}
 
 async function ownedPair(db: Sql, matchId: number, userId: number) {
   const [row] = await query<PairRow>(
@@ -40,20 +53,26 @@ async function ownedPair(db: Sql, matchId: number, userId: number) {
       CASE WHEN l.user_id=$2 THEN 'LOST' ELSE 'FOUND' END AS role,
       m.lost_confirmed_at, m.found_confirmed_at, m.returned_at,
       m.result AS raw_assessment,
-      l.image_data AS lost_image,
-      f.image_data AS found_image,
+      l.image_data AS lost_image_1,
+      l.image_data_2 AS lost_image_2,
+      l.image_data_3 AS lost_image_3,
+      f.image_data AS found_image_1,
+      f.image_data_2 AS found_image_2,
+      f.image_data_3 AS found_image_3,
       COALESCE(m.state='complete' AND m.result->>'decision'='possible_match'
         AND l.matching_revision=m.lost_revision AND f.matching_revision=m.found_revision
         AND l.status='OPEN' AND f.status='OPEN', FALSE) AS current_suggestion,
       json_build_object(
         'reportId', l.report_id, 'title', l.title, 'description', l.description,
         'category', lc.category_name, 'location', ll.location_name,
-        'occurredAt', l.event_datetime, 'hasPhoto', l.image_data IS NOT NULL
+        'occurredAt', l.event_datetime,
+        'hasPhoto', (l.image_data IS NOT NULL OR l.image_data_2 IS NOT NULL OR l.image_data_3 IS NOT NULL)
       ) AS lost,
       json_build_object(
         'reportId', f.report_id, 'title', f.title, 'description', f.description,
         'category', fc.category_name, 'location', fl.location_name,
-        'occurredAt', f.event_datetime, 'hasPhoto', f.image_data IS NOT NULL
+        'occurredAt', f.event_datetime,
+        'hasPhoto', (f.image_data IS NOT NULL OR f.image_data_2 IS NOT NULL OR f.image_data_3 IS NOT NULL)
       ) AS found
       FROM report_matches m
       JOIN item_reports l ON l.report_id=m.lost_report_id
@@ -72,6 +91,10 @@ async function ownedPair(db: Sql, matchId: number, userId: number) {
 async function toMatchReturn(row: PairRow): Promise<MatchReturn> {
   const lostOccurredAt = new Date(row.lost.occurredAt).toISOString();
   const foundOccurredAt = new Date(row.found.occurredAt).toISOString();
+  const lostSlots = [row.lost_image_1, row.lost_image_2, row.lost_image_3];
+  const foundSlots = [row.found_image_1, row.found_image_2, row.found_image_3];
+  const lostUrls = slotUrls(row.lost.reportId, lostSlots);
+  const foundUrls = slotUrls(row.found.reportId, foundSlots);
   const textComparison = analyzeMatchText(
     {
       title: row.lost.title,
@@ -89,8 +112,8 @@ async function toMatchReturn(row: PairRow): Promise<MatchReturn> {
     },
   );
   const imageSimilarity = await compareMatchImagesLocally(
-    row.lost_image,
-    row.found_image,
+    lostSlots,
+    foundSlots,
   );
   const parsedAssessment = assessmentSchema.safeParse(row.raw_assessment);
   return {
@@ -101,10 +124,14 @@ async function toMatchReturn(row: PairRow): Promise<MatchReturn> {
     lost: {
       ...row.lost,
       occurredAt: lostOccurredAt,
+      photoCount: lostUrls.length,
+      photoUrls: lostUrls,
     },
     found: {
       ...row.found,
       occurredAt: foundOccurredAt,
+      photoCount: foundUrls.length,
+      photoUrls: foundUrls,
     },
     lostConfirmedAt: row.lost_confirmed_at?.toISOString() ?? null,
     foundConfirmedAt: row.found_confirmed_at?.toISOString() ?? null,

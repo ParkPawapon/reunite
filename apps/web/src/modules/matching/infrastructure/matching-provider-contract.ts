@@ -1,7 +1,11 @@
 import 'server-only';
 import { z } from 'zod';
 import { MatchingFailure } from '../application/matching-worker';
-import { evidenceAttributes, type MatchItem } from '../domain/matching';
+import {
+  evidenceAttributes,
+  itemImages,
+  type MatchItem,
+} from '../domain/matching';
 
 export const assessmentSchema = z.strictObject({
   decision: z.enum([
@@ -28,13 +32,15 @@ Report observable agree/conflict evidence using only supplied fields/photos; nev
 Use Thai for summary/details, explicitly comparing both typed text and attached photos. Set imageComparison to exact photo count (both/one/none).
 Return possible_match only if >=2 non-generic identity attributes agree (including model, marking, contents, or damage) with zero conflicts; prefer insufficient_evidence otherwise.`;
 export function textItem(value: MatchItem) {
+  const count = itemImages(value).length;
   return {
     title: value.title,
     ...(value.description ? { description: value.description } : {}),
     category: value.category,
     location: value.location,
     eventDatetime: value.eventDatetime,
-    hasImage: !!value.image,
+    hasImage: count > 0,
+    ...(count > 1 ? { photoCount: count } : {}),
   };
 }
 

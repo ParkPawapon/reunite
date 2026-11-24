@@ -278,6 +278,39 @@ test('creates a lost report with a photo and confirms it in Thai', async ({
   expect(image.status()).toBe(200);
 });
 
+test('attaches multiple angles/damage photos on a new report and uploads all of them', async ({
+  page,
+}) => {
+  const title = `${prefix}หลายมุม`;
+  const writes = watchWrites(page);
+  await openForm(page);
+  await fillForm(page, title, false);
+  await page.locator('input[type=file]').setInputFiles([
+    { name: 'angle1.png', mimeType: 'image/png', buffer: photo },
+    { name: 'damage2.png', mimeType: 'image/png', buffer: photo },
+  ]);
+  await expect(page.getByText('angle1.png')).toBeVisible();
+  await expect(page.getByText('damage2.png')).toBeVisible();
+  await submitLost(page).click();
+  await expect(
+    page.getByRole('heading', { name: 'แจ้งรายการแล้ว' }),
+  ).toBeVisible();
+  await expect(page.getByText(/แนบ 2 รูปแล้ว/)).toBeVisible();
+  const rows = await reportsCreated(title);
+  expect(rows).toHaveLength(1);
+  expect(writes.posts).toHaveLength(1);
+  expect(writes.puts).toHaveLength(2);
+  const reportId = rows[0]?.report_id;
+  expect(
+    (await page.request.get(`/api/v1/item-reports/${reportId}/image`)).status(),
+  ).toBe(200);
+  expect(
+    (
+      await page.request.get(`/api/v1/item-reports/${reportId}/image?slot=2`)
+    ).status(),
+  ).toBe(200);
+});
+
 test('sends one request when the submit button is pressed twice', async ({
   page,
 }) => {

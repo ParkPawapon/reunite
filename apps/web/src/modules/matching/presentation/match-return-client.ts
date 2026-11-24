@@ -9,6 +9,8 @@ const item = z.object({
   location: z.string(),
   occurredAt: z.iso.datetime(),
   hasPhoto: z.boolean(),
+  photoCount: z.number().int().min(0).max(3).optional().default(0),
+  photoUrls: z.array(z.string()).optional().default([]),
 });
 
 const textComparison = z.object({

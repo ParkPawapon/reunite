@@ -154,7 +154,7 @@ export function ReportSubmission() {
       void submitter.submit(
         type,
         result.payload,
-        photoDrafts.photos[type]?.file ?? null,
+        photoDrafts.photos[type].map((item) => item.file),
       );
       return;
     }
@@ -378,10 +378,10 @@ export function ReportSubmission() {
             <div className={styles.fullRow}>
               <PhotoField
                 id={fieldId('photo')}
-                photo={photoDrafts.photos[type]}
+                photos={photoDrafts.photos[type]}
                 error={photoDrafts.errors[type]}
                 onPick={(files) => photoDrafts.pick(type, files)}
-                onRemove={() => photoDrafts.remove(type)}
+                onRemove={(photoId) => photoDrafts.remove(type, photoId)}
               />
             </div>
           </div>
@@ -391,7 +391,7 @@ export function ReportSubmission() {
             onRetryPhoto={() =>
               void submitter.retryPhoto(
                 type,
-                photoDrafts.photos[type]?.file ?? null,
+                photoDrafts.photos[type].map((item) => item.file),
               )
             }
           />

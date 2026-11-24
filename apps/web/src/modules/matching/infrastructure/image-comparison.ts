@@ -11,13 +11,19 @@ export type ImageSimilarity = {
   detail: string;
 };
 
-const AI_IMAGE_MAX_EDGE = 512;
-const AI_IMAGE_WEBP_QUALITY = 70;
+const AI_IMAGE_DEFAULT_MAX_EDGE = 512;
+const AI_IMAGE_COMPACT_MAX_EDGE = 384;
 const AI_IMAGE_OPTIMIZE_THRESHOLD_BYTES = 40_000;
 
 export async function prepareMatchImageForAi(
   bytes: Uint8Array,
+  totalImagesInPair = 2,
 ): Promise<Uint8Array> {
+  const maxEdge =
+    totalImagesInPair > 2
+      ? AI_IMAGE_COMPACT_MAX_EDGE
+      : AI_IMAGE_DEFAULT_MAX_EDGE;
+  const quality = totalImagesInPair > 2 ? 65 : 70;
   try {
     const pipeline = sharp(bytes, {
       limitInputPixels: 24_000_000,
@@ -27,19 +33,19 @@ export async function prepareMatchImageForAi(
     const width = meta.width ?? 0;
     const height = meta.height ?? 0;
     if (
-      width <= AI_IMAGE_MAX_EDGE &&
-      height <= AI_IMAGE_MAX_EDGE &&
+      width <= maxEdge &&
+      height <= maxEdge &&
       bytes.byteLength <= AI_IMAGE_OPTIMIZE_THRESHOLD_BYTES
     ) {
       return bytes;
     }
     const resized = await pipeline
       .rotate()
-      .resize(AI_IMAGE_MAX_EDGE, AI_IMAGE_MAX_EDGE, {
+      .resize(maxEdge, maxEdge, {
         fit: 'inside',
         withoutEnlargement: true,
       })
-      .webp({ quality: AI_IMAGE_WEBP_QUALITY, effort: 4 })
+      .webp({ quality, effort: 4 })
       .timeout({ seconds: 4 })
       .toBuffer();
     return resized.byteLength < bytes.byteLength ? resized : bytes;
@@ -132,11 +138,21 @@ function scoreFingerprints(a: VisualFingerprint, b: VisualFingerprint) {
   return 0.45 * structureSimilarity + 0.55 * colorSimilarity;
 }
 
+function normalizeImageList(
+  input: Uint8Array | (Uint8Array | null)[] | null,
+): Uint8Array[] {
+  if (!input) return [];
+  if (input instanceof Uint8Array) return [input];
+  return input.filter((value): value is Uint8Array => value !== null);
+}
+
 export async function compareMatchImagesLocally(
-  lostImage: Uint8Array | null,
-  foundImage: Uint8Array | null,
+  lostInput: Uint8Array | (Uint8Array | null)[] | null,
+  foundInput: Uint8Array | (Uint8Array | null)[] | null,
 ): Promise<ImageSimilarity> {
-  if (!lostImage && !foundImage) {
+  const lostList = normalizeImageList(lostInput);
+  const foundList = normalizeImageList(foundInput);
+  if (!lostList.length && !foundList.length) {
     return {
       status: 'none',
       level: 'unavailable',
@@ -145,7 +161,7 @@ export async function compareMatchImagesLocally(
         'ทั้งสองประกาศไม่ได้แนบภาพไว้ จึงใช้การเทียบจากข้อความและรายละเอียดเป็นหลัก',
     };
   }
-  if (!lostImage || !foundImage) {
+  if (!lostList.length || !foundList.length) {
     return {
       status: 'one',
       level: 'unavailable',
@@ -154,11 +170,17 @@ export async function compareMatchImagesLocally(
         'มีภาพแนบเพียง 1 ฝั่ง จึงยังไม่สามารถเทียบภาพคู่กันโดยตรงได้ (ดูภาพที่แนบเทียบกับคำอธิบายอีกฝั่ง)',
     };
   }
-  const [lostFp, foundFp] = await Promise.all([
-    extractVisualFingerprint(lostImage),
-    extractVisualFingerprint(foundImage),
+  const [lostFps, foundFps] = await Promise.all([
+    Promise.all(lostList.map((img) => extractVisualFingerprint(img))),
+    Promise.all(foundList.map((img) => extractVisualFingerprint(img))),
   ]);
-  if (!lostFp || !foundFp) {
+  const validLost = lostFps.filter(
+    (fp): fp is VisualFingerprint => fp !== null,
+  );
+  const validFound = foundFps.filter(
+    (fp): fp is VisualFingerprint => fp !== null,
+  );
+  if (!validLost.length || !validFound.length) {
     return {
       status: 'both',
       level: 'unavailable',
@@ -167,14 +189,23 @@ export async function compareMatchImagesLocally(
         'มีภาพแนบทั้ง 2 ฝั่ง แต่ไม่สามารถอ่านรูปแบบภาพเพื่อประเมินโทนสีอัตโนมัติได้',
     };
   }
-  const score = scoreFingerprints(lostFp, foundFp);
+  let score = 0;
+  for (const a of validLost) {
+    for (const b of validFound) {
+      const pairScore = scoreFingerprints(a, b);
+      if (pairScore > score) score = pairScore;
+    }
+  }
+  const multiNote =
+    lostList.length > 1 || foundList.length > 1
+      ? ` (เทียบจาก ${lostList.length} ภาพของหาย กับ ${foundList.length} ภาพที่พบ)`
+      : '';
   if (score >= 0.78) {
     return {
       status: 'both',
       level: 'similar',
       label: 'โทนสีและโครงภาพใกล้เคียงกัน',
-      detail:
-        'มีภาพทั้ง 2 ฝั่ง: โทนสีหลักและโครงสร้างภาพมีความใกล้เคียงกัน ควรตรวจจุดสังเกตเฉพาะบนภาพเพิ่มเติม',
+      detail: `มีภาพทั้ง 2 ฝั่ง${multiNote}: โทนสีหลักและโครงสร้างภาพมีความใกล้เคียงกัน ควรตรวจจุดสังเกตเฉพาะบนภาพเพิ่มเติม`,
     };
   }
   if (score >= 0.55) {
@@ -182,15 +213,13 @@ export async function compareMatchImagesLocally(
       status: 'both',
       level: 'moderate',
       label: 'ภาพคล้ายกันบางส่วน',
-      detail:
-        'มีภาพทั้ง 2 ฝั่ง: โทนสีหรือองค์ประกอบบางส่วนคล้ายกัน แต่แสง พื้นหลัง หรือมุมกล้องอาจต่างกัน',
+      detail: `มีภาพทั้ง 2 ฝั่ง${multiNote}: โทนสีหรือองค์ประกอบบางส่วนคล้ายกัน แต่แสง พื้นหลัง หรือมุมกล้องอาจต่างกัน`,
     };
   }
   return {
     status: 'both',
     level: 'different',
     label: 'โทนสีหรือมุมภาพต่างกันมาก',
-    detail:
-      'มีภาพทั้ง 2 ฝั่ง: โทนสีหรือมุมภาพค่อนข้างต่างกัน อาจเป็นคนละชิ้นหรือถ่ายคนละมุม/สภาพแสง',
+    detail: `มีภาพทั้ง 2 ฝั่ง${multiNote}: โทนสีหรือมุมภาพค่อนข้างต่างกัน อาจเป็นคนละชิ้นหรือถ่ายคนละมุม/สภาพแสง`,
   };
 }

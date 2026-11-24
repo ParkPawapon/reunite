@@ -126,6 +126,12 @@ describe('token-saving AI image resizing and local visual check', () => {
     expect(meta.width).toBeLessThanOrEqual(512);
     expect(meta.height).toBeLessThanOrEqual(512);
 
+    const optimizedCompact = await prepareMatchImageForAi(large, 4);
+    const metaCompact = await sharp(optimizedCompact).metadata();
+    expect(metaCompact.format).toBe('webp');
+    expect(metaCompact.width).toBeLessThanOrEqual(384);
+    expect(metaCompact.height).toBeLessThanOrEqual(384);
+
     const dummy = Uint8Array.of(1, 2, 3);
     expect(await prepareMatchImageForAi(dummy)).toBe(dummy);
   });

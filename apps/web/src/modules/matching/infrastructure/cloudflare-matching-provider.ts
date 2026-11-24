@@ -2,7 +2,11 @@ import 'server-only';
 import { z } from 'zod';
 import { CLOUDFLARE_MATCHING_MODEL } from '@/config/matching';
 import { MatchingFailure } from '../application/matching-worker';
-import type { MatchJob, MatchingProvider } from '../domain/matching';
+import {
+  itemImages,
+  type MatchJob,
+  type MatchingProvider,
+} from '../domain/matching';
 import { prepareMatchImageForAi } from './image-comparison';
 import {
   assessmentSchema,
@@ -60,21 +64,31 @@ export class CloudflareMatchingProvider implements MatchingProvider {
     if (Buffer.byteLength(itemText) > 65_000)
       throw new MatchingFailure('INPUT_TOO_LARGE', false);
     const content: Content[] = [{ type: 'text', text: itemText }];
-    for (const [label, item] of [
-      ['LOST', job.lost],
-      ['FOUND', job.found],
+    const lostPhotos = itemImages(job.lost);
+    const foundPhotos = itemImages(job.found);
+    const totalImages = lostPhotos.length + foundPhotos.length;
+    for (const [label, photos] of [
+      ['LOST', lostPhotos],
+      ['FOUND', foundPhotos],
     ] as const) {
-      if (!item.image) continue;
-      const prepared = await prepareMatchImageForAi(item.image);
-      if (prepared.byteLength > maxPhotoBytes)
-        throw new MatchingFailure('INPUT_TOO_LARGE', false);
-      content.push({ type: 'text', text: `${label} item photo:` });
-      content.push({
-        type: 'image_url',
-        image_url: {
-          url: `data:image/webp;base64,${Buffer.from(prepared).toString('base64')}`,
-        },
-      });
+      for (const [index, photo] of photos.entries()) {
+        const prepared = await prepareMatchImageForAi(photo, totalImages);
+        if (prepared.byteLength > maxPhotoBytes)
+          throw new MatchingFailure('INPUT_TOO_LARGE', false);
+        content.push({
+          type: 'text',
+          text:
+            photos.length === 1
+              ? `${label} item photo:`
+              : `${label} item photo ${index + 1}:`,
+        });
+        content.push({
+          type: 'image_url',
+          image_url: {
+            url: `data:image/webp;base64,${Buffer.from(prepared).toString('base64')}`,
+          },
+        });
+      }
     }
     let response: Response;
     try {

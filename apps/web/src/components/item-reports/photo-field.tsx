@@ -7,6 +7,7 @@ import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
 import {
   PHOTO_ACCEPT,
+  PHOTO_MAX_COUNT,
   PHOTO_MAX_MIB,
   formatSize,
   photoTypeLabel,
@@ -16,43 +17,47 @@ import styles from './photo-field.module.css';
 
 export function PhotoField({
   id,
-  photo,
+  photos,
   error,
   onPick,
   onRemove,
 }: {
   id: string;
-  photo: PickedPhoto | null;
+  photos: PickedPhoto[];
   error: string | null;
   onPick: (files: File[]) => void;
-  onRemove: () => void;
+  onRemove: (photoId: string) => void;
 }) {
   const motion = useShellMotion();
   const [dragging, setDragging] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const viewRef = useRef<HTMLButtonElement>(null);
+  const viewRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const labelId = `${id}-label`;
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
   const previewTitleId = `${id}-preview-title`;
+  const full = photos.length >= PHOTO_MAX_COUNT;
+  const activePreview =
+    previewIndex !== null ? (photos[previewIndex] ?? null) : null;
+
   return (
     <div className={styles.root} role="group" aria-labelledby={labelId}>
       <span id={labelId} className={styles.label}>
-        รูปสิ่งของ (ไม่บังคับ)
+        รูปสิ่งของ (ไม่บังคับ · สูงสุด {PHOTO_MAX_COUNT} รูป)
       </span>
       <div
         className={styles.box}
-        data-attached={Boolean(photo)}
+        data-attached={full}
         data-dragging={dragging}
         data-error={Boolean(error)}
         onDragEnter={(event) => {
           event.preventDefault();
-          setDragging(true);
+          if (!full) setDragging(true);
         }}
         onDragOver={(event) => {
           event.preventDefault();
-          setDragging(true);
+          if (!full) setDragging(true);
         }}
         onDragLeave={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget as Node | null))
@@ -61,51 +66,47 @@ export function PhotoField({
         onDrop={(event) => {
           event.preventDefault();
           setDragging(false);
-          onPick(Array.from(event.dataTransfer.files));
+          if (!full) onPick(Array.from(event.dataTransfer.files));
         }}
       >
-        {photo ? (
-          // Mouse shortcut for the eye button, which is the keyboard way in.
-          <button
-            type="button"
-            className={styles.thumbButton}
-            tabIndex={-1}
-            aria-hidden="true"
-            onClick={() => setPreviewOpen(true)}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview */}
-            <img className={styles.thumb} src={photo.url} alt="" />
-          </button>
-        ) : null}
-        <label className={styles.pick} data-attached={Boolean(photo)}>
+        <label
+          className={styles.pick}
+          data-attached={false}
+          data-disabled={full}
+        >
           <input
             ref={inputRef}
             id={id}
             className={styles.input}
             type="file"
+            multiple
+            disabled={full}
             accept={PHOTO_ACCEPT}
             aria-describedby={error ? `${hintId} ${errorId}` : hintId}
             aria-invalid={error ? true : undefined}
             onChange={(event) => {
               onPick(Array.from(event.target.files ?? []));
-              // Let the user pick the same file again after an error.
               event.target.value = '';
             }}
           />
-          {photo ? null : (
-            <span className={styles.icon}>
-              <ShellIcon name="camera" />
-            </span>
-          )}
+          <span className={styles.icon}>
+            <ShellIcon name={photos.length ? 'plus' : 'camera'} />
+          </span>
           <span className={styles.copy}>
-            <strong>{photo ? photo.file.name : 'เลือกไฟล์รูป'}</strong>
+            <strong>
+              {full
+                ? `แนบครบ ${PHOTO_MAX_COUNT} รูปแล้ว`
+                : photos.length
+                  ? `เพิ่มรูปเพิ่มเติม (${photos.length}/${PHOTO_MAX_COUNT})`
+                  : 'เลือกไฟล์รูป'}
+            </strong>
             <span>
-              {photo ? (
-                `${photoTypeLabel(photo.file.type)} · ${formatSize(photo.file.size)} · แนบแล้ว`
+              {full ? (
+                'ลบออกบางรูปได้หากต้องการเปลี่ยนมุมใหม่'
               ) : (
                 <>
                   <span className={styles.desktopOnly}>
-                    หรือลากรูปมาวางที่นี่
+                    หรือลากรูปมาวางที่นี่ (หลายมุมหรือจุดตำหนิ)
                   </span>
                   <span className={styles.mobileOnly}>เลือกรูปจากเครื่อง</span>
                 </>
@@ -113,36 +114,65 @@ export function PhotoField({
             </span>
           </span>
         </label>
-        {photo ? (
-          <div className={styles.actions}>
-            <Tooltip title="ดูรูป">
-              <IconButton
-                ref={viewRef}
-                className={styles.iconButton}
-                aria-label="ดูรูป"
-                onClick={() => setPreviewOpen(true)}
-              >
-                <ShellIcon name="eye" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="ลบรูป">
-              <IconButton
-                className={styles.iconButton}
-                aria-label="ลบรูป"
-                onClick={() => {
-                  onRemove();
-                  // The button is about to disappear; keep the keyboard focus on the field.
-                  inputRef.current?.focus();
-                }}
-              >
-                <ShellIcon name="trash" />
-              </IconButton>
-            </Tooltip>
-          </div>
-        ) : null}
       </div>
+      {photos.length > 0 && (
+        <ul className={styles.list} aria-label="รูปสิ่งของที่แนบ">
+          {photos.map((photo, index) => (
+            <li key={photo.id} className={styles.item}>
+              <button
+                type="button"
+                className={styles.thumbButton}
+                tabIndex={-1}
+                aria-hidden="true"
+                onClick={() => setPreviewIndex(index)}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview */}
+                <img className={styles.thumb} src={photo.url} alt="" />
+              </button>
+              <span className={styles.copy}>
+                <strong>{photo.file.name}</strong>
+                <span>
+                  รูปที่ {index + 1} · {photoTypeLabel(photo.file.type)} ·{' '}
+                  {formatSize(photo.file.size)}
+                </span>
+              </span>
+              <div className={styles.actions}>
+                <Tooltip title={`ดูรูปที่ ${index + 1}`}>
+                  <IconButton
+                    ref={(el) => {
+                      viewRefs.current[index] = el;
+                    }}
+                    className={styles.iconButton}
+                    aria-label={
+                      photos.length === 1 ? 'ดูรูป' : `ดูรูปที่ ${index + 1}`
+                    }
+                    onClick={() => setPreviewIndex(index)}
+                  >
+                    <ShellIcon name="eye" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title={`ลบรูปที่ ${index + 1}`}>
+                  <IconButton
+                    className={styles.iconButton}
+                    aria-label={
+                      photos.length === 1 ? 'ลบรูป' : `ลบรูปที่ ${index + 1}`
+                    }
+                    onClick={() => {
+                      onRemove(photo.id);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    <ShellIcon name="trash" />
+                  </IconButton>
+                </Tooltip>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       <p id={hintId} className={styles.hint}>
-        1 รูป · JPG, PNG หรือ WebP · ไม่เกิน {PHOTO_MAX_MIB} MB
+        สูงสุด {PHOTO_MAX_COUNT} รูป · JPG, PNG หรือ WebP · ไม่เกิน{' '}
+        {PHOTO_MAX_MIB} MB ต่อรูป
       </p>
       {error ? (
         <p id={errorId} role="alert" className={styles.error}>
@@ -150,8 +180,8 @@ export function PhotoField({
         </p>
       ) : null}
       <Dialog
-        open={previewOpen && Boolean(photo)}
-        onClose={() => setPreviewOpen(false)}
+        open={Boolean(activePreview)}
+        onClose={() => setPreviewIndex(null)}
         aria-labelledby={previewTitleId}
         maxWidth={false}
         disableRestoreFocus
@@ -159,8 +189,11 @@ export function PhotoField({
         slotProps={{
           paper: { className: styles.dialogPaper },
           transition: {
-            // Always return to the eye button, even when the thumbnail opened it.
-            onExited: () => viewRef.current?.focus(),
+            onExited: () => {
+              const target =
+                previewIndex !== null ? viewRefs.current[previewIndex] : null;
+              (target ?? inputRef.current)?.focus();
+            },
           },
         }}
       >
@@ -168,11 +201,15 @@ export function PhotoField({
           <div>
             <h2 id={previewTitleId} className={styles.dialogTitle}>
               รูปสิ่งของ
+              {photos.length > 1 && previewIndex !== null
+                ? ` (${previewIndex + 1}/${photos.length})`
+                : ''}
             </h2>
-            {photo ? (
+            {activePreview ? (
               <p className={styles.dialogMeta}>
-                {photo.file.name} · {photoTypeLabel(photo.file.type)} ·{' '}
-                {formatSize(photo.file.size)}
+                {activePreview.file.name} ·{' '}
+                {photoTypeLabel(activePreview.file.type)} ·{' '}
+                {formatSize(activePreview.file.size)}
               </p>
             ) : null}
           </div>
@@ -180,19 +217,19 @@ export function PhotoField({
             <IconButton
               className={styles.iconButton}
               aria-label="ปิดรูป"
-              onClick={() => setPreviewOpen(false)}
+              onClick={() => setPreviewIndex(null)}
             >
               <ShellIcon name="close" />
             </IconButton>
           </Tooltip>
         </header>
-        {photo ? (
+        {activePreview ? (
           <div className={styles.stage}>
             {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview */}
             <img
               className={styles.preview}
-              src={photo.url}
-              alt={`รูปสิ่งของ ${photo.file.name}`}
+              src={activePreview.url}
+              alt={`รูปสิ่งของ ${activePreview.file.name}`}
             />
           </div>
         ) : null}

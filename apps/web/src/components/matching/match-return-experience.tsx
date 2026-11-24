@@ -37,7 +37,17 @@ function ItemCard({
   label: string;
   own: boolean;
 }) {
-  const [photoFailed, setPhotoFailed] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
+  const urls = item.photoUrls.length
+    ? item.photoUrls
+    : item.hasPhoto
+      ? [`/api/v1/item-reports/${item.reportId}/image`]
+      : [];
+  const safeIndex = Math.min(selectedIndex, Math.max(0, urls.length - 1));
+  const activeUrl = urls[safeIndex];
+  const photoFailed = activeUrl ? Boolean(failedUrls[activeUrl]) : false;
+
   return (
     <article className={styles.item}>
       <div className={styles.itemMeta}>
@@ -45,14 +55,21 @@ function ItemCard({
         {own && <span>ของคุณ</span>}
       </div>
       <div className={styles.photo} data-match-photo>
-        {item.hasPhoto && !photoFailed ? (
+        {activeUrl && !photoFailed ? (
           <Image
-            src={`/api/v1/item-reports/${item.reportId}/image`}
-            alt={`รูป${item.title}`}
+            key={activeUrl}
+            src={activeUrl}
+            alt={
+              urls.length > 1
+                ? `รูป${item.title} (${safeIndex + 1}/${urls.length})`
+                : `รูป${item.title}`
+            }
             width={640}
             height={400}
             unoptimized
-            onError={() => setPhotoFailed(true)}
+            onError={() =>
+              setFailedUrls((current) => ({ ...current, [activeUrl]: true }))
+            }
           />
         ) : (
           <span className={styles.photoEmpty}>
@@ -61,6 +78,25 @@ function ItemCard({
           </span>
         )}
       </div>
+      {urls.length > 1 && (
+        <div
+          className={styles.photoStrip}
+          role="group"
+          aria-label={`เลือกรูป${label}`}
+        >
+          {urls.map((url, index) => (
+            <button
+              key={url}
+              type="button"
+              className={styles.photoThumb}
+              aria-pressed={index === safeIndex}
+              onClick={() => setSelectedIndex(index)}
+            >
+              รูป {index + 1}
+            </button>
+          ))}
+        </div>
+      )}
       <div className={styles.itemContent}>
         <h3>{item.title}</h3>
         <p className={styles.place}>

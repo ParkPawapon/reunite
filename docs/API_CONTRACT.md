@@ -31,10 +31,11 @@ Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED`, `AVATAR_
 | Method/path                          | Authentication      | Behavior                                                                             |
 | ------------------------------------ | ------------------- | ------------------------------------------------------------------------------------ |
 | `GET /matches?before=123`            | Session             | Own current match suggestions, 20 items/keyset cursor, job counts and service status |
-| `GET /item-reports/:id/image`        | Session             | Normalized item WebP, 404 if absent                                                  |
-| `GET /item-reports/:id/image/access` | Owner               | `{ hasImage: boolean }` for image controls; non-owner/missing report returns 404     |
-| `PUT /item-reports/:id/image`        | Owner + same-origin | Raw JPEG/PNG/WebP, <=4 MiB; normalizes and stores item photo; `{ updated: true }`    |
-| `DELETE /item-reports/:id/image`     | Owner + same-origin | Clears stored photo and reference; `{ updated: true }`                               |
+| `GET /item-reports/:id/images`       | Session             | `{ imageCount, images }` URLs for up to 3 normalized item photos                     |
+| `GET /item-reports/:id/image`        | Session             | Normalized item WebP (`?slot=1..3`, default `1`), 404 if absent                      |
+| `GET /item-reports/:id/image/access` | Owner               | `{ hasImage, imageCount, maxImages, slots }` for photo controls; 404 otherwise       |
+| `PUT /item-reports/:id/image`        | Owner + same-origin | Raw JPEG/PNG/WebP, <=4 MiB (`?slot=1..3\|next`); stores up to 3 item photos          |
+| `DELETE /item-reports/:id/image`     | Owner + same-origin | Clears stored photo (`?slot=1..3\|all`) and compacts remaining slots                 |
 
 See [MATCHING.md](MATCHING.md) for the exact match DTO, privacy, provider contract, cost reservations, retries and release limitations. The dashboard matching panel and its polling were removed at the user's request; the authenticated API remains available. The notification bell uses 10-second polling while visible, not a WebSocket or an instantaneous-delivery guarantee.
 
