@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { bangkokEventFields } from '@/components/item-reports/report-format';
 import { ReportLocationChoice } from '@/components/item-reports/report-location-choice';
+import { ThaiDateTimeField } from '@/components/item-reports/thai-datetime-field';
 import { validateReport } from '@/components/item-reports/report-validation';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { REPORT_TITLE_LIMIT } from '@/modules/item-reports/domain/report';
@@ -33,8 +34,11 @@ export function ReportManagement({
   onEditReadyChange: (ready: boolean) => void;
 }) {
   const locationFieldId = useId();
+  const dateFieldId = useId();
   const [locationId, setLocationId] = useState(String(row.locationId));
   const eventFields = bangkokEventFields(row.eventDatetime);
+  const [eventDate, setEventDate] = useState(eventFields.date);
+  const [eventTime, setEventTime] = useState(eventFields.time);
   const [catalogs, setCatalogs] = useState<Catalogs | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [pending, setPending] = useState(false);
@@ -222,26 +226,23 @@ export function ReportManagement({
                   />
                 </div>
               </div>
-              <div className={styles.catalogFields}>
-                <label>
-                  วันที่เกิดเหตุ
-                  <input
-                    name="date"
-                    type="date"
-                    defaultValue={eventFields.date}
-                    required
-                  />
-                </label>
-                <label>
-                  เวลาเกิดเหตุ (เวลาไทย)
-                  <input
-                    name="time"
-                    type="time"
-                    defaultValue={eventFields.time}
-                    required
-                  />
-                </label>
-              </div>
+              <ThaiDateTimeField
+                id={dateFieldId}
+                label={
+                  row.type === 'LOST' ? 'วันและเวลาที่หาย' : 'วันและเวลาที่พบ'
+                }
+                required
+                compact
+                disabled={pending}
+                date={eventDate}
+                time={eventTime}
+                nameDate="date"
+                nameTime="time"
+                onChange={({ date, time }) => {
+                  setEventDate(date);
+                  setEventTime(time);
+                }}
+              />
               <label>
                 ลักษณะสิ่งของ
                 <textarea

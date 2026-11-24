@@ -13,6 +13,112 @@ const MONTHS = [
   'ธ.ค.',
 ];
 
+export const THAI_MONTHS_FULL = [
+  'มกราคม',
+  'กุมภาพันธ์',
+  'มีนาคม',
+  'เมษายน',
+  'พฤษภาคม',
+  'มิถุนายน',
+  'กรกฎาคม',
+  'สิงหาคม',
+  'กันยายน',
+  'ตุลาคม',
+  'พฤศจิกายน',
+  'ธันวาคม',
+] as const;
+
+export const THAI_WEEKDAYS_SHORT = [
+  'อา.',
+  'จ.',
+  'อ.',
+  'พ.',
+  'พฤ.',
+  'ศ.',
+  'ส.',
+] as const;
+
+const pad2 = (value: number) => String(value).padStart(2, '0');
+
+export function formatIsoDate(year: number, month: number, day: number) {
+  return `${year}-${pad2(month)}-${pad2(day)}`;
+}
+
+export function parseIsoDateParts(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return { year, month, day };
+}
+
+export function parseTimeParts(value: string) {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)/.exec(value);
+  if (!match) return null;
+  return { hour: Number(match[1]), minute: Number(match[2]) };
+}
+
+export function formatThaiCalendarMonthYear(year: number, month: number) {
+  const monthName = THAI_MONTHS_FULL[month - 1];
+  return monthName ? `${monthName} ${year + 543}` : `${year + 543}`;
+}
+
+export function shiftYearMonth(
+  year: number,
+  month: number,
+  deltaMonths: number,
+) {
+  const utc = new Date(Date.UTC(year, month - 1 + deltaMonths, 1));
+  return { year: utc.getUTCFullYear(), month: utc.getUTCMonth() + 1 };
+}
+
+export type ThaiCalendarCell = {
+  iso: string;
+  year: number;
+  month: number;
+  day: number;
+  inMonth: boolean;
+  isSunday: boolean;
+};
+
+export function buildThaiCalendarGrid(
+  year: number,
+  month: number,
+): ThaiCalendarCell[] {
+  const firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+  const cells: ThaiCalendarCell[] = [];
+  for (let i = 0; i < totalCells; i++) {
+    const current = new Date(Date.UTC(year, month - 1, 1 - firstWeekday + i));
+    const cellYear = current.getUTCFullYear();
+    const cellMonth = current.getUTCMonth() + 1;
+    const cellDay = current.getUTCDate();
+    cells.push({
+      iso: formatIsoDate(cellYear, cellMonth, cellDay),
+      year: cellYear,
+      month: cellMonth,
+      day: cellDay,
+      inMonth: cellYear === year && cellMonth === month,
+      isSunday: current.getUTCDay() === 0,
+    });
+  }
+  return cells;
+}
+
+export function stepTimePart(current: number, max: number, delta: 1 | -1) {
+  return (current + delta + (max + 1)) % (max + 1);
+}
+
 // "2026-11-16T10:30:00+07:00" -> "16 พ.ย. 2569 · 10:30 น."
 // The value is already Thai time, so read the parts instead of converting zones.
 export function formatEventDatetime(value: string) {

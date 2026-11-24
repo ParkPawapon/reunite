@@ -140,8 +140,41 @@ test('searches the full board while typing and lets an owner edit and close only
     await location.press('ArrowDown');
     await location.press('Enter');
     await expect(location).toHaveValue(place);
-    await dialog.getByLabel('วันที่เกิดเหตุ').fill('2026-11-12');
-    await dialog.getByLabel('เวลาเกิดเหตุ (เวลาไทย)').fill('13:42');
+    await dialog.getByRole('button', { name: /วันและเวลาที่หาย/ }).click();
+    const picker = page
+      .getByRole('dialog')
+      .filter({ hasText: 'รูปแบบ 24 ชั่วโมง' });
+    await expect(picker).toBeVisible();
+    const headerBtn = picker.getByRole('button', { name: /เลือกเดือนและปี/ });
+    if (!((await headerBtn.textContent()) ?? '').includes('พฤศจิกายน 2569')) {
+      await headerBtn.click();
+      const yearStep = async () => {
+        const text = await picker.getByText(/^พ\.ศ\. \d{4}$/).textContent();
+        return Number(text?.replace(/\D/g, '') ?? '2569');
+      };
+      while ((await yearStep()) < 2569) {
+        await picker
+          .getByRole('button', { name: 'ปีถัดไป', exact: true })
+          .click();
+      }
+      while ((await yearStep()) > 2569) {
+        await picker
+          .getByRole('button', { name: 'ปีก่อนหน้า', exact: true })
+          .click();
+      }
+      await picker
+        .getByRole('button', { name: 'พฤศจิกายน', exact: true })
+        .click();
+    }
+    await picker
+      .getByRole('button', { name: '12 พฤศจิกายน 2569', exact: true })
+      .click();
+    await picker
+      .getByRole('textbox', { name: 'ชั่วโมง', exact: true })
+      .fill('13');
+    await picker.getByRole('textbox', { name: 'นาที', exact: true }).fill('42');
+    await picker.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
+    await expect(picker).toBeHidden();
     await dialog.getByLabel('ลักษณะสิ่งของ').fill('ด้ามจับลายทาง');
     await dialog.getByRole('button', { name: 'บันทึกการแก้ไข' }).click();
     await expect(dialog.getByText('บันทึกการแก้ไขแล้ว')).toBeVisible();
