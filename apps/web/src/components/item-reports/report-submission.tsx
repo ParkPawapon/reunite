@@ -6,7 +6,6 @@ import MenuItem from '@mui/material/MenuItem';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
 import type { ReportType } from '@/modules/item-reports/presentation/reports-client';
@@ -22,11 +21,7 @@ import {
   type FieldErrors,
 } from './report-validation';
 import { PhotoField } from './photo-field';
-import {
-  formatEventDate,
-  formatEventDatetime,
-  formatEventTime,
-} from './report-format';
+import { ThaiDateTimeField } from './thai-datetime-field';
 import { usePhotoDrafts } from './use-photo-drafts';
 import { SubmitFeedback } from './submit-feedback';
 import { useReportOptions } from './use-report-options';
@@ -42,8 +37,6 @@ const baseSlots = {
   inputLabel: { shrink: true },
   input: { notched: false, label: '' },
 } as const;
-const dateClass = (value: string) =>
-  `${styles.dateField} ${value ? styles.filledDate : styles.emptyDate}`;
 
 function SelectChevron({ className }: { className?: string }) {
   return <ShellIcon name="chevron" className={className} />;
@@ -111,7 +104,6 @@ function Choice({
 export function ReportSubmission() {
   const id = useId();
   const motion = useShellMotion();
-  const wide = useMediaQuery('(min-width: 768px)');
   const [type, setType] = useState<ReportType>('LOST');
   const [drafts, setDrafts] = useState<Record<ReportType, ReportDraft>>({
     LOST: emptyDraft,
@@ -132,7 +124,6 @@ export function ReportSubmission() {
   const locations = state.status === 'ready' ? state.locations : [];
   const noOptions =
     state.status === 'ready' && (!categories.length || !locations.length);
-  const when = draft.date && draft.time ? `${draft.date}T${draft.time}` : '';
   const fieldId = (name: string) => `${id}-${name}`;
   const patch = (fields: Partial<ReportDraft>) => {
     setDrafts((current) => ({
@@ -161,7 +152,9 @@ export function ReportSubmission() {
     setAllErrors((current) => ({ ...current, [type]: result.errors }));
     for (const name of FIELD_ORDER) {
       if (!result.errors[name]) continue;
-      const target = document.getElementById(fieldId(name));
+      const target = document.getElementById(
+        fieldId(name === 'time' ? 'date' : name),
+      );
       if (target) {
         target.focus();
         break;
@@ -284,77 +277,16 @@ export function ReportSubmission() {
                 onChange={(locationId) => patch({ locationId })}
               />
             )}
-            {wide ? (
-              <TextField
-                required
-                fullWidth
-                type="datetime-local"
-                id={fieldId('date')}
-                label={copy.when}
-                error={Boolean(whenError)}
-                helperText={whenError}
-                className={dateClass(when)}
-                value={when}
-                onChange={(event) => {
-                  const [date = '', time = ''] = event.target.value.split('T');
-                  patch({ date, time });
-                }}
-                slotProps={{
-                  ...baseSlots,
-                  htmlInput: {
-                    'data-placeholder': 'เลือกวันและเวลา',
-                    'data-formatted': when
-                      ? formatEventDatetime(`${when}:00`)
-                      : undefined,
-                  },
-                }}
-              />
-            ) : (
-              <>
-                <TextField
-                  required
-                  fullWidth
-                  type="date"
-                  id={fieldId('date')}
-                  label={copy.date}
-                  error={Boolean(errors.date)}
-                  helperText={errors.date}
-                  className={dateClass(draft.date)}
-                  value={draft.date}
-                  onChange={(event) => patch({ date: event.target.value })}
-                  slotProps={{
-                    ...baseSlots,
-                    htmlInput: {
-                      'data-placeholder': 'เลือกวันที่',
-                      'data-formatted': draft.date
-                        ? formatEventDate(draft.date)
-                        : undefined,
-                    },
-                  }}
-                />
-                <TextField
-                  required
-                  fullWidth
-                  type="time"
-                  id={fieldId('time')}
-                  label="เวลา"
-                  error={Boolean(errors.time)}
-                  helperText={errors.time}
-                  className={dateClass(draft.time)}
-                  value={draft.time}
-                  onChange={(event) => patch({ time: event.target.value })}
-                  slotProps={{
-                    ...baseSlots,
-                    htmlInput: {
-                      'data-placeholder': 'เลือกเวลา',
-                      'data-formatted': draft.time
-                        ? formatEventTime(draft.time)
-                        : undefined,
-                    },
-                  }}
-                />
-              </>
-            )}
+            <ThaiDateTimeField
+              id={fieldId('date')}
+              label={copy.when}
+              required
+              disabled={state.status === 'loading'}
+              date={draft.date}
+              time={draft.time}
+              error={whenError}
+              onChange={({ date, time }) => patch({ date, time })}
+            />
             <TextField
               className={styles.fullRow}
               fullWidth

@@ -5,9 +5,15 @@ import {
   uploadReportImage,
 } from '@/modules/item-reports/presentation/reports-client';
 import {
+  buildThaiCalendarGrid,
   formatEventDate,
   formatEventDatetime,
   formatEventTime,
+  formatThaiCalendarMonthYear,
+  parseIsoDateParts,
+  parseTimeParts,
+  shiftYearMonth,
+  stepTimePart,
 } from '@/components/item-reports/report-format';
 import {
   PHOTO_MAX_BYTES,
@@ -133,6 +139,52 @@ describe('Thai date display', () => {
   it('leaves unreadable values untouched', () => {
     expect(formatEventDatetime('garbage')).toBe('garbage');
     expect(formatEventDate('2026-13-01')).toBe('2026-13-01');
+  });
+  it('builds Sunday-first Thai calendar grids and wraps month/time boundaries', () => {
+    expect(formatThaiCalendarMonthYear(2026, 11)).toBe('พฤศจิกายน 2569');
+    expect(shiftYearMonth(2026, 1, -1)).toEqual({ year: 2025, month: 12 });
+    expect(shiftYearMonth(2026, 12, 1)).toEqual({ year: 2027, month: 1 });
+    expect(parseIsoDateParts('2026-02-29')).toBeNull();
+    expect(parseIsoDateParts('2026-11-25')).toEqual({
+      year: 2026,
+      month: 11,
+      day: 25,
+    });
+    expect(parseTimeParts('24:00')).toBeNull();
+    expect(parseTimeParts('02:04')).toEqual({ hour: 2, minute: 4 });
+    expect(stepTimePart(23, 23, 1)).toBe(0);
+    expect(stepTimePart(0, 23, -1)).toBe(23);
+    expect(stepTimePart(59, 59, 1)).toBe(0);
+    expect(stepTimePart(0, 59, -1)).toBe(59);
+
+    const novGrid = buildThaiCalendarGrid(2026, 11);
+    expect(novGrid).toHaveLength(35);
+    expect(novGrid[0]).toMatchObject({
+      iso: '2026-11-01',
+      day: 1,
+      inMonth: true,
+      isSunday: true,
+    });
+    expect(novGrid[29]).toMatchObject({
+      iso: '2026-11-30',
+      day: 30,
+      inMonth: true,
+    });
+    expect(novGrid[34]).toMatchObject({
+      iso: '2026-12-05',
+      day: 5,
+      inMonth: false,
+    });
+
+    // August 2026 starts on Saturday and spans 6 calendar rows.
+    const augGrid = buildThaiCalendarGrid(2026, 8);
+    expect(augGrid).toHaveLength(42);
+    expect(augGrid[0]).toMatchObject({
+      iso: '2026-07-26',
+      inMonth: false,
+      isSunday: true,
+    });
+    expect(augGrid[6]).toMatchObject({ iso: '2026-08-01', inMonth: true });
   });
 });
 

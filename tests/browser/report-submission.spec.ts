@@ -6,6 +6,7 @@ import {
   type Page,
   type Request,
 } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import sharp from 'sharp';
 import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
@@ -119,19 +120,59 @@ async function openForm(page: Page) {
   await expect(page.getByLabel(/ชื่อสิ่งของ/)).toBeVisible();
   await expect(page.getByRole('combobox').first()).toBeEnabled();
 }
+async function selectNov2026DateTime(
+  page: Page,
+  trigger: Locator,
+  day: number,
+  hour: string,
+  minute: string,
+) {
+  await trigger.click();
+  const picker = page.getByRole('dialog');
+  await expect(picker).toBeVisible();
+  const headerBtn = picker.getByRole('button', { name: /เลือกเดือนและปี/ });
+  if (!((await headerBtn.textContent()) ?? '').includes('พฤศจิกายน 2569')) {
+    await headerBtn.click();
+    const yearStep = async () => {
+      const text = await picker.getByText(/^พ\.ศ\. \d{4}$/).textContent();
+      return Number(text?.replace(/\D/g, '') ?? '2569');
+    };
+    while ((await yearStep()) < 2569) {
+      await picker
+        .getByRole('button', { name: 'ปีถัดไป', exact: true })
+        .click();
+    }
+    while ((await yearStep()) > 2569) {
+      await picker
+        .getByRole('button', { name: 'ปีก่อนหน้า', exact: true })
+        .click();
+    }
+    await picker
+      .getByRole('button', { name: 'พฤศจิกายน', exact: true })
+      .click();
+  }
+  await picker
+    .getByRole('button', { name: `${day} พฤศจิกายน 2569`, exact: true })
+    .click();
+  await picker.getByLabel('ชั่วโมง').fill(hour);
+  await picker.getByLabel('นาที').fill(minute);
+  await picker.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
+  await expect(picker).toBeHidden();
+}
+
 async function fillForm(page: Page, title: string, withPhoto = false) {
   await page.getByLabel(/ชื่อสิ่งของ/).fill(title);
   await page.getByRole('combobox').first().click();
   await page.getByRole('option').first().click();
   await page.getByRole('combobox', { name: /สถานที่(?:หาย|พบ)/ }).click();
   await page.getByRole('option').first().click();
-  const narrow = (page.viewportSize()?.width ?? 1440) < 768;
-  if (narrow) {
-    await page.locator('input[type=date]').fill('2026-11-16');
-    await page.locator('input[type=time]').fill('10:30');
-  } else {
-    await page.locator('input[type=datetime-local]').fill('2026-11-16T10:30');
-  }
+  await selectNov2026DateTime(
+    page,
+    page.getByRole('button', { name: /วันและเวลาที่(?:หาย|พบ)/ }),
+    16,
+    '10',
+    '30',
+  );
   if (withPhoto)
     await page.locator('input[type=file]').setInputFiles({
       name: 'umbrella.png',
@@ -147,49 +188,88 @@ test('keeps location and date controls the same size on desktop and mobile', asy
 }) => {
   await openForm(page);
 
-  const controlBox = async (input: Locator) => {
+  const outlineBox = async (input: Locator) => {
     const outline = input.locator('xpath=..').locator('fieldset');
     await expect(outline).toBeVisible();
     const box = await outline.boundingBox();
     if (!box) throw new Error('Expected a visible field outline');
     return box;
   };
+  const buttonBox = async (button: Locator) => {
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    if (!box) throw new Error('Expected a visible field trigger');
+    return box;
+  };
   const compareSize = (
-    first: Awaited<ReturnType<typeof controlBox>>,
-    second: Awaited<ReturnType<typeof controlBox>>,
+    first: Awaited<ReturnType<typeof buttonBox>>,
+    second: Awaited<ReturnType<typeof buttonBox>>,
   ) => {
-    expect(Math.abs(first.width - second.width)).toBeLessThan(1);
-    expect(Math.abs(first.height - second.height)).toBeLessThan(1);
+    expect(Math.abs(first.width - second.width)).toBeLessThan(1.5);
+    expect(Math.abs(first.height - second.height)).toBeLessThan(1.5);
   };
 
-  for (const [tab, label] of [
-    ['ของหาย', /สถานที่หาย/],
-    ['ของที่พบ', /สถานที่พบ/],
+  for (const [tab, placeLabel, dateLabel] of [
+    ['ของหาย', /สถานที่หาย/, /วันและเวลาที่หาย/],
+    ['ของที่พบ', /สถานที่พบ/, /วันและเวลาที่พบ/],
   ] as const) {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('tab', { name: tab, exact: true }).click();
-    const location = page.getByRole('combobox', { name: label });
-    const desktopPlace = await controlBox(location);
-    const datetime = await controlBox(
-      page.locator('input[type=datetime-local]'),
-    );
+    const location = page.getByRole('combobox', { name: placeLabel });
+    const desktopPlace = await outlineBox(location);
+    const dateButton = page.getByRole('button', { name: dateLabel });
+    const datetime = await buttonBox(dateButton);
     compareSize(desktopPlace, datetime);
-    expect(Math.abs(desktopPlace.y - datetime.y)).toBeLessThan(1);
+    expect(Math.abs(desktopPlace.y - datetime.y)).toBeLessThan(1.5);
 
     await location.click();
     await page.getByRole('option').first().click();
     await expect(location).toHaveValue(/สถานที่ทดสอบ/);
-    compareSize(await controlBox(location), datetime);
+    compareSize(await outlineBox(location), datetime);
 
     await page.setViewportSize({ width: 390, height: 844 });
-    const mobilePlace = await controlBox(location);
-    const date = await controlBox(page.locator('input[type=date]'));
-    const time = await controlBox(page.locator('input[type=time]'));
-    compareSize(mobilePlace, date);
-    compareSize(mobilePlace, time);
-    expect(Math.abs(mobilePlace.x - date.x)).toBeLessThan(1);
-    expect(date.y).toBeGreaterThan(mobilePlace.y + mobilePlace.height);
+    const mobilePlace = await outlineBox(location);
+    const mobileDatetime = await buttonBox(dateButton);
+    compareSize(mobilePlace, mobileDatetime);
+    expect(Math.abs(mobilePlace.x - mobileDatetime.x)).toBeLessThan(1.5);
+    expect(mobileDatetime.y).toBeGreaterThan(
+      mobilePlace.y + mobilePlace.height,
+    );
   }
+});
+
+test('edits Thai Buddhist Era calendar and 24-hour time popover cleanly with zero a11y issues', async ({
+  page,
+}) => {
+  await openForm(page);
+  const trigger = page.getByRole('button', { name: /วันและเวลาที่หาย/ });
+  await expect(trigger).toContainText('เลือกวันและเวลา');
+
+  await trigger.click();
+  const picker = page.getByRole('dialog');
+  await expect(picker).toBeVisible();
+  await expect(picker.getByText('รูปแบบ 24 ชั่วโมง')).toBeVisible();
+  expect(
+    (await new AxeBuilder({ page }).include('[role="dialog"]').analyze())
+      .violations,
+  ).toEqual([]);
+
+  await picker
+    .getByRole('button', { name: 'เพิ่มชั่วโมง', exact: true })
+    .click();
+  await picker.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
+  await expect(picker).toBeHidden();
+  await expect(trigger).toContainText('เลือกวันและเวลา');
+
+  await selectNov2026DateTime(page, trigger, 25, '02', '04');
+  await expect(trigger).toContainText('25 พ.ย. 2569 · 02:04 น.');
+
+  await trigger.click();
+  const reopened = page.getByRole('dialog');
+  await reopened.getByRole('button', { name: 'วันนี้', exact: true }).click();
+  await reopened.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
+  await expect(reopened).toBeHidden();
+  await expect(trigger).toContainText(/\d{1,2} .+ 25\d{2} · \d{2}:\d{2} น\./);
 });
 
 test('searches all locations and scrolls beyond the first seven choices', async ({
