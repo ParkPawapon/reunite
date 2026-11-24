@@ -10,7 +10,7 @@ test('searches the full board while typing and lets an owner edit and close only
     'Requires the managed disposable report fixtures',
   );
   await page.goto('/reports/mine');
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/login\?next=%2Freports%2Fmine$/);
   expect((await page.request.get('/api/v1/item-reports/me')).status()).toBe(
     401,
   );

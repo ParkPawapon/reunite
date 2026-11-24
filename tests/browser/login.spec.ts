@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
-import { browserAccount } from './test-account';
+import { browserAccount, authenticateBrowserAccount } from './test-account';
+
+const kmuttSignIn = { name: 'Sign in with KMUTT account', exact: true };
 
 function formChunkPattern() {
   const folder = 'apps/web/.next/static/chunks';
@@ -20,6 +22,74 @@ async function openLogin(page: import('@playwright/test').Page) {
     page.getByRole('heading', { name: 'เข้าสู่ระบบ', exact: true }),
   ).toBeVisible();
 }
+
+test('starts Microsoft sign-in once and returns a readable failure with the intended destination', async ({
+  page,
+}) => {
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/v1/auth/microsoft?*', async (route) => {
+    expect(route.request().method()).toBe('POST');
+    expect(new URL(route.request().url()).searchParams.get('next')).toBe(
+      '/map#from=N7&to=S3',
+    );
+    await gate;
+    await route.fulfill({
+      status: 303,
+      headers: {
+        location: '/login?next=%2Fmap%23from%3DN7%26to%3DS3&microsoft=denied',
+      },
+    });
+  });
+  await page.goto('/login?next=map#from=N7&to=S3');
+  const panel = page.locator('[data-login-form]');
+  const microsoft = panel.getByRole('button', kmuttSignIn);
+  await expect(microsoft).toBeEnabled();
+  await expect(panel.getByRole('button')).toHaveCount(1);
+  await expect(panel.locator('input')).toHaveCount(0);
+  const logo = microsoft.locator('img[src="/kmutt-logo.png"]');
+  await expect(logo).toBeVisible();
+  await expect(logo).toHaveJSProperty('naturalWidth', 83);
+  let pendingControls: string[] | undefined;
+  await page.exposeFunction('recordMicrosoftPending', (controls: string[]) => {
+    pendingControls = controls;
+  });
+  await microsoft.evaluate((button) => {
+    const form = button.closest('form');
+    const panel = button.closest('[data-login-form]');
+    if (!form || !panel) throw new Error('Missing login controls');
+    const report = (
+      window as Window & {
+        recordMicrosoftPending?: (controls: string[]) => void;
+      }
+    ).recordMicrosoftPending;
+    if (!report) throw new Error('Missing pending-state observer');
+    // Playwright locators wait for the navigation to commit, so observe the
+    // outgoing document while the intercepted POST is still pending.
+    const observer = new MutationObserver(() => {
+      if (form.getAttribute('aria-busy') !== 'true') return;
+      observer.disconnect();
+      const disabled = panel.querySelectorAll('button[type="submit"]:disabled');
+      report(Array.from(disabled, (control) => control.textContent ?? ''));
+    });
+    observer.observe(form, {
+      attributes: true,
+      attributeFilter: ['aria-busy'],
+    });
+  });
+  await microsoft.click({ noWaitAfter: true });
+  try {
+    await expect.poll(() => pendingControls).toEqual(['กำลังเปิด Microsoft…']);
+  } finally {
+    release();
+  }
+  await expect(
+    page.locator('[data-login-form]').getByRole('alert'),
+  ).toContainText('กรุณาใช้บัญชี Microsoft ของ มจธ. ที่ได้รับสิทธิ์เข้าใช้งาน');
+  await expect(page.getByRole('button', kmuttSignIn)).toBeEnabled();
+});
 
 test('opens the root with a 1.3-second intro when the form chunk is cached', async ({
   page,
@@ -134,29 +204,19 @@ test('keeps a real chunk-loading skeleton aligned with the form and respects mot
         ),
       )
       .toBe(0);
-    const before = await Promise.all(
-      ['email', 'password', 'submit'].map((control) =>
-        page.locator(`[data-skeleton-for=${control}]`).boundingBox(),
-      ),
-    );
+    const skeleton = await page
+      .locator('[data-skeleton-for="kmutt"]')
+      .boundingBox();
     release();
     await expect(page.locator('[data-login-screen]')).toBeVisible();
     await expect(page.locator('[data-login-skeleton]')).toHaveCount(0);
-    const after = await Promise.all([
-      page.locator('#login-email').boundingBox(),
-      page.locator('#login-password').boundingBox(),
-      page
-        .getByRole('button', { name: 'เข้าสู่ระบบ', exact: true })
-        .boundingBox(),
-    ]);
-    for (let index = 0; index < before.length; index++) {
-      const skeleton = before[index];
-      const control = after[index];
-      if (!skeleton || !control)
-        throw new Error('Missing skeleton or real control');
+    if (!skeleton) throw new Error('Missing sign-in skeleton');
+    await expect(async () => {
+      const control = await page.getByRole('button', kmuttSignIn).boundingBox();
+      if (!control) throw new Error('Missing sign-in button');
       for (const key of ['x', 'y', 'width', 'height'] as const)
         expect(Math.abs(skeleton[key] - control[key])).toBeLessThanOrEqual(2.1);
-    }
+    }).toPass({ timeout: 2000 });
     if (width === 1440)
       await expect(
         page.getByRole('button', { name: 'เล่นภาพเคลื่อนไหว', exact: true }),
@@ -182,7 +242,7 @@ test('recovers from a failed login-form chunk with a working reload action', asy
   await page.unroute(pattern);
   await page.getByRole('button', { name: 'ลองโหลดใหม่', exact: true }).click();
   await expect(page.locator('[data-login-screen]')).toBeVisible();
-  await expect(page.getByLabel('อีเมล', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', kmuttSignIn)).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -238,7 +298,7 @@ test('offers a working reload when the login-form download stalls', async ({
     await expect(page.locator('[data-login-screen]')).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByLabel('อีเมล', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', kmuttSignIn)).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
     release();
@@ -247,115 +307,12 @@ test('offers a working reload when the login-form download stalls', async ({
   }
 });
 
-test('validates locally, supports password visibility and closes the goose eye', async ({
-  page,
-}) => {
-  let calls = 0;
-  await page.route('**/api/v1/auth/login', (route) => {
-    calls++;
-    return route.fulfill({ status: 401, json: {} });
-  });
-  await openLogin(page);
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }).click();
-  await expect(page.getByLabel('อีเมล')).toBeFocused();
-  await expect(page.getByLabel('อีเมล')).toHaveAttribute(
-    'aria-invalid',
-    'true',
-  );
-  expect(calls).toBe(0);
-  await page.getByLabel('อีเมล').fill('hello@example.test');
-  await page
-    .getByLabel('รหัสผ่าน', { exact: true })
-    .fill('spaces are preserved ');
-  await expect(page.locator('[data-goose-animation]')).toHaveAttribute(
-    'data-private',
-    'true',
-  );
-  await expect(page.locator('[data-goose-animation]')).toHaveAttribute(
-    'data-goose-animation',
-    'still',
-  );
-  await page.getByRole('button', { name: 'แสดงรหัสผ่าน', exact: true }).click();
-  await expect(page.getByLabel('รหัสผ่าน', { exact: true })).toHaveAttribute(
-    'type',
-    'text',
-  );
-  await page.getByRole('button', { name: 'ซ่อนรหัสผ่าน' }).click();
-  await expect(page.getByLabel('รหัสผ่าน', { exact: true })).toHaveAttribute(
-    'type',
-    'password',
-  );
-});
-
-test('normalizes only email, prevents duplicate requests and recovers from API errors', async ({
-  page,
-}) => {
-  let calls = 0;
-  let release = () => {};
-  const gate = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  await page.route('**/api/v1/auth/login', async (route) => {
-    calls++;
-    expect(route.request().postDataJSON()).toEqual({
-      email: 'hello@example.test',
-      password: ' keep spaces ',
-    });
-    await gate;
-    return route.fulfill({
-      status: 401,
-      json: { error: { message: 'Untrusted backend detail' } },
-    });
-  });
-  await openLogin(page);
-  await page.getByLabel('อีเมล').fill('HELLO@EXAMPLE.TEST');
-  await page.getByLabel('รหัสผ่าน', { exact: true }).fill(' keep spaces ');
-  const submit = page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true });
-  await submit.click();
-  await expect(
-    page.getByRole('button', { name: 'กำลังเข้าสู่ระบบ…', exact: true }),
-  ).toBeDisabled();
-  await page.locator('form').evaluate((form) => {
-    form.dispatchEvent(
-      new Event('submit', { bubbles: true, cancelable: true }),
-    );
-  });
-  release();
-  await expect(page.locator('form').getByRole('alert')).toContainText(
-    'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
-  );
-  await expect(page.locator('form').getByRole('alert')).toBeFocused();
-  expect(calls).toBe(1);
-  await expect(page.getByText('Untrusted backend detail')).toHaveCount(0);
-  for (const [status, message] of [
-    [429, '15 นาที'],
-    [503, 'ในภายหลัง'],
-    [200, 'ไม่สามารถยืนยัน'],
-  ] as const) {
-    await page.unroute('**/api/v1/auth/login');
-    await page.route('**/api/v1/auth/login', (route) =>
-      route.fulfill({ status, json: { data: {} } }),
-    );
-    await submit.click();
-    await expect(page.locator('form').getByRole('alert')).toContainText(
-      message,
-    );
-    await expect(submit).toBeEnabled();
-  }
-  await page.unroute('**/api/v1/auth/login');
-  await page.route('**/api/v1/auth/login', (route) => route.abort());
-  await submit.click();
-  await expect(page.locator('form').getByRole('alert')).toContainText(
-    'เชื่อมต่อไม่สำเร็จ',
-  );
-  await expect(submit).toBeEnabled();
-});
-
 test('keeps the form usable on small screens, zoom, keyboard and reduced motion', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openLogin(page);
+  const signIn = page.getByRole('button', kmuttSignIn);
   for (const [width, height] of [
     [320, 568],
     [390, 844],
@@ -367,24 +324,15 @@ test('keeps the form usable on small screens, zoom, keyboard and reduced motion'
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBe(width);
-    await expect(page.getByLabel('อีเมล')).toBeVisible();
-    await page
-      .getByRole('button', { name: 'เข้าสู่ระบบ', exact: true })
-      .scrollIntoViewIfNeeded();
-    await expect(
-      page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }),
-    ).toBeInViewport();
+    await signIn.scrollIntoViewIfNeeded();
+    await expect(signIn).toBeInViewport();
   }
   await expect(
     page.getByRole('button', { name: 'หยุดภาพเคลื่อนไหว' }),
   ).toHaveCount(0);
-  await page.getByLabel('อีเมล').focus();
+  await page.getByRole('heading', { name: 'เข้าสู่ระบบ', exact: true }).focus();
   await page.keyboard.press('Tab');
-  await expect(page.getByLabel('รหัสผ่าน', { exact: true })).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(
-    page.getByRole('button', { name: 'แสดงรหัสผ่าน', exact: true }),
-  ).toBeFocused();
+  await expect(signIn).toBeFocused();
   await page.setViewportSize({ width: 720, height: 500 });
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '200%';
@@ -392,8 +340,8 @@ test('keeps the form usable on small screens, zoom, keyboard and reduced motion'
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
     720,
   );
-  await page.getByLabel('อีเมล').scrollIntoViewIfNeeded();
-  await expect(page.getByLabel('อีเมล')).toBeInViewport();
+  await signIn.scrollIntoViewIfNeeded();
+  await expect(signIn).toBeInViewport();
 });
 
 test('provides a JavaScript-disabled explanation instead of an unexplained intro', async ({
@@ -406,28 +354,7 @@ test('provides a JavaScript-disabled explanation instead of an unexplained intro
   await context.close();
 });
 
-test('times out a stalled login request and allows a retry', async ({
-  page,
-}) => {
-  await openLogin(page);
-  await page.route('**/api/v1/auth/login', () => {});
-  await page.getByLabel('อีเมล').fill('timeout@example.test');
-  await page
-    .getByLabel('รหัสผ่าน', { exact: true })
-    .fill('not a real credential');
-  await page.clock.install();
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }).click();
-  await page.clock.fastForward(15_001);
-  await expect(page.locator('form').getByRole('alert')).toContainText(
-    'เชื่อมต่อไม่สำเร็จ',
-  );
-  await expect(page.locator('form').getByRole('alert')).toBeFocused();
-  await expect(
-    page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }),
-  ).toBeEnabled();
-});
-
-test('passes automated WCAG A and AA checks on desktop, mobile and invalid form states', async ({
+test('passes automated WCAG A and AA checks on desktop and mobile', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -442,14 +369,9 @@ test('passes automated WCAG A and AA checks on desktop, mobile and invalid form 
       .analyze();
     expect(result.violations).toEqual([]);
   }
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }).click();
-  const result = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
-    .analyze();
-  expect(result.violations).toEqual([]);
 });
 
-test('logs in through the real API and receives an HttpOnly session in the isolated test database', async ({
+test('receives an HttpOnly session from the password API in the isolated test database', async ({
   page,
   context,
 }) => {
@@ -461,15 +383,8 @@ test('logs in through the real API and receives an HttpOnly session in the isola
   await expect(page.getByRole('link', { name: 'ดูแผนที่บางมด' })).toHaveCount(
     0,
   );
-  await page.getByLabel('อีเมล').fill(browserAccount.email);
-  await page
-    .getByLabel('รหัสผ่าน', { exact: true })
-    .fill(browserAccount.password);
-  const response = page.waitForResponse((response) =>
-    response.url().endsWith('/api/v1/auth/login'),
-  );
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }).click();
-  expect((await response).status()).toBe(200);
+  await authenticateBrowserAccount(page.request);
+  await page.goto('/dashboard');
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.locator('[data-dashboard]')).toBeVisible();
   await expect(

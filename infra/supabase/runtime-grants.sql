@@ -7,6 +7,7 @@ GRANT USAGE ON SCHEMA public TO reunite_runtime;
 
 GRANT SELECT ON public.categories, public.locations TO reunite_runtime;
 GRANT SELECT, UPDATE ON public.users TO reunite_runtime;
+GRANT INSERT (name, email, microsoft_tenant_id, microsoft_object_id) ON public.users TO reunite_runtime;
 GRANT SELECT, INSERT, UPDATE ON
   public.item_reports, public.claims, public.notifications, public.report_matches,
   public.auth_login_throttles

@@ -2,7 +2,12 @@
 import { AnimatePresence, motion } from 'motion/react';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import { ShellIcon } from '@/components/shell/shell-icon';
+import {
+  kmuttDepartments,
+  kmuttEducation,
+} from '@/modules/users/domain/kmutt-education';
 import type { ProfileEditor, ProfileFields } from './use-profile-editor';
 import styles from './profile.module.css';
 
@@ -16,12 +21,16 @@ const labels: Record<keyof ProfileFields, string> = {
   major: 'สาขาวิชา',
   phone: 'เบอร์โทรศัพท์',
 };
+const faculties = Object.keys(kmuttEducation);
+
 export function ProfileForm({
   editor,
   running,
+  canChangeEmail,
 }: {
   editor: ProfileEditor;
   running: boolean;
+  canChangeEmail: boolean;
 }) {
   const {
     profile,
@@ -34,6 +43,50 @@ export function ProfileForm({
     failure,
     success,
   } = editor;
+  const programs = kmuttDepartments(values.faculty) ?? {};
+  const departments = Object.keys(programs).filter(Boolean);
+  const majors = Object.hasOwn(programs, values.department)
+    ? (programs[values.department] ?? [])
+    : [];
+
+  function educationSelect(
+    key: 'faculty' | 'department' | 'major',
+    options: readonly string[],
+  ) {
+    const value = values[key];
+    return (
+      <TextField
+        select
+        id={`profile-${key}`}
+        label={labels[key]}
+        value={value}
+        fullWidth
+        disabled={pending || (!options.length && !value)}
+        error={Boolean(errors[key])}
+        helperText={errors[key]}
+        onChange={(event) => editor.change(key, event.target.value)}
+        slotProps={{
+          select: {
+            MenuProps: {
+              transitionDuration: running ? undefined : 0,
+              slotProps: { paper: { className: styles.educationMenu } },
+            },
+          },
+        }}
+      >
+        <MenuItem value="">ไม่ระบุ</MenuItem>
+        {value && !options.includes(value) && (
+          <MenuItem value={value}>{value}</MenuItem>
+        )}
+        {options.map((option) => (
+          <MenuItem key={option} value={option}>
+            {option}
+          </MenuItem>
+        ))}
+      </TextField>
+    );
+  }
+
   function field(
     key: keyof ProfileFields,
     max: number,
@@ -54,7 +107,7 @@ export function ProfileForm({
         slotProps={{
           htmlInput: {
             maxLength: max,
-            readOnly: pending,
+            readOnly: pending || (key === 'email' && !canChangeEmail),
             ...(key === 'studentId' ? { inputMode: 'numeric' } : {}),
           },
         }}
@@ -89,9 +142,9 @@ export function ProfileForm({
         </header>
         <div className={styles.fields}>
           {field('studentId', 20)}
-          {field('faculty', 180)}
-          {field('department', 180)}
-          {field('major', 180)}
+          {educationSelect('faculty', faculties)}
+          {educationSelect('department', departments)}
+          {educationSelect('major', majors)}
         </div>
       </section>
       <section className={styles.section} aria-labelledby="contact-heading">
@@ -106,31 +159,32 @@ export function ProfileForm({
             autoComplete: 'email',
           })}
           <AnimatePresence initial={false}>
-            {values.email.trim().toLowerCase() !== profile.email && (
-              <motion.div
-                className={styles.password}
-                key="password"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: running ? 0.2 : 0 }}
-              >
-                <TextField
-                  id="profile-password"
-                  label="รหัสผ่านปัจจุบัน"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  fullWidth
-                  value={password}
-                  onChange={(event) => editor.setPassword(event.target.value)}
-                  helperText="ยืนยันรหัสผ่านก่อนเปลี่ยนอีเมล"
-                  slotProps={{
-                    htmlInput: { maxLength: 1024, readOnly: pending },
-                  }}
-                />
-              </motion.div>
-            )}
+            {canChangeEmail &&
+              values.email.trim().toLowerCase() !== profile.email && (
+                <motion.div
+                  className={styles.password}
+                  key="password"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: running ? 0.2 : 0 }}
+                >
+                  <TextField
+                    id="profile-password"
+                    label="รหัสผ่านปัจจุบัน"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    fullWidth
+                    value={password}
+                    onChange={(event) => editor.setPassword(event.target.value)}
+                    helperText="ยืนยันรหัสผ่านก่อนเปลี่ยนอีเมล"
+                    slotProps={{
+                      htmlInput: { maxLength: 1024, readOnly: pending },
+                    }}
+                  />
+                </motion.div>
+              )}
           </AnimatePresence>
         </div>
       </section>

@@ -33,6 +33,8 @@ Set these values in the **Production** environment:
 
 Keep Production secrets out of Preview. A functional preview needs a separate database and an `APP_BASE_URL` matching its own tested HTTPS origin. On Production, verify `GET /api/v1/health/live` and `/api/v1/health/ready`, then log in with a provisioned account. Check the protected dashboard, category/location lists, profile, report creation and image readback, claim ownership, and logout. Item-photo inputs are capped at 4 MiB to fit the Vercel Function payload limit and are stored as WebP up to 1 MiB. Check database size and backup/restore procedures before allowing real student data. [Vercel Function limits](https://vercel.com/docs/functions/limitations)
 
+For Microsoft sign-in, follow the [KMUTT Entra setup](MICROSOFT_SSO.md) before enabling the server variables. Apply migrations through `0013` and reapply the runtime grants before deploying the feature.
+
 ## Docker
 
 The Dockerfile pins Bun 1.3.14 and Node 24.18.0 Debian images, installs from the frozen lockfile, builds standalone with monorepo tracing and copies static/public assets into `apps/web` beneath the runtime root. The final image runs `node apps/web/server.js` as non-root `node`, binds port 3000 and checks liveness with Node fetch. It contains no migration startup hook or embedded runtime credentials.

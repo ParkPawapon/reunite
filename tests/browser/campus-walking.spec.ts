@@ -34,11 +34,15 @@ test('requires a valid session, restores a shared route after sign-in and reject
   await expect(
     page.getByRole('region', { name: 'แผนที่วิทยาเขต' }),
   ).toHaveCount(0);
-  await page.getByLabel('อีเมล', { exact: true }).fill(browserMapAccount.email);
+  await page.route('**/api/v1/auth/microsoft?*', async (route) => {
+    const destination = new URL(route.request().url()).searchParams.get('next');
+    expect(destination).toBe(sharedWalk);
+    await authenticateBrowserMapAccount(page.request);
+    await route.fulfill({ status: 303, headers: { location: sharedWalk } });
+  });
   await page
-    .getByLabel('รหัสผ่าน', { exact: true })
-    .fill(browserMapAccount.password);
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }).click();
+    .getByRole('button', { name: 'Sign in with KMUTT account' })
+    .click();
   await expect(page).toHaveURL(/\/map#from=N7&to=S3$/);
   await expect(page.getByText('ประมาณ 360 ม.', { exact: true })).toBeVisible();
   await expect(

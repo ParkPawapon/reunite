@@ -31,7 +31,7 @@ async function CampusMap({ user }: { user: UserProfile }) {
 
 export default async function CampusMapPage() {
   // Redirect before streaming so shared map URL fragments survive login.
-  const user = await requirePageUser('/login?next=map');
+  const user = await requirePageUser('/map');
   return (
     <Suspense
       fallback={

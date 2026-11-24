@@ -179,6 +179,13 @@
 .fields :global(input) {
   scroll-margin-block: 8rem;
 }
+.educationMenu {
+  max-height: min(20rem, 50dvh);
+}
+.educationMenu :global(.MuiMenuItem-root) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .password {
   grid-column: 1/-1;
   overflow: hidden;
