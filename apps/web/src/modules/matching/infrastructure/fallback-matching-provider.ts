@@ -1,4 +1,5 @@
 import 'server-only';
+import { logMatchingProviderFailure } from '@/lib/observability/logger';
 import { MatchingFailure } from '../application/matching-worker';
 import type { MatchJob, MatchingProvider } from '../domain/matching';
 
@@ -9,6 +10,7 @@ export type ProviderEntry = {
 
 export class FallbackMatchingProvider implements MatchingProvider {
   private readonly cooldownUntilMs = new Map<string, number>();
+  private readonly rejectedUntilMs = new Map<string, number>();
 
   constructor(
     private readonly entries: readonly ProviderEntry[],
@@ -42,13 +44,34 @@ export class FallbackMatchingProvider implements MatchingProvider {
         continue;
       }
 
+      const rejectedUntil = this.rejectedUntilMs.get(entry.name) ?? 0;
+      if (rejectedUntil > currentMs) {
+        if (!lastError) {
+          lastError = new MatchingFailure('PROVIDER_REJECTED', false);
+        }
+        continue;
+      }
+
       try {
         const result = await entry.provider.compare(job);
         this.cooldownUntilMs.delete(entry.name);
+        this.rejectedUntilMs.delete(entry.name);
         return result;
       } catch (error) {
         lastError = error;
         if (error instanceof MatchingFailure) {
+          logMatchingProviderFailure({
+            provider: entry.name,
+            code: error.code,
+            retryable: error.retryable,
+            ...(error.telemetry?.httpStatus !== undefined
+              ? { httpStatus: error.telemetry.httpStatus }
+              : {}),
+            ...(error.telemetry?.stage ? { stage: error.telemetry.stage } : {}),
+            ...(error.telemetry?.detail
+              ? { detail: error.telemetry.detail }
+              : {}),
+          });
           if (error.code === 'INPUT_TOO_LARGE') throw error;
           if (error.code === 'PROVIDER_RATE_LIMITED') {
             sawRateLimit = true;
@@ -60,7 +83,17 @@ export class FallbackMatchingProvider implements MatchingProvider {
                 : Math.min(retryAfterMin, delay);
             continue;
           }
+          if (error.code === 'PROVIDER_REJECTED' && !error.retryable) {
+            this.rejectedUntilMs.set(entry.name, currentMs + 300_000);
+          }
           if (error.retryable && !firstRetryable) firstRetryable = error;
+        } else {
+          logMatchingProviderFailure({
+            provider: entry.name,
+            code: 'PROVIDER_UNAVAILABLE',
+            retryable: true,
+            stage: 'unexpected_error',
+          });
         }
       }
     }

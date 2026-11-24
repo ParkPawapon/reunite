@@ -22,7 +22,13 @@ const job: MatchJob = {
 const assessment = {
   decision: 'insufficient_evidence',
   summary: 'สีส้มตรงกัน ควรตรวจหลักฐานเพิ่มเติม',
-  evidence: [],
+  evidence: [
+    {
+      attribute: 'color',
+      relation: 'agree',
+      detail: 'กระบอกน้ำสีส้มเหมือนกัน',
+    },
+  ],
   missingEvidence: ['รอยตำหนิที่เห็นได้จากทั้งสองด้าน'],
   imageComparison: 'both',
 };

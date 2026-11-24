@@ -5,11 +5,18 @@ import {
   type MatchingQueue,
 } from '../domain/matching';
 
+export type MatchingFailureTelemetry = {
+  stage?: string;
+  httpStatus?: number;
+  detail?: string;
+};
+
 export class MatchingFailure extends Error {
   constructor(
     public readonly code: string,
     public readonly retryable: boolean,
     public readonly retryAfterSeconds?: number,
+    public readonly telemetry?: MatchingFailureTelemetry,
   ) {
     super(code);
   }

@@ -8,6 +8,28 @@ export function logMatchingFailure() {
     );
 }
 
+export function logMatchingProviderFailure(entry: {
+  provider: string;
+  code: string;
+  retryable: boolean;
+  httpStatus?: number;
+  stage?: string;
+  detail?: string;
+}) {
+  // Strictly non-sensitive technical metadata; never log keys, prompts, bodies, or report data.
+  const level = process.env.LOG_LEVEL ?? 'info';
+  if (level === 'silent') return;
+  const isError = !entry.retryable || entry.code === 'PROVIDER_REJECTED';
+  if (level === 'error' && !isError) return;
+  const payload = JSON.stringify({
+    level: isError ? 'error' : 'info',
+    event: 'matching_provider_failed',
+    ...entry,
+  });
+  if (isError) console.error(payload);
+  else console.info(payload);
+}
+
 export function logMicrosoftSignInFailure(
   stage: 'configuration' | 'authorization' | 'session',
 ) {

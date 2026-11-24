@@ -60,7 +60,12 @@ it('calls Gemini generateContent with header key auth, schema without $schema, a
       candidates: [
         {
           finishReason: 'STOP',
-          content: { parts: [{ text: JSON.stringify(assessment) }] },
+          content: {
+            parts: [
+              { thought: true, text: 'ignoring internal thought' },
+              { text: `\`\`\`json\n${JSON.stringify(assessment)}\n\`\`\`` },
+            ],
+          },
         },
       ],
     }),
@@ -86,7 +91,20 @@ it('calls Gemini generateContent with header key auth, schema without $schema, a
     'x-goog-api-key': 'gemini-secret-key',
   });
   const body = JSON.parse(String(init?.body));
+  expect(body.generationConfig.temperature).toBeUndefined();
+  expect(body.generationConfig.maxOutputTokens).toBe(8192);
+  expect(body.generationConfig.thinkingConfig).toEqual({
+    thinkingLevel: 'low',
+  });
   expect(body.generationConfig.responseJsonSchema.$schema).toBeUndefined();
+  expect(
+    body.generationConfig.responseJsonSchema.properties.summary.maxLength,
+  ).toBeUndefined();
+  const keys = Object.keys(body.generationConfig.responseJsonSchema.properties);
+  expect(keys.indexOf('evidence')).toBeLessThan(keys.indexOf('decision'));
+  expect(JSON.parse(body.contents[0].parts[0].text)).toMatchObject({
+    expectedImageComparison: 'both',
+  });
   expect(body.contents[0].parts).toEqual(
     expect.arrayContaining([
       { text: 'LOST item photo:' },
@@ -96,19 +114,36 @@ it('calls Gemini generateContent with header key auth, schema without $schema, a
   );
 });
 
-it('caps Groq vision inputs cleanly to 3 balanced photos and omits unsupported store parameter', async () => {
-  const transport = vi.fn<typeof fetch>().mockResolvedValue(
-    Response.json({
-      id: 'groq-resp-1',
-      model: GROQ_MATCHING_MODEL,
-      choices: [
-        {
-          finish_reason: 'stop',
-          message: { content: JSON.stringify(assessment), refusal: null },
-        },
-      ],
-    }),
-  );
+it('caps Groq vision inputs cleanly to 3 balanced photos, isolates parsed reasoning, and rejects empty evidence', async () => {
+  const transport = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      Response.json({
+        id: 'groq-resp-1',
+        model: GROQ_MATCHING_MODEL,
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: { content: JSON.stringify(assessment), refusal: null },
+          },
+        ],
+      }),
+    )
+    .mockResolvedValueOnce(
+      Response.json({
+        id: 'groq-empty-evidence',
+        model: GROQ_MATCHING_MODEL,
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: {
+              content: JSON.stringify({ ...assessment, evidence: [] }),
+              refusal: null,
+            },
+          },
+        ],
+      }),
+    );
   const provider = new GroqMatchingProvider(
     'groq-secret',
     GROQ_MATCHING_MODEL,
@@ -133,7 +168,8 @@ it('caps Groq vision inputs cleanly to 3 balanced photos and omits unsupported s
 
   const body = JSON.parse(String(transport.mock.calls[0]?.[1]?.body));
   expect(body.store).toBeUndefined();
-  expect(body.reasoning_effort).toBe('none');
+  expect(body.reasoning_effort).toBe('low');
+  expect(body.reasoning_format).toBe('parsed');
   const imageParts = body.messages[1].content.filter(
     (part: { type: string }) => part.type === 'image_url',
   );
@@ -149,9 +185,15 @@ it('caps Groq vision inputs cleanly to 3 balanced photos and omits unsupported s
     'LOST item photo 2:',
     'FOUND item photo 1:',
   ]);
+
+  await expect(provider.compare(job)).rejects.toMatchObject({
+    code: 'INVALID_ASSESSMENT',
+    retryable: false,
+  });
 });
 
-it('falls back across free providers on 429/503 and cools down throttled primaries cleanly', async () => {
+it('falls back across free providers on 429/503 and cools down throttled or rejected primaries cleanly', async () => {
+  vi.stubEnv('LOG_LEVEL', 'silent');
   let clock = 1_000_000;
   const gemini: MatchingProvider = {
     compare: vi
@@ -201,6 +243,36 @@ it('falls back across free providers on 429/503 and cools down throttled primari
     model: GROQ_MATCHING_MODEL,
   });
   expect(gemini.compare).toHaveBeenCalledTimes(1);
+
+  const rejectedPrimary: MatchingProvider = {
+    compare: vi.fn().mockRejectedValue(
+      new MatchingFailure('PROVIDER_REJECTED', false, undefined, {
+        httpStatus: 400,
+      }),
+    ),
+  };
+  const backup: MatchingProvider = {
+    compare: vi.fn().mockResolvedValue({
+      assessment,
+      model: GROQ_MATCHING_MODEL,
+      responseId: 'groq-backup',
+      estimatedUsdMicros: 0,
+    }),
+  };
+  const rejectFallback = new FallbackMatchingProvider(
+    [
+      { name: 'gemini', provider: rejectedPrimary },
+      { name: 'groq', provider: backup },
+    ],
+    () => clock,
+  );
+  await expect(rejectFallback.compare(job)).resolves.toMatchObject({
+    responseId: 'groq-backup',
+  });
+  await expect(rejectFallback.compare(job)).resolves.toMatchObject({
+    responseId: 'groq-backup',
+  });
+  expect(rejectedPrimary.compare).toHaveBeenCalledTimes(1);
 });
 
 it('builds ordered free fallback chains for auto and unlocks higher free daily limits', () => {
