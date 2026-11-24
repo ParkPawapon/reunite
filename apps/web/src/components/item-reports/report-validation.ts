@@ -3,6 +3,11 @@ import type {
   ReportType,
 } from '@/modules/item-reports/presentation/reports-client';
 import { DESCRIPTION_LIMIT, tabCopy, type ReportDraft } from './report-draft';
+import {
+  isFutureDateIso,
+  isFutureEventDatetime,
+  nowInBangkok,
+} from './report-format';
 
 export const TITLE_LIMIT = 255;
 // The campus is in Thailand, so the time the user types is always UTC+7.
@@ -50,7 +55,10 @@ export function toEventDatetime(date: string, time: string) {
 export function validateReport(
   type: ReportType,
   draft: ReportDraft,
+  now: Date | number = Date.now(),
 ): ValidationResult {
+  const nowMs = typeof now === 'number' ? now : now.getTime();
+  const bangkokNow = nowInBangkok(nowMs);
   const errors: FieldErrors = {};
   const title = draft.title.trim();
   if (!title) errors.title = 'กรุณากรอกชื่อสิ่งของ';
@@ -64,8 +72,15 @@ export function validateReport(
     errors.locationId = `กรุณาเลือก${tabCopy[type].place}`;
   if (!draft.date) errors.date = 'กรุณาเลือกวันที่';
   else if (!isRealDate(draft.date)) errors.date = 'วันที่ไม่ถูกต้อง';
+  else if (isFutureDateIso(draft.date, bangkokNow.date))
+    errors.date = 'ไม่สามารถเลือกวันที่ในอนาคตได้';
   if (!draft.time) errors.time = 'กรุณาเลือกเวลา';
   else if (!isRealTime(draft.time)) errors.time = 'เวลาไม่ถูกต้อง';
+  else if (
+    !errors.date &&
+    isFutureEventDatetime(toEventDatetime(draft.date, draft.time), nowMs)
+  )
+    errors.time = 'ไม่สามารถเลือกเวลาในอนาคตได้';
   if (draft.description.length > DESCRIPTION_LIMIT)
     errors.description = `ลักษณะสิ่งของต้องไม่เกิน ${DESCRIPTION_LIMIT.toLocaleString('en-US')} ตัวอักษร`;
   if (Object.keys(errors).length) return { ok: false, errors };

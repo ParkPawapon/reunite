@@ -251,20 +251,19 @@ test('edits Thai Buddhist Era calendar and 24-hour time popover cleanly with zer
   const picker = page.getByRole('dialog');
   await expect(picker).toBeVisible();
   await expect(picker.getByText('รูปแบบ 24 ชั่วโมง')).toBeVisible();
+  await expect(picker).toHaveCSS('opacity', '1');
   expect(
     (await new AxeBuilder({ page }).include('[role="dialog"]').analyze())
       .violations,
   ).toEqual([]);
 
-  await picker
-    .getByRole('button', { name: 'เพิ่มชั่วโมง', exact: true })
-    .click();
+  await picker.getByRole('button', { name: 'ลดชั่วโมง', exact: true }).click();
   await picker.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
   await expect(picker).toBeHidden();
   await expect(trigger).toContainText('เลือกวันและเวลา');
 
-  await selectNov2026DateTime(page, trigger, 25, '02', '04');
-  await expect(trigger).toContainText('25 พ.ย. 2569 · 02:04 น.');
+  await selectNov2026DateTime(page, trigger, 24, '02', '04');
+  await expect(trigger).toContainText('24 พ.ย. 2569 · 02:04 น.');
 
   await trigger.click();
   const reopened = page.getByRole('dialog');
@@ -604,5 +603,101 @@ test('keeps the title field disabled during mobile loading and submits its value
   expect(rows).toHaveLength(1);
   expect(rows[0]?.event_datetime.toISOString()).toBe(
     '2026-11-16T03:30:00.000Z',
+  );
+});
+
+test('prevents selecting future Bangkok dates or times and unlocks minutes in real time', async ({
+  page,
+}) => {
+  await page.clock.install({
+    time: new Date('2026-11-24T14:30:55+07:00'),
+  });
+  await openForm(page);
+
+  const title = `${prefix}ทดสอบเวลาปัจจุบัน`;
+  await page.getByLabel(/ชื่อสิ่งของ/).fill(title);
+  await page.getByRole('combobox').first().click();
+  await page.getByRole('option').first().click();
+  await page.getByRole('combobox', { name: /สถานที่หาย/ }).click();
+  await page.getByRole('option').first().click();
+
+  const trigger = page.getByRole('button', { name: /วันและเวลาที่หาย/ });
+  await trigger.click();
+  const picker = page.getByRole('dialog');
+  await expect(picker).toBeVisible();
+  await expect(picker.getByText('เลือกได้ถึง 14:30 น.')).toBeVisible();
+
+  await expect(
+    picker.getByRole('button', { name: '25 พฤศจิกายน 2569', exact: true }),
+  ).toBeDisabled();
+  await expect(
+    picker.getByRole('button', { name: '1 ธันวาคม 2569', exact: true }),
+  ).toBeDisabled();
+  await expect(
+    picker.getByRole('button', { name: 'เดือนถัดไป', exact: true }),
+  ).toBeDisabled();
+
+  await picker.getByRole('button', { name: /เลือกเดือนและปี/ }).click();
+  await expect(
+    picker.getByRole('button', { name: 'ปีถัดไป', exact: true }),
+  ).toBeDisabled();
+  await expect(
+    picker.getByRole('button', { name: 'ธันวาคม', exact: true }),
+  ).toBeDisabled();
+  await picker.getByRole('button', { name: 'พฤศจิกายน', exact: true }).click();
+
+  const incHour = picker.getByRole('button', {
+    name: 'เพิ่มชั่วโมง',
+    exact: true,
+  });
+  const incMinute = picker.getByRole('button', {
+    name: 'เพิ่มนาที',
+    exact: true,
+  });
+  await expect(incHour).toBeDisabled();
+  await expect(incMinute).toBeDisabled();
+
+  const hourBox = picker.getByRole('textbox', { name: 'ชั่วโมง', exact: true });
+  const minuteBox = picker.getByRole('textbox', { name: 'นาที', exact: true });
+  await hourBox.fill('20');
+  await expect(hourBox).toHaveValue('14');
+  await minuteBox.fill('50');
+  await expect(minuteBox).toHaveValue('30');
+
+  // Switch to yesterday, select 20:50, then jump back to today and verify clamp.
+  await picker
+    .getByRole('button', { name: '23 พฤศจิกายน 2569', exact: true })
+    .click();
+  await expect(incHour).toBeEnabled();
+  await hourBox.fill('20');
+  await minuteBox.fill('50');
+  await expect(hourBox).toHaveValue('20');
+  await expect(minuteBox).toHaveValue('50');
+
+  await picker
+    .getByRole('button', { name: '24 พฤศจิกายน 2569', exact: true })
+    .click();
+  await expect(hourBox).toHaveValue('14');
+  await expect(minuteBox).toHaveValue('30');
+
+  // Advance clock across the minute boundary while popover stays open.
+  await page.clock.fastForward(6000);
+  await expect(picker.getByText('เลือกได้ถึง 14:31 น.')).toBeVisible();
+  await expect(incMinute).toBeEnabled();
+  await incMinute.click();
+  await expect(minuteBox).toHaveValue('31');
+
+  await picker.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
+  await expect(picker).toBeHidden();
+  await expect(trigger).toContainText('24 พ.ย. 2569 · 14:31 น.');
+
+  await submitLost(page).click();
+  await expect(
+    page.getByRole('heading', { name: 'แจ้งรายการแล้ว' }),
+  ).toBeVisible();
+  const rows = await reportsCreated(title);
+  expect(rows).toHaveLength(1);
+  expect(rows[0]?.event_datetime.toISOString()).toBe(
+    '2026-11-24T07:31:00.000Z',
   );
 });

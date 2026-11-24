@@ -24,6 +24,8 @@ describe('boundary validation', () => {
     { eventDatetime: 'yesterday' },
     { eventDatetime: '2026-02-30T10:00:00Z' },
     { eventDatetime: '2026-11-04T10:00:00' },
+    { eventDatetime: new Date(Date.now() + 120_000).toISOString() },
+    { eventDatetime: '2099-01-01T10:00:00+07:00' },
     { categoryId: true },
     { userId: 5 },
     { status: 'CLOSED' },
@@ -48,6 +50,7 @@ describe('boundary validation', () => {
       { status: 'RESOLVED' },
       { userId: 2 },
       { eventDatetime: '2026-11-04T12:30:00' },
+      { eventDatetime: new Date(Date.now() + 120_000).toISOString() },
       { createdAt: valid.eventDatetime },
       { type: 'FOUND' },
     ])

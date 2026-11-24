@@ -6,10 +6,17 @@ import {
 } from '@/modules/item-reports/presentation/reports-client';
 import {
   buildThaiCalendarGrid,
+  clampDateTimeToNow,
   formatEventDate,
   formatEventDatetime,
   formatEventTime,
   formatThaiCalendarMonthYear,
+  isFutureDateIso,
+  isFutureEventDatetime,
+  isFutureMonthYear,
+  maxHourForDate,
+  maxMinuteForDateTime,
+  nowInBangkok,
   parseIsoDateParts,
   parseTimeParts,
   shiftYearMonth,
@@ -101,6 +108,87 @@ describe('report form validation', () => {
     );
     expect(validateReport('LOST', { ...draft, time: '25:00' }).ok).toBe(false);
     expect(validateReport('LOST', { ...draft, date: '+275760-09-13' }).ok).toBe(
+      false,
+    );
+  });
+  it('enforces real-time Bangkok bounds against future dates and times', () => {
+    const fixedNow = new Date('2026-11-25T05:14:20+07:00');
+    const fixedNowMs = fixedNow.getTime();
+    const bangkok = nowInBangkok(fixedNowMs);
+    expect(bangkok).toEqual({
+      date: '2026-11-25',
+      time: '05:14',
+      year: 2026,
+      month: 11,
+      day: 25,
+      hour: 5,
+      minute: 14,
+    });
+
+    expect(
+      validateReport(
+        'LOST',
+        { ...draft, date: '2026-11-25', time: '05:14' },
+        fixedNow,
+      ).ok,
+    ).toBe(true);
+    expect(
+      validateReport(
+        'LOST',
+        { ...draft, date: '2026-11-24', time: '23:59' },
+        fixedNow,
+      ).ok,
+    ).toBe(true);
+
+    const futureDay = validateReport(
+      'LOST',
+      { ...draft, date: '2026-11-26', time: '00:00' },
+      fixedNow,
+    );
+    expect(futureDay.ok).toBe(false);
+    expect(!futureDay.ok && futureDay.errors.date).toBe(
+      'ไม่สามารถเลือกวันที่ในอนาคตได้',
+    );
+
+    const futureTimeToday = validateReport(
+      'FOUND',
+      { ...draft, date: '2026-11-25', time: '05:15' },
+      fixedNow,
+    );
+    expect(futureTimeToday.ok).toBe(false);
+    expect(!futureTimeToday.ok && futureTimeToday.errors.time).toBe(
+      'ไม่สามารถเลือกเวลาในอนาคตได้',
+    );
+
+    expect(isFutureDateIso('2026-11-26', bangkok.date)).toBe(true);
+    expect(isFutureDateIso('2026-11-25', bangkok.date)).toBe(false);
+    expect(isFutureMonthYear(2026, 12, 2026, 11)).toBe(true);
+    expect(isFutureMonthYear(2027, 1, 2026, 11)).toBe(true);
+    expect(isFutureMonthYear(2026, 11, 2026, 11)).toBe(false);
+    expect(maxHourForDate('2026-11-25', bangkok)).toBe(5);
+    expect(maxHourForDate('2026-11-24', bangkok)).toBe(23);
+    expect(maxMinuteForDateTime('2026-11-25', 5, bangkok)).toBe(14);
+    expect(maxMinuteForDateTime('2026-11-25', 4, bangkok)).toBe(59);
+    expect(maxMinuteForDateTime('2026-11-24', 20, bangkok)).toBe(59);
+    expect(clampDateTimeToNow('2026-11-28', 20, 50, bangkok)).toEqual({
+      date: '2026-11-25',
+      hour: 5,
+      minute: 14,
+    });
+    expect(clampDateTimeToNow('2026-11-25', 20, 50, bangkok)).toEqual({
+      date: '2026-11-25',
+      hour: 5,
+      minute: 14,
+    });
+    expect(clampDateTimeToNow('2026-11-24', 20, 50, bangkok)).toEqual({
+      date: '2026-11-24',
+      hour: 20,
+      minute: 50,
+    });
+    expect(isFutureEventDatetime('2026-11-25T05:15:00+07:00', fixedNowMs)).toBe(
+      true,
+    );
+    expect(isFutureEventDatetime('2026-11-25T05:14:00+07:00', fixedNowMs)).toBe(
       false,
     );
   });

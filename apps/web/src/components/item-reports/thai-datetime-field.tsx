@@ -1,20 +1,26 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import Popover from '@mui/material/Popover';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import {
-  bangkokEventFields,
   buildThaiCalendarGrid,
+  clampDateTimeToNow,
   formatEventDatetime,
   formatIsoDate,
   formatThaiCalendarMonthYear,
+  isFutureDateIso,
+  isFutureMonthYear,
+  maxHourForDate,
+  maxMinuteForDateTime,
+  nowInBangkok,
   parseIsoDateParts,
   parseTimeParts,
   shiftYearMonth,
   stepTimePart,
   THAI_MONTHS_FULL,
   THAI_WEEKDAYS_SHORT,
+  type BangkokNow,
 } from './report-format';
 import styles from './thai-datetime-field.module.css';
 
@@ -74,26 +80,40 @@ export function ThaiDateTimeField({
   const [minuteText, setMinuteText] = useState('00');
   const [viewYear, setViewYear] = useState(2026);
   const [viewMonth, setViewMonth] = useState(11);
-  const [todayIso, setTodayIso] = useState('');
+  const [nowFields, setNowFields] = useState<BangkokNow>(() => nowInBangkok());
+  const todayIso = nowFields.date;
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setInterval(() => {
+      setNowFields(nowInBangkok());
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [open]);
 
   const openPicker = (target: HTMLButtonElement) => {
     if (disabled) return;
-    const nowFields = bangkokEventFields(new Date().toISOString());
-    const validDate = parseIsoDateParts(date) ? date : nowFields.date;
-    const initialDateParts = parseIsoDateParts(validDate) ?? {
-      year: 2026,
-      month: 11,
-      day: 1,
+    const liveNow = nowInBangkok();
+    const rawDate = parseIsoDateParts(date) ? date : liveNow.date;
+    const rawTime = parseTimeParts(time) ?? {
+      hour: liveNow.hour,
+      minute: liveNow.minute,
     };
-    const validTime = parseTimeParts(time) ??
-      parseTimeParts(nowFields.time) ?? {
-        hour: 0,
-        minute: 0,
-      };
-    setTodayIso(nowFields.date);
-    setDraftDate(validDate);
-    setHourText(pad2(validTime.hour));
-    setMinuteText(pad2(validTime.minute));
+    const clamped = clampDateTimeToNow(
+      rawDate,
+      rawTime.hour,
+      rawTime.minute,
+      liveNow,
+    );
+    const initialDateParts = parseIsoDateParts(clamped.date) ?? {
+      year: liveNow.year,
+      month: liveNow.month,
+      day: liveNow.day,
+    };
+    setNowFields(liveNow);
+    setDraftDate(clamped.date);
+    setHourText(pad2(clamped.hour));
+    setMinuteText(pad2(clamped.minute));
     setViewYear(initialDateParts.year);
     setViewMonth(initialDateParts.month);
     setPickingMonthYear(false);
@@ -106,32 +126,28 @@ export function ThaiDateTimeField({
   };
 
   const setNowInBangkok = () => {
-    const now = bangkokEventFields(new Date().toISOString());
-    const parts = parseIsoDateParts(now.date);
-    const timeParts = parseTimeParts(now.time);
-    setTodayIso(now.date);
-    setDraftDate(now.date);
-    if (parts) {
-      setViewYear(parts.year);
-      setViewMonth(parts.month);
-    }
-    if (timeParts) {
-      setHourText(pad2(timeParts.hour));
-      setMinuteText(pad2(timeParts.minute));
-    }
+    const liveNow = nowInBangkok();
+    setNowFields(liveNow);
+    setDraftDate(liveNow.date);
+    setViewYear(liveNow.year);
+    setViewMonth(liveNow.month);
+    setHourText(pad2(liveNow.hour));
+    setMinuteText(pad2(liveNow.minute));
     setPickingMonthYear(false);
   };
 
   const commit = () => {
-    const hour = clampDigits(hourText, 23, 0);
-    const minute = clampDigits(minuteText, 59, 0);
-    const chosenDate =
-      parseIsoDateParts(draftDate) !== null
-        ? draftDate
-        : bangkokEventFields(new Date().toISOString()).date;
+    const liveNow = nowInBangkok();
+    setNowFields(liveNow);
+    const clamped = clampDateTimeToNow(
+      draftDate,
+      clampDigits(hourText, 23, 0),
+      clampDigits(minuteText, 59, 0),
+      liveNow,
+    );
     onChange({
-      date: chosenDate,
-      time: `${pad2(hour)}:${pad2(minute)}`,
+      date: clamped.date,
+      time: `${pad2(clamped.hour)}:${pad2(clamped.minute)}`,
     });
     closePicker();
   };
@@ -145,14 +161,64 @@ export function ThaiDateTimeField({
     date && time ? formatEventDatetime(`${date}T${time}:00`) : '';
   const visibleHelper = error || helperText;
 
+  const activeDate = draftDate || todayIso;
+  const maxHour = maxHourForDate(activeDate, nowFields);
+  const currentHour = Math.min(clampDigits(hourText, 23, 0), maxHour);
+  const maxMinute = maxMinuteForDateTime(activeDate, currentHour, nowFields);
+  const currentMinute = clampDigits(minuteText, 59, 0);
+  const isTodayOrFutureSelected = activeDate >= todayIso;
+  const isHourIncrementDisabled =
+    isTodayOrFutureSelected && currentHour >= maxHour;
+  const isMinuteIncrementDisabled =
+    isTodayOrFutureSelected &&
+    currentHour >= maxHour &&
+    currentMinute >= maxMinute;
+  const nextMonthCandidate = shiftYearMonth(viewYear, viewMonth, 1);
+  const isNextMonthDisabled = isFutureMonthYear(
+    nextMonthCandidate.year,
+    nextMonthCandidate.month,
+    nowFields.year,
+    nowFields.month,
+  );
+  const isNextYearDisabled = viewYear >= nowFields.year;
+
   const stepHour = (delta: 1 | -1) => {
-    const next = stepTimePart(clampDigits(hourText, 23, 0), 23, delta);
-    setHourText(pad2(next));
+    const liveNow = nowInBangkok();
+    setNowFields(liveNow);
+    const currentDate = draftDate || liveNow.date;
+    const limitHour = maxHourForDate(currentDate, liveNow);
+    const curHour = Math.min(clampDigits(hourText, 23, 0), limitHour);
+    if (delta === 1 && currentDate >= liveNow.date && curHour >= limitHour)
+      return;
+    const nextHour = stepTimePart(curHour, limitHour, delta);
+    const clamped = clampDateTimeToNow(
+      currentDate,
+      nextHour,
+      clampDigits(minuteText, 59, 0),
+      liveNow,
+    );
+    setHourText(pad2(clamped.hour));
+    setMinuteText(pad2(clamped.minute));
   };
 
   const stepMinute = (delta: 1 | -1) => {
-    const next = stepTimePart(clampDigits(minuteText, 59, 0), 59, delta);
-    setMinuteText(pad2(next));
+    const liveNow = nowInBangkok();
+    setNowFields(liveNow);
+    const currentDate = draftDate || liveNow.date;
+    const limitHour = maxHourForDate(currentDate, liveNow);
+    const curHour = Math.min(clampDigits(hourText, 23, 0), limitHour);
+    const limitMinute = maxMinuteForDateTime(currentDate, curHour, liveNow);
+    const curMinute = Math.min(clampDigits(minuteText, 59, 0), limitMinute);
+    if (
+      delta === 1 &&
+      currentDate >= liveNow.date &&
+      curHour >= limitHour &&
+      curMinute >= limitMinute
+    )
+      return;
+    const nextMinute = stepTimePart(curMinute, limitMinute, delta);
+    setHourText(pad2(curHour));
+    setMinuteText(pad2(nextMinute));
   };
 
   return (
@@ -269,10 +335,11 @@ export function ThaiDateTimeField({
                   type="button"
                   className={styles.navBtn}
                   aria-label="เดือนถัดไป"
+                  disabled={isNextMonthDisabled}
                   onClick={() => {
-                    const next = shiftYearMonth(viewYear, viewMonth, 1);
-                    setViewYear(next.year);
-                    setViewMonth(next.month);
+                    if (isNextMonthDisabled) return;
+                    setViewYear(nextMonthCandidate.year);
+                    setViewMonth(nextMonthCandidate.month);
                   }}
                 >
                   <ShellIcon
@@ -308,7 +375,11 @@ export function ThaiDateTimeField({
                     type="button"
                     className={styles.navBtn}
                     aria-label="ปีถัดไป"
-                    onClick={() => setViewYear((y) => y + 1)}
+                    disabled={isNextYearDisabled}
+                    onClick={() => {
+                      if (isNextYearDisabled) return;
+                      setViewYear((y) => y + 1);
+                    }}
                   >
                     <ShellIcon
                       name="chevron"
@@ -322,10 +393,17 @@ export function ThaiDateTimeField({
                   {THAI_MONTHS_FULL.map((monthLabel, index) => {
                     const monthNumber = index + 1;
                     const selected = monthNumber === viewMonth;
+                    const isFutureMonth = isFutureMonthYear(
+                      viewYear,
+                      monthNumber,
+                      nowFields.year,
+                      nowFields.month,
+                    );
                     return (
                       <button
                         key={monthLabel}
                         type="button"
+                        disabled={isFutureMonth}
                         className={
                           selected
                             ? styles.monthOptionSelected
@@ -333,19 +411,29 @@ export function ThaiDateTimeField({
                         }
                         aria-pressed={selected}
                         onClick={() => {
+                          if (isFutureMonth) return;
+                          const liveNow = nowInBangkok();
+                          setNowFields(liveNow);
                           setViewMonth(monthNumber);
                           const currentParts = parseIsoDateParts(draftDate);
                           if (currentParts) {
                             const maxDay = new Date(
                               Date.UTC(viewYear, monthNumber, 0),
                             ).getUTCDate();
-                            setDraftDate(
-                              formatIsoDate(
-                                viewYear,
-                                monthNumber,
-                                Math.min(currentParts.day, maxDay),
-                              ),
+                            const candidateIso = formatIsoDate(
+                              viewYear,
+                              monthNumber,
+                              Math.min(currentParts.day, maxDay),
                             );
+                            const clamped = clampDateTimeToNow(
+                              candidateIso,
+                              clampDigits(hourText, 23, 0),
+                              clampDigits(minuteText, 59, 0),
+                              liveNow,
+                            );
+                            setDraftDate(clamped.date);
+                            setHourText(pad2(clamped.hour));
+                            setMinuteText(pad2(clamped.minute));
                           }
                           setPickingMonthYear(false);
                         }}
@@ -378,22 +466,37 @@ export function ThaiDateTimeField({
                   {calendarCells.map((cell) => {
                     const isSelected = cell.iso === draftDate;
                     const isToday = cell.iso === todayIso;
-                    const className = isSelected
-                      ? styles.dayBtnSelected
-                      : !cell.inMonth
-                        ? styles.dayBtnMuted
-                        : isToday
-                          ? styles.dayBtnToday
-                          : styles.dayBtn;
+                    const isFuture = isFutureDateIso(cell.iso, todayIso);
+                    const className = isFuture
+                      ? styles.dayBtnDisabled
+                      : isSelected
+                        ? styles.dayBtnSelected
+                        : !cell.inMonth
+                          ? styles.dayBtnMuted
+                          : isToday
+                            ? styles.dayBtnToday
+                            : styles.dayBtn;
                     return (
                       <button
                         key={cell.iso}
                         type="button"
+                        disabled={isFuture}
                         className={className}
                         aria-label={`${cell.day} ${formatThaiCalendarMonthYear(cell.year, cell.month)}`}
                         aria-pressed={isSelected}
                         onClick={() => {
-                          setDraftDate(cell.iso);
+                          if (isFuture) return;
+                          const liveNow = nowInBangkok();
+                          setNowFields(liveNow);
+                          const clamped = clampDateTimeToNow(
+                            cell.iso,
+                            clampDigits(hourText, 23, 0),
+                            clampDigits(minuteText, 59, 0),
+                            liveNow,
+                          );
+                          setDraftDate(clamped.date);
+                          setHourText(pad2(clamped.hour));
+                          setMinuteText(pad2(clamped.minute));
                           if (!cell.inMonth) {
                             setViewYear(cell.year);
                             setViewMonth(cell.month);
@@ -426,12 +529,49 @@ export function ThaiDateTimeField({
                     value={hourText}
                     className={styles.timeInput}
                     onChange={(event) => {
-                      const cleaned = event.target.value.replace(/\D/g, '');
-                      setHourText(cleaned.slice(0, 2));
+                      const liveNow = nowInBangkok();
+                      setNowFields(liveNow);
+                      const currentDate = draftDate || liveNow.date;
+                      const limitHour = maxHourForDate(currentDate, liveNow);
+                      const cleaned = event.target.value
+                        .replace(/\D/g, '')
+                        .slice(0, 2);
+                      if (!cleaned) {
+                        setHourText('');
+                        return;
+                      }
+                      const parsed = Number.parseInt(cleaned, 10);
+                      const boundedHour = Math.min(parsed, limitHour);
+                      setHourText(
+                        parsed > limitHour ? pad2(boundedHour) : cleaned,
+                      );
+                      const limitMinute = maxMinuteForDateTime(
+                        currentDate,
+                        boundedHour,
+                        liveNow,
+                      );
+                      if (clampDigits(minuteText, 59, 0) > limitMinute) {
+                        setMinuteText(pad2(limitMinute));
+                      }
                     }}
-                    onBlur={() =>
-                      setHourText(pad2(clampDigits(hourText, 23, 0)))
-                    }
+                    onBlur={() => {
+                      const liveNow = nowInBangkok();
+                      setNowFields(liveNow);
+                      const currentDate = draftDate || liveNow.date;
+                      const limitHour = maxHourForDate(currentDate, liveNow);
+                      const boundedHour = clampDigits(hourText, limitHour, 0);
+                      const limitMinute = maxMinuteForDateTime(
+                        currentDate,
+                        boundedHour,
+                        liveNow,
+                      );
+                      const boundedMinute = Math.min(
+                        clampDigits(minuteText, 59, 0),
+                        limitMinute,
+                      );
+                      setHourText(pad2(boundedHour));
+                      setMinuteText(pad2(boundedMinute));
+                    }}
                     onKeyDown={(event) => {
                       if (event.key === 'ArrowUp') {
                         event.preventDefault();
@@ -447,6 +587,7 @@ export function ThaiDateTimeField({
                       type="button"
                       className={styles.stepBtn}
                       aria-label="เพิ่มชั่วโมง"
+                      disabled={isHourIncrementDisabled}
                       onClick={() => stepHour(1)}
                     >
                       <ShellIcon
@@ -486,12 +627,49 @@ export function ThaiDateTimeField({
                     value={minuteText}
                     className={styles.timeInput}
                     onChange={(event) => {
-                      const cleaned = event.target.value.replace(/\D/g, '');
-                      setMinuteText(cleaned.slice(0, 2));
+                      const liveNow = nowInBangkok();
+                      setNowFields(liveNow);
+                      const currentDate = draftDate || liveNow.date;
+                      const limitHour = maxHourForDate(currentDate, liveNow);
+                      const curHour = Math.min(
+                        clampDigits(hourText, 23, 0),
+                        limitHour,
+                      );
+                      const limitMinute = maxMinuteForDateTime(
+                        currentDate,
+                        curHour,
+                        liveNow,
+                      );
+                      const cleaned = event.target.value
+                        .replace(/\D/g, '')
+                        .slice(0, 2);
+                      if (!cleaned) {
+                        setMinuteText('');
+                        return;
+                      }
+                      const parsed = Number.parseInt(cleaned, 10);
+                      setMinuteText(
+                        parsed > limitMinute ? pad2(limitMinute) : cleaned,
+                      );
                     }}
-                    onBlur={() =>
-                      setMinuteText(pad2(clampDigits(minuteText, 59, 0)))
-                    }
+                    onBlur={() => {
+                      const liveNow = nowInBangkok();
+                      setNowFields(liveNow);
+                      const currentDate = draftDate || liveNow.date;
+                      const limitHour = maxHourForDate(currentDate, liveNow);
+                      const curHour = Math.min(
+                        clampDigits(hourText, 23, 0),
+                        limitHour,
+                      );
+                      const limitMinute = maxMinuteForDateTime(
+                        currentDate,
+                        curHour,
+                        liveNow,
+                      );
+                      setMinuteText(
+                        pad2(clampDigits(minuteText, limitMinute, 0)),
+                      );
+                    }}
                     onKeyDown={(event) => {
                       if (event.key === 'ArrowUp') {
                         event.preventDefault();
@@ -507,6 +685,7 @@ export function ThaiDateTimeField({
                       type="button"
                       className={styles.stepBtn}
                       aria-label="เพิ่มนาที"
+                      disabled={isMinuteIncrementDisabled}
                       onClick={() => stepMinute(1)}
                     >
                       <ShellIcon
@@ -529,6 +708,11 @@ export function ThaiDateTimeField({
               </div>
             </div>
             <p className={styles.timeHint}>รูปแบบ 24 ชั่วโมง</p>
+            <p className={styles.timeLiveNote} aria-live="polite">
+              {isTodayOrFutureSelected
+                ? `เลือกได้ถึง ${nowFields.time} น. (เวลาไทยขณะนี้)`
+                : `เวลาไทยขณะนี้ ${nowFields.time} น.`}
+            </p>
           </div>
         </div>
 

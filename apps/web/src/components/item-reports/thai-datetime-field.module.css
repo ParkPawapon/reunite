@@ -202,10 +202,15 @@
   cursor: pointer;
 }
 
-.navBtn:hover {
+.navBtn:not(:disabled):hover {
   border-color: var(--color-orange-200);
   background: var(--color-orange-50);
   color: var(--color-action-primary);
+}
+
+.navBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .navBtn:focus-visible {
@@ -252,6 +257,7 @@
 
 .dayBtn,
 .dayBtnMuted,
+.dayBtnDisabled,
 .dayBtnToday,
 .dayBtnSelected {
   display: inline-flex;
@@ -274,6 +280,12 @@
 
 .dayBtnMuted {
   color: var(--color-text-muted);
+}
+
+.dayBtnDisabled {
+  color: var(--color-text-muted);
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .dayBtn:hover,
@@ -347,10 +359,16 @@
   cursor: pointer;
 }
 
-.monthOptionBtn:hover {
+.monthOptionBtn:not(:disabled):hover {
   border-color: var(--color-orange-200);
   background: var(--color-orange-50);
   color: var(--color-action-primary);
+}
+
+.monthOptionBtn:disabled,
+.monthOptionSelected:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .monthOptionSelected {
@@ -452,9 +470,14 @@
   cursor: pointer;
 }
 
-.stepBtn:hover {
+.stepBtn:not(:disabled):hover {
   background: var(--color-orange-50);
   color: var(--color-action-primary);
+}
+
+.stepBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .stepBtn:focus-visible {
@@ -476,6 +499,13 @@
   margin: 12px 0 0;
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+
+.timeLiveNote {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-action-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .popoverFooter {
