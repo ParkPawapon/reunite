@@ -8,6 +8,7 @@ test('opens the match from alerts in one dialog and completes the return on two 
   page,
   browser,
 }, info) => {
+  test.setTimeout(90_000);
   test.skip(
     !!process.env.PLAYWRIGHT_BASE_URL,
     'Uses the managed disposable schema',

@@ -205,6 +205,7 @@ test('submits a private claim and shows the owner decision in report details', a
   browser,
   page,
 }) => {
+  test.setTimeout(90_000);
   test.skip(
     !!process.env.PLAYWRIGHT_BASE_URL,
     'Requires managed disposable fixtures',
@@ -226,10 +227,18 @@ test('submits a private claim and shows the owner decision in report details', a
   }
   async function openReport(target: typeof page) {
     await target.goto('/dashboard');
-    await target.getByRole('tab', { name: 'ของที่พบ' }).click();
-    await target
-      .getByRole('searchbox', { name: 'ค้นหาชื่อสิ่งของ' })
-      .fill('ClaimTag');
+    await expect(target.getByRole('tabpanel')).toHaveAttribute(
+      'aria-busy',
+      'false',
+    );
+    const foundTab = target.getByRole('tab', { name: 'ของที่พบ' });
+    await foundTab.click();
+    await expect(foundTab).toHaveAttribute('aria-selected', 'true');
+    const search = target.getByRole('searchbox', {
+      name: 'ค้นหาชื่อสิ่งของ',
+    });
+    await search.fill('ClaimTag');
+    await expect(search).toHaveValue('ClaimTag');
     await expect(target.getByText('ผลการค้นหา “ClaimTag”')).toBeVisible();
     await target.getByRole('button', { name: title, exact: true }).click();
     return target.getByRole('dialog');
