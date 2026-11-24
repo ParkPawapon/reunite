@@ -217,21 +217,27 @@ test('keeps location and date controls the same size on desktop and mobile', asy
   ] as const) {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('tab', { name: tab, exact: true }).click();
+    const category = page.getByRole('combobox', { name: /หมวดหมู่/ });
+    const desktopCategory = await outlineBox(category);
     const location = page.getByRole('combobox', { name: placeLabel });
     const desktopPlace = await outlineBox(location);
     const dateButton = page.getByRole('button', { name: dateLabel });
     const datetime = await buttonBox(dateButton);
+    compareSize(desktopCategory, desktopPlace);
     compareSize(desktopPlace, datetime);
     expect(Math.abs(desktopPlace.y - datetime.y)).toBeLessThan(1.5);
 
     await location.click();
     await page.getByRole('option').first().click();
     await expect(location).toHaveValue(/สถานที่ทดสอบ/);
+    compareSize(desktopCategory, await outlineBox(location));
     compareSize(await outlineBox(location), datetime);
 
     await page.setViewportSize({ width: 390, height: 844 });
+    const mobileCategory = await outlineBox(category);
     const mobilePlace = await outlineBox(location);
     const mobileDatetime = await buttonBox(dateButton);
+    compareSize(mobileCategory, mobilePlace);
     compareSize(mobilePlace, mobileDatetime);
     expect(Math.abs(mobilePlace.x - mobileDatetime.x)).toBeLessThan(1.5);
     expect(mobileDatetime.y).toBeGreaterThan(

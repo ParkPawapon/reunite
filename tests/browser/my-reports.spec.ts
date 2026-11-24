@@ -134,8 +134,33 @@ test('searches the full board while typing and lets an owner edit and close only
     ).toBeVisible();
     const titleField = dialog.getByLabel('ชื่อสิ่งของ', { exact: true });
     await expect(titleField).toBeFocused();
-    await titleField.fill(newTitle);
+    const categorySelect = dialog.getByLabel('หมวดหมู่', { exact: true });
     const location = dialog.getByRole('combobox', { name: /สถานที่หาย/ });
+    const locationOutline = location.locator('xpath=..');
+    const datetimeTrigger = dialog.getByRole('button', {
+      name: /วันและเวลาที่หาย/,
+    });
+    const measureEditHeights = async () => {
+      const catBox = await categorySelect.boundingBox();
+      const locBox = await locationOutline.boundingBox();
+      const titleBox = await titleField.boundingBox();
+      const dateBox = await datetimeTrigger.boundingBox();
+      if (!catBox || !locBox || !titleBox || !dateBox)
+        throw new Error('Expected visible edit form controls');
+      expect(Math.abs(catBox.height - locBox.height)).toBeLessThan(1.5);
+      expect(Math.abs(catBox.height - titleBox.height)).toBeLessThan(1.5);
+      expect(Math.abs(catBox.height - dateBox.height)).toBeLessThan(1.5);
+      return { catBox, locBox };
+    };
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    const desktopEdit = await measureEditHeights();
+    expect(Math.abs(desktopEdit.catBox.y - desktopEdit.locBox.y)).toBeLessThan(
+      1.5,
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    await measureEditHeights();
+
+    await titleField.fill(newTitle);
     await location.fill('ชั้นล่างอาคารทดสอบ');
     await location.press('ArrowDown');
     await location.press('Enter');
