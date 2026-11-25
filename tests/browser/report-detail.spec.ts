@@ -5,7 +5,10 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import type { Pool } from 'pg';
-import { browserAccount } from './test-account';
+import {
+  authenticateBrowserAccount,
+  browserReportDetailAccount,
+} from './test-account';
 import { isolatedServerDatabase } from './isolated-server-database';
 
 let pool: Pool | undefined;
@@ -33,11 +36,7 @@ test.beforeEach(async ({ page }) => {
     'Requires the managed disposable test database',
   );
   pool = await isolatedServerDatabase();
-  const login = await page.request.post('/api/v1/auth/login', {
-    headers: { origin: 'http://localhost:3100' },
-    data: { email: browserAccount.email, password: browserAccount.password },
-  });
-  expect(login.status()).toBe(200);
+  await authenticateBrowserAccount(page.request, browserReportDetailAccount);
   categoryId =
     (
       await pool.query<{ category_id: number }>(
@@ -114,10 +113,10 @@ test('keeps the modal readable and keyboard-contained on desktop, mobile, zoom a
     dialog.getByText('ผู้แจ้งประกาศ', { exact: true }),
   ).toBeVisible();
   await expect(
-    dialog.getByText(browserAccount.name, { exact: true }),
+    dialog.getByText(browserReportDetailAccount.name, { exact: true }),
   ).toBeVisible();
   await expect(
-    dialog.getByText(browserAccount.email, { exact: true }),
+    dialog.getByText(browserReportDetailAccount.email, { exact: true }),
   ).toBeVisible();
   await expect(
     dialog.getByText('ไม่ระบุเบอร์โทรศัพท์', { exact: true }),

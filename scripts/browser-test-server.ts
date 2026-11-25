@@ -5,6 +5,7 @@ import { hashPassword } from '../packages/database/src/password';
 import {
   browserAccount,
   browserMapAccount,
+  browserReportDetailAccount,
 } from '../tests/browser/test-account';
 import {
   cleanupBrowserSchema,
@@ -38,8 +39,14 @@ try {
     [browserAccount.name, browserAccount.email, passwordHash],
   );
   await database.pool.query(
-    'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
-    [browserMapAccount.name, browserMapAccount.email, passwordHash],
+    'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $5), ($3, $4, $5)',
+    [
+      browserMapAccount.name,
+      browserMapAccount.email,
+      browserReportDetailAccount.name,
+      browserReportDetailAccount.email,
+      passwordHash,
+    ],
   );
   const category = await database.pool.query<{ category_id: number }>(
     'INSERT INTO categories(category_name) VALUES($1) RETURNING category_id',
