@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { reportPublisherSchema } from '@/modules/item-reports/presentation/reports-client';
 import { evidenceAttributes } from '../domain/matching';
 
 const item = z.object({
@@ -11,6 +12,7 @@ const item = z.object({
   hasPhoto: z.boolean(),
   photoCount: z.number().int().min(0).max(3).optional().default(0),
   photoUrls: z.array(z.string()).optional().default([]),
+  publisher: reportPublisherSchema,
 });
 
 const textComparison = z.object({

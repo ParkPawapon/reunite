@@ -111,6 +111,18 @@ test('keeps the modal readable and keyboard-contained on desktop, mobile, zoom a
   await expect(dialog).toHaveAttribute('aria-modal', 'true');
   await expect(dialog.getByText('สถานที่หาย', { exact: true })).toBeVisible();
   await expect(
+    dialog.getByText('ผู้แจ้งประกาศ', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText(browserAccount.name, { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText(browserAccount.email, { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText('ไม่ระบุเบอร์โทรศัพท์', { exact: true }),
+  ).toBeVisible();
+  await expect(
     dialog.getByText('รูปช่วยให้จำง่าย', { exact: true }),
   ).toBeVisible();
   await expect(dialog.getByRole('img')).toHaveCount(0);

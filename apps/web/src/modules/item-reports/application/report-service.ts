@@ -1,6 +1,7 @@
 import { AppError } from '@campus/shared';
 import type {
   Report,
+  ReportDetail,
   ReportRepository,
   ReportInput,
   ReportPatch,
@@ -15,7 +16,7 @@ export class ReportService {
     return this.repository.list(filter);
   }
 
-  async find(id: number): Promise<Report> {
+  async find(id: number): Promise<ReportDetail> {
     const report = await this.repository.find(id);
     if (!report) throw new AppError('NOT_FOUND', 404, 'Report not found');
     return report;

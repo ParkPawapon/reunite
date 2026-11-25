@@ -547,6 +547,35 @@
   }
 }
 
+.publisher {
+  margin-top: 0.8rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.publisher h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.publisher dl {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.publisher dt {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.publisher dd {
+  margin: 0;
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
 .confirmations {
   margin: 0;
   padding: 0;

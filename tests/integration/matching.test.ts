@@ -261,6 +261,7 @@ it('stores actual provider results, notifies both participants exactly once, and
 
 it('requires the two exact participants to confirm independently and resolves both reports once', async () => {
   const { lost, found } = await pair();
+  await pool.query("UPDATE users SET phone='0812345678' WHERE user_id=1");
   const job = await queue.claim(1000000, 100000);
   if (!job) throw new Error('Missing job');
   await queue.complete(job, result);
@@ -269,6 +270,16 @@ it('requires the two exact participants to confirm independently and resolves bo
   const route = context(job.matchId);
   const info = await handlers.getReturn(request(), route);
   const { data } = await info.json();
+  const lostPublisher = {
+    name: 'Test 1',
+    email: 'matching1@example.test',
+    phone: '0812345678',
+  };
+  const foundPublisher = {
+    name: 'Test 2',
+    email: 'matching2@example.test',
+    phone: null,
+  };
   expect(data).toMatchObject({
     role: 'LOST',
     lost: { reportId: lost },
@@ -276,9 +287,11 @@ it('requires the two exact participants to confirm independently and resolves bo
     returnedAt: null,
   });
   expect(info.headers.get('cache-control')).toBe('no-store');
-  expect(
-    (await handlers.getReturn(request('GET', outsider), route)).status,
-  ).toBe(404);
+  expect(data.lost.publisher).toEqual(lostPublisher);
+  expect(data.found.publisher).toEqual(foundPublisher);
+  const denied = await handlers.getReturn(request('GET', outsider), route);
+  expect(denied.status).toBe(404);
+  expect(await denied.text()).not.toMatch(/matching[12]@|0812345678/);
   expect((await handlers.getReturn(request('GET', ''), route)).status).toBe(
     401,
   );
@@ -301,6 +314,8 @@ it('requires the two exact participants to confirm independently and resolves bo
   expect(firstState.lostConfirmedAt).toBeTruthy();
   expect(firstState.foundConfirmedAt).toBeNull();
   expect(firstState.returnedAt).toBeNull();
+  expect(firstState.lost.publisher).toEqual(lostPublisher);
+  expect(firstState.found.publisher).toEqual(foundPublisher);
   expect(
     (
       await pool.query(
@@ -317,6 +332,8 @@ it('requires the two exact participants to confirm independently and resolves bo
   const final = await handlers.getReturn(request('GET', whoFound), route);
   expect((await final.json()).data).toMatchObject({
     role: 'FOUND',
+    lost: { reportId: lost, publisher: lostPublisher },
+    found: { reportId: found, publisher: foundPublisher },
     returnedAt: expect.any(String),
   });
   expect(
