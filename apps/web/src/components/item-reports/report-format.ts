@@ -163,3 +163,86 @@ export function bangkokEventFields(value: string) {
     time: `${parts.hour}:${parts.minute}`,
   };
 }
+
+export type BangkokNow = {
+  date: string;
+  time: string;
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+};
+
+export function nowInBangkok(now: Date | number = Date.now()): BangkokNow {
+  const instant = typeof now === 'number' ? new Date(now) : now;
+  const fields = bangkokEventFields(instant.toISOString());
+  const dateParts = parseIsoDateParts(fields.date) ?? {
+    year: 2026,
+    month: 1,
+    day: 1,
+  };
+  const timeParts = parseTimeParts(fields.time) ?? { hour: 0, minute: 0 };
+  return {
+    date: fields.date,
+    time: fields.time,
+    ...dateParts,
+    ...timeParts,
+  };
+}
+
+export function isFutureDateIso(dateIso: string, todayIso: string): boolean {
+  return Boolean(dateIso && todayIso && dateIso > todayIso);
+}
+
+export function isFutureMonthYear(
+  year: number,
+  month: number,
+  maxYear: number,
+  maxMonth: number,
+): boolean {
+  return year > maxYear || (year === maxYear && month > maxMonth);
+}
+
+export function maxHourForDate(
+  dateIso: string,
+  now: Pick<BangkokNow, 'date' | 'hour'>,
+): number {
+  return dateIso >= now.date ? now.hour : 23;
+}
+
+export function maxMinuteForDateTime(
+  dateIso: string,
+  hour: number,
+  now: Pick<BangkokNow, 'date' | 'hour' | 'minute'>,
+): number {
+  const cappedHour = Math.min(hour, maxHourForDate(dateIso, now));
+  return dateIso >= now.date && cappedHour >= now.hour ? now.minute : 59;
+}
+
+export function clampDateTimeToNow(
+  dateIso: string,
+  hour: number,
+  minute: number,
+  now: Pick<BangkokNow, 'date' | 'hour' | 'minute'>,
+): { date: string; hour: number; minute: number } {
+  const safeDate =
+    parseIsoDateParts(dateIso) && !isFutureDateIso(dateIso, now.date)
+      ? dateIso
+      : now.date;
+  const safeHour = Math.min(Math.max(0, hour), maxHourForDate(safeDate, now));
+  const safeMinute = Math.min(
+    Math.max(0, minute),
+    maxMinuteForDateTime(safeDate, safeHour, now),
+  );
+  return { date: safeDate, hour: safeHour, minute: safeMinute };
+}
+
+export function isFutureEventDatetime(
+  eventDatetime: string,
+  nowMs = Date.now(),
+  toleranceMs = 0,
+): boolean {
+  const timestamp = Date.parse(eventDatetime);
+  return Number.isFinite(timestamp) && timestamp > nowMs + toleranceMs;
+}

@@ -2,8 +2,15 @@ import { z } from 'zod';
 import { idSchema, paginationSchema } from '@/lib/http/api';
 import { REPORT_TITLE_LIMIT } from '../domain/report';
 
+const MAX_CLIENT_CLOCK_SKEW_MS = 30_000;
+
 const fields = {
-  eventDatetime: z.iso.datetime({ offset: true }),
+  eventDatetime: z.iso
+    .datetime({ offset: true })
+    .refine(
+      (value) => Date.parse(value) <= Date.now() + MAX_CLIENT_CLOCK_SKEW_MS,
+      'Event datetime cannot be in the future',
+    ),
   categoryId: z.number().int().positive().max(2147483647),
   locationId: z.number().int().positive().max(2147483647),
   title: z.string().trim().min(1).max(REPORT_TITLE_LIMIT),
