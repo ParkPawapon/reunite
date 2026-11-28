@@ -12,6 +12,7 @@ import {
 import { useShellMotion } from './shell-motion';
 import { ShellIcon } from './shell-icon';
 import { MatchReturnExperience } from '@/components/matching/match-return-experience';
+import { ReportDetail } from '@/components/dashboard/report-detail';
 import styles from './notifications.module.css';
 
 const pageSchema = z.object({
@@ -24,8 +25,12 @@ const pageSchema = z.object({
         'MATCH_SUGGESTED',
         'MATCH_PARTNER_CONFIRMED',
         'MATCH_RETURNED',
+        'CLAIM_SUBMITTED',
+        'CLAIM_APPROVED',
+        'CLAIM_REJECTED',
       ]),
       matchId: z.number().int().positive().optional(),
+      reportId: z.number().int().positive().optional(),
       createdAt: z.iso.datetime(),
       readAt: z.iso.datetime().nullable(),
     }),
@@ -35,6 +40,21 @@ const pageSchema = z.object({
 });
 type Page = z.infer<typeof pageSchema>;
 const content = {
+  CLAIM_SUBMITTED: {
+    title: 'มีคำร้องขอรับของใหม่',
+    description: 'เปิดประกาศเพื่อตรวจหลักฐานของผู้ยื่น',
+    icon: 'box',
+  },
+  CLAIM_APPROVED: {
+    title: 'คำร้องขอรับของได้รับอนุมัติ',
+    description: 'เปิดประกาศเพื่อดูผลพิจารณาและช่องทางติดต่อที่ผู้แจ้งเปิดไว้',
+    icon: 'check',
+  },
+  CLAIM_REJECTED: {
+    title: 'คำร้องขอรับของไม่ได้รับอนุมัติ',
+    description: 'เปิดประกาศเพื่อดูผลพิจารณา',
+    icon: 'box',
+  },
   MATCH_SUGGESTED: {
     title: 'ของสองชิ้นนี้อาจตรงกัน',
     description: 'เปิดดูรูปและสถานที่ของทั้งสองประกาศ',
@@ -84,7 +104,10 @@ export function NotificationBell({
   const [reading, setReading] = useState(false);
   const [suggestion, setSuggestion] = useState<number | null>(null);
   const [activeMatch, setActiveMatch] = useState<number | null>(null);
-  const queuedMatch = useRef<number | null>(null);
+  const [activeReport, setActiveReport] = useState<number | null>(null);
+  const queuedDialog = useRef<{ type: 'match' | 'report'; id: number } | null>(
+    null,
+  );
   const bell = useRef<HTMLButtonElement>(null);
   const newest = useRef<number | null>(null);
   const request = useRef<AbortController | null>(null);
@@ -202,7 +225,7 @@ export function NotificationBell({
   function openMatch(matchId: number) {
     setSuggestion(null);
     if (anchor) {
-      queuedMatch.current = matchId;
+      queuedDialog.current = { type: 'match', id: matchId };
       setAnchor(null);
     } else {
       setActiveMatch(matchId);
@@ -243,10 +266,11 @@ export function NotificationBell({
         slotProps={{
           transition: {
             onExited: () => {
-              const next = queuedMatch.current;
-              if (next === null) return;
-              queuedMatch.current = null;
-              setActiveMatch(next);
+              const next = queuedDialog.current;
+              if (!next) return;
+              queuedDialog.current = null;
+              if (next.type === 'match') setActiveMatch(next.id);
+              else setActiveReport(next.id);
             },
           },
           paper: {
@@ -357,13 +381,20 @@ export function NotificationBell({
                       <ShellIcon name={content[item.kind].icon} />
                     </span>
                     <div>
-                      {item.matchId ? (
+                      {item.matchId || item.reportId ? (
                         <button
                           type="button"
                           className={styles.matchAction}
                           aria-haspopup="dialog"
                           onClick={() => {
                             if (item.matchId) openMatch(item.matchId);
+                            else if (item.reportId) {
+                              queuedDialog.current = {
+                                type: 'report',
+                                id: item.reportId,
+                              };
+                              setAnchor(null);
+                            }
                           }}
                         >
                           {content[item.kind].title}
@@ -436,6 +467,18 @@ export function NotificationBell({
           matchId={activeMatch}
           onDismiss={() => {
             setActiveMatch(null);
+            bell.current?.focus({ preventScroll: true });
+            void load();
+          }}
+        />
+      )}
+      {activeReport !== null && (
+        <ReportDetail
+          key={activeReport}
+          reportId={activeReport}
+          showClaims
+          onClose={() => {
+            setActiveReport(null);
             bell.current?.focus({ preventScroll: true });
             void load();
           }}

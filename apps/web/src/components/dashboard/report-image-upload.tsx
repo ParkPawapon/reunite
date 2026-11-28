@@ -54,11 +54,13 @@ export function ReportImageUpload({
   onUpdated,
   shown = true,
   refreshing = false,
+  onProgress,
 }: {
   reportId: number;
   onUpdated: (update: ReportImageUpdate) => void;
   shown?: boolean;
   refreshing?: boolean;
+  onProgress: (message: string) => void;
 }) {
   const ask = useActionConfirmation();
   const [access, setAccess] = useState<
@@ -163,8 +165,13 @@ export function ReportImageUpload({
     setError('');
     let currentSlots = access.slots;
     try {
-      for (const file of queueFiles) {
+      for (const [index, file] of queueFiles.entries()) {
         if (!file) continue;
+        onProgress(
+          queueFiles.length === 1
+            ? 'กำลังบันทึกรูป…'
+            : `กำลังบันทึกรูป ${index + 1} จาก ${queueFiles.length}…`,
+        );
         const slotParam = replaceSlot
           ? `?slot=${replaceSlot}`
           : currentSlots.length === 0
@@ -200,7 +207,8 @@ export function ReportImageUpload({
       }
     } catch (err) {
       if (!controller.signal.aborted) {
-        if (currentSlots.length !== access.slots.length) {
+        const uploaded = currentSlots.length - access.slots.length;
+        if (uploaded > 0) {
           setAccess({
             kind: 'ready',
             hasImage: currentSlots.length > 0,
@@ -212,13 +220,16 @@ export function ReportImageUpload({
         setError(
           err instanceof AccountRequestError && err.status === 401
             ? 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่'
-            : 'บันทึกรูปไม่สำเร็จ กรุณาลองอีกครั้ง',
+            : uploaded > 0
+              ? `บันทึกแล้ว ${uploaded} จาก ${queueFiles.length} รูป ตรวจรายการก่อนลองอีกครั้ง`
+              : 'บันทึกรูปไม่สำเร็จ กรุณาลองอีกครั้ง',
         );
       }
     } finally {
       request.current = null;
       targetRef.current = { mode: 'add' };
       if (!controller.signal.aborted) setBusy(false);
+      onProgress('');
       if (input.current) input.current.value = '';
     }
   }
@@ -242,6 +253,7 @@ export function ReportImageUpload({
     const controller = new AbortController();
     request.current = controller;
     setBusy(true);
+    onProgress('กำลังลบรูป…');
     setError('');
     try {
       const slotQuery =
@@ -281,6 +293,7 @@ export function ReportImageUpload({
     } finally {
       request.current = null;
       if (!controller.signal.aborted) setBusy(false);
+      onProgress('');
     }
   }
 

@@ -116,6 +116,10 @@ test('searches the full board while typing and lets an owner edit and close only
     ).toHaveCount(0);
     await page.getByRole('button', { name: title, exact: true }).click();
     const dialog = page.getByRole('dialog');
+    const matchingStatus = dialog.getByRole('region', { name: 'สถานะจับคู่' });
+    await expect(
+      matchingStatus.getByText('ระบบจับคู่ยังไม่เปิดให้บริการ'),
+    ).toBeVisible();
     const footer = dialog.locator('footer');
     await expect(
       footer.getByRole('button', { name: 'แก้ไขรายการ', exact: true }),
@@ -369,6 +373,12 @@ test('submits a private claim and shows the owner decision in report details', a
       .click();
     await expect(claimantDialog.getByText('ส่งคำร้องแล้ว')).toBeVisible();
     await expect(claimantDialog.getByText('รอตรวจสอบ')).toBeVisible();
+    await expect(
+      claimantDialog.getByRole('button', { name: 'ส่งคำร้องขอรับของ' }),
+    ).toHaveCount(0);
+    await expect(
+      claimantDialog.getByText('ยังไม่มีช่องทางติดต่อที่เปิดให้คุณเห็น'),
+    ).toBeVisible();
     expect((await peerPage.request.get(claimsUrl)).status()).toBe(404);
     const peerDialog = await openReport(peerPage);
     await peerDialog
@@ -387,10 +397,27 @@ test('submits a private claim and shows the owner decision in report details', a
     await expect(peerDialog.getByText('รอตรวจสอบ')).toBeVisible();
     await peerPage.close();
 
-    const ownerDialog = await openReport(page);
-    await ownerDialog
-      .getByRole('button', { name: 'คำร้องขอรับของ', exact: true })
+    await page.bringToFront();
+    await page.goto('/dashboard');
+    await page.getByRole('button', { name: /^การแจ้งเตือน/ }).click();
+    await page
+      .getByRole('button', { name: 'มีคำร้องขอรับของใหม่', exact: true })
+      .first()
       .click();
+    const ownerDialog = page.getByRole('dialog');
+    const ownerContact = ownerDialog.getByRole('region', {
+      name: 'ช่องทางติดต่อ',
+    });
+    await ownerContact
+      .getByRole('checkbox', { name: 'แชร์อีเมลจากโปรไฟล์' })
+      .check();
+    await ownerContact
+      .getByRole('button', { name: 'บันทึกช่องทางติดต่อ' })
+      .click();
+    await confirmAction(page, 'บันทึก');
+    await expect(
+      ownerContact.getByText('บันทึกการแชร์ช่องทางติดต่อแล้ว'),
+    ).toBeVisible();
     const claim = ownerDialog
       .getByRole('listitem')
       .filter({ hasText: evidence });
@@ -418,11 +445,12 @@ test('submits a private claim and shows the owner decision in report details', a
       ownerDialog.getByText('เปิดอยู่', { exact: true }),
     ).toBeVisible();
 
-    const toggle = claimantDialog.getByRole('button', {
-      name: 'ขอรับของและดูคำร้อง',
-    });
-    await toggle.click();
-    await toggle.click();
+    await claimantPage.bringToFront();
+    await claimantPage.goto('/dashboard');
+    await claimantPage.getByRole('button', { name: /^การแจ้งเตือน/ }).click();
+    await claimantPage
+      .getByRole('button', { name: 'คำร้องขอรับของได้รับอนุมัติ' })
+      .click();
     await expect(
       claimantDialog.getByText('อนุมัติแล้ว', { exact: true }),
     ).toBeVisible();
@@ -432,6 +460,9 @@ test('submits a private claim and shows the owner decision in report details', a
     await expect(
       claimantDialog.getByText('รอยเย็บสีแดงที่มุมกระเป๋า', { exact: true }),
     ).toHaveCount(0);
+    await expect(
+      claimantDialog.getByText(owner, { exact: true }),
+    ).toBeVisible();
   } finally {
     await Promise.all([
       claimantPage.isClosed() ? Promise.resolve() : claimantPage.close(),

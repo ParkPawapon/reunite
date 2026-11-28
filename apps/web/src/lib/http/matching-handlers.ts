@@ -45,6 +45,16 @@ export function createMatchingHandlers(
       readSessionToken(request, serverConfig().SESSION_COOKIE_NAME),
     );
   return {
+    reportStatus: (request: Request, context: RouteContext) =>
+      api(request, async () => {
+        const identity = await user(request);
+        const id = parse(idSchema, (await context.params).id);
+        const status = await resolve().matching.reportStatus(
+          identity.userId,
+          id,
+        );
+        return success({ ...status, enabled: matchingConfig().enabled });
+      }),
     getReturn: (request: Request, context: RouteContext) =>
       api(request, async () => {
         const identity = await user(request);

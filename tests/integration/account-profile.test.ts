@@ -100,6 +100,7 @@ describe('student profile and private notification workflow', () => {
       '0012',
       '0013',
       '0014',
+      '0015',
     ]);
     expect(
       await data(await handlers.profile(request('profile'))),
@@ -197,8 +198,10 @@ describe('student profile and private notification workflow', () => {
       'created_at',
       'read_at',
       'match_id',
+      'report_id',
     ]);
     expect(raw.rows[0].match_id).toBeNull();
+    expect(raw.rows[0].report_id).toBeNull();
   });
   it('enforces uniqueness without partial updates and requires a throttled password check for email changes', async () => {
     const duplicate = await handlers.updateProfile(

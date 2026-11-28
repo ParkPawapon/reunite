@@ -21,6 +21,7 @@ import { MatchReturnService } from '@/modules/matching/application/match-return-
 import { PgMatchReturnRepository } from '@/modules/matching/infrastructure/pg-match-return-repository';
 import { ReportImageService } from '@/modules/item-reports/application/report-image-service';
 import { PgReportImageRepository } from '@/modules/item-reports/infrastructure/pg-report-image-repository';
+import { PgReportContactRepository } from '@/modules/item-reports/infrastructure/pg-report-contact-repository';
 
 // Explicit composition root. Each use case receives its port; no app dependency in the DB package.
 export function createServices(db: Sql) {
@@ -46,6 +47,7 @@ export function createServices(db: Sql) {
     notifications: new NotificationService(new PgNotificationRepository(db)),
     reports: new ReportService(new PgReportRepository(db)),
     reportImages: new ReportImageService(new PgReportImageRepository(db)),
+    reportContacts: new PgReportContactRepository(db),
     matching: new MatchingService(new PgMatchReader(db)),
     claims: new ClaimService(new PgClaimRepository(db)),
     categories: createCategoryService(db),

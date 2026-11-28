@@ -5,8 +5,12 @@ export type AccountNotification = {
     | 'AVATAR_UPDATED'
     | 'MATCH_SUGGESTED'
     | 'MATCH_PARTNER_CONFIRMED'
-    | 'MATCH_RETURNED';
+    | 'MATCH_RETURNED'
+    | 'CLAIM_SUBMITTED'
+    | 'CLAIM_APPROVED'
+    | 'CLAIM_REJECTED';
   matchId?: number;
+  reportId?: number;
   createdAt: string;
   readAt: string | null;
 };

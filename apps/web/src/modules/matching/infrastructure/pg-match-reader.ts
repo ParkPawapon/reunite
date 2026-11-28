@@ -4,6 +4,44 @@ import type { MatchReader } from '../domain/match-reader';
 import { assessmentSchema } from './matching-provider-contract';
 export class PgMatchReader implements MatchReader {
   constructor(private readonly db: Sql) {}
+  async reportStatus(userId: number, reportId: number) {
+    const [row] = await query<{
+      open: boolean;
+      pending: number;
+      failed: number;
+      checked: number;
+      latest_match_id: number | null;
+    }>(
+      this.db,
+      `SELECT r.status = 'OPEN' AS open, counts.*
+      FROM item_reports r
+      CROSS JOIN LATERAL (
+        SELECT count(*) FILTER (WHERE m.state IN ('queued','processing'))::integer AS pending,
+          count(*) FILTER (WHERE m.state = 'failed')::integer AS failed,
+          count(*) FILTER (WHERE m.state = 'complete')::integer AS checked,
+          max(m.match_id) FILTER (WHERE m.state = 'complete' AND m.notified
+             AND m.result->>'decision' = 'possible_match') AS latest_match_id
+        FROM report_matches m
+        JOIN item_reports l ON l.report_id = m.lost_report_id
+        JOIN item_reports f ON f.report_id = m.found_report_id
+        WHERE r.status = 'OPEN' AND (m.lost_report_id = r.report_id OR m.found_report_id = r.report_id)
+          AND l.status = 'OPEN' AND f.status = 'OPEN' AND l.user_id <> f.user_id
+          AND l.type = 'LOST' AND f.type = 'FOUND'
+          AND l.matching_revision = m.lost_revision AND f.matching_revision = m.found_revision
+      ) counts
+      WHERE r.report_id = $1 AND r.user_id = $2`,
+      [reportId, userId],
+    );
+    return row
+      ? {
+          open: row.open,
+          pendingCount: row.pending,
+          failedCount: row.failed,
+          checkedCount: row.checked,
+          latestMatchId: row.latest_match_id,
+        }
+      : null;
+  }
   async listOwned(userId: number, before?: number) {
     type Row = {
       match_id: number;

@@ -33,6 +33,8 @@
     "db:create-user": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/create-user.ts",
     "db:seed": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/seed.ts",
     "db:cleanup-auth": "node --env-file-if-exists=.env --conditions=react-server --import tsx packages/database/scripts/cleanup-auth.ts",
+    "db:storage:check": "node --conditions=react-server --import tsx packages/database/scripts/check-storage.ts",
+    "db:restore:drill": "node --env-file-if-exists=.env.test --conditions=react-server --import tsx packages/database/scripts/restore-drill.ts",
     "env:setup": "node scripts/setup-env.mjs",
     "env:check": "node --env-file-if-exists=.env --conditions=react-server --import tsx scripts/check-env.ts"
   },

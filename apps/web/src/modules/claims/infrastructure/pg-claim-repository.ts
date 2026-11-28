@@ -60,10 +60,27 @@ export class PgClaimRepository implements ClaimRepository {
   async create(userId: number, input: ClaimInput) {
     const [row] = await query<Row>(
       this.db,
-      `INSERT INTO claims (report_id, user_id, evidence) VALUES ($1, $2, $3) RETURNING ${columns}`,
+      `WITH eligible AS (
+        SELECT user_id FROM item_reports
+        WHERE report_id = $1 AND user_id <> $2 AND type = 'FOUND' AND status = 'OPEN'
+        FOR UPDATE
+      ), submitted AS (
+        INSERT INTO claims (report_id, user_id, evidence)
+        SELECT $1, $2, $3 FROM eligible
+        RETURNING ${columns}
+      ), notified AS (
+        INSERT INTO notifications (user_id, kind, report_id)
+        SELECT eligible.user_id, 'CLAIM_SUBMITTED', submitted.report_id FROM eligible CROSS JOIN submitted
+      )
+      SELECT ${columns} FROM submitted`,
       [input.reportId, userId, input.evidence],
     );
-    if (!row) throw new Error('Claim insert returned no row');
+    if (!row)
+      throw new AppError(
+        'INVALID_REFERENCE',
+        422,
+        'Report is not eligible for claims',
+      );
     return map(row);
   }
   async reviewReportClaim(
@@ -73,7 +90,7 @@ export class PgClaimRepository implements ClaimRepository {
   ): Promise<Claim | null> {
     const [row] = await query<Row>(
       this.db,
-      `UPDATE claims c
+      `WITH reviewed AS (UPDATE claims c
        SET status = $3,
            resolution_note = $4,
            resolved_by = $2,
@@ -84,7 +101,12 @@ export class PgClaimRepository implements ClaimRepository {
          AND r.user_id = $2
          AND c.status = 'PENDING'
        RETURNING c.claim_id, c.report_id, c.user_id, c.evidence, c.status,
-                 c.resolution_note, c.resolved_by, c.claim_date, c.updated_at`,
+                 c.resolution_note, c.resolved_by, c.claim_date, c.updated_at
+       ), notified AS (
+         INSERT INTO notifications (user_id, kind, report_id)
+         SELECT user_id, CASE WHEN status = 'APPROVED' THEN 'CLAIM_APPROVED' ELSE 'CLAIM_REJECTED' END, report_id
+         FROM reviewed
+       ) SELECT ${columns} FROM reviewed`,
       [
         claimId,
         reportOwnerId,

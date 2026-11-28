@@ -24,7 +24,7 @@ Profile input uses `firstName`/`lastName` (1–100 characters), canonical email 
 
 Avatar decoding accepts still images only, checks actual decoded format against MIME, limits decoded pixels to 16 million, resizes to at most 384×384, and stores at most 128 KiB of WebP with a SHA-256 version. No uploaded URL or filename is accepted. Oversized input returns 413, unsupported MIME 415 and corrupt/mismatched/animated images 422. Unauthenticated requests return 401, and cross-origin mutations 403. URLs under `/profile/avatar?v=<version>` are cache-busting references for the same private image, not public resources or other-account selectors.
 
-Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED`, `AVATAR_UPDATED`, `MATCH_SUGGESTED`), UTC ISO `createdAt` and nullable `readAt`. Events commit atomically with actual account changes or an accepted current matching result. No personal-field snapshots, dummy alerts, claim events, email delivery or notification image publishing are implemented. Mark-read preserves events with newer IDs. The client refreshes on opening/focus/account edits and every 10 seconds while visible.
+Each in-app notification contains `notificationId`, `kind`, UTC ISO `createdAt` and nullable `readAt`. Matching events can contain a `matchId` and claim events include a `reportId` for opening its details. Events commit with the underlying account, match, return or claim change. The payload omits contact values, claim evidence and personal-field snapshots. Mark-read preserves events with newer IDs. The client refreshes on opening, focus, account edits and every 10 seconds while visible.
 
 ## Item matching and item photos
 
@@ -39,26 +39,26 @@ Each notification contains `notificationId`, `kind` (`PROFILE_UPDATED`, `AVATAR_
 
 See [MATCHING.md](MATCHING.md) for the exact match DTO, privacy, provider contract, cost reservations, retries and release limitations. The dashboard matching panel and its polling were removed at the user's request; the authenticated API remains available. The notification bell uses 10-second polling while visible, not a WebSocket or an instantaneous-delivery guarantee.
 
-| Method / path                    | Authentication       | Behavior                                                                               |
-| -------------------------------- | -------------------- | -------------------------------------------------------------------------------------- |
-| GET `/health/live`               | none                 | `{status:"live"}`; no database access                                                  |
-| GET `/health/ready`              | none                 | `{status:"ready"}` after bounded database ping; otherwise 503                          |
-| POST `/auth/login`               | credentials          | Profile and opaque HttpOnly cookie; previous browser token revoked after valid login   |
-| POST `/auth/logout`              | optional session     | Revoke current token and clear cookie; idempotent                                      |
-| GET `/auth/me`                   | session              | Own `{userId,name,email}`                                                              |
-| GET `/categories`                | none                 | Paginated `[{categoryId,categoryName}]`, ordered by category ID                        |
-| GET `/locations`                 | none                 | Paginated `[{locationId,locationName,detail}]` (implemented in BE003)                  |
-| GET `/item-reports`              | session              | Paginated reports, optional filters, newest report ID first                            |
-| GET `/item-reports/:id`          | session              | Single report or 404 with viewer-specific `isOwner`; reporter identity omitted         |
-| POST `/item-reports`             | session              | Create report as current user, `OPEN`; 201                                             |
-| PATCH `/item-reports/:id`        | owner session        | Safe field update; other owners/missing reports return 404                             |
-| PATCH `/item-reports/:id/status` | owner session        | Report status lifecycle transition (`RESOLVED`, `CLOSED`); non-owner returns 404       |
-| GET `/item-reports/me`           | session              | Paginated own reports, newest first, with optional `type`, `status` and `q` filters    |
-| GET `/item-reports/:id/claims`   | report-owner session | Paginated claims submitted on owned report; non-owner returns 404 (BE012)              |
-| GET `/claims`                    | session              | Own claims only, newest first, with optional `reportId` filter                         |
-| GET `/claims/:id`                | claimant session     | Own claim/evidence or non-disclosing 404                                               |
-| POST `/claims`                   | session              | Current claimant, supplied report/evidence, DB `PENDING` and timestamp; 201            |
-| PATCH `/claims/:id/status`       | report-owner session | Review and approve/reject claim (`APPROVED`, `REJECTED`); non-report-owner returns 404 |
+| Method / path                    | Authentication       | Behavior                                                                                                                  |
+| -------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| GET `/health/live`               | none                 | `{status:"live"}`; no database access                                                                                     |
+| GET `/health/ready`              | none                 | `{status:"ready"}` after bounded database ping; otherwise 503                                                             |
+| POST `/auth/login`               | credentials          | Profile and opaque HttpOnly cookie; previous browser token revoked after valid login                                      |
+| POST `/auth/logout`              | optional session     | Revoke current token and clear cookie; idempotent                                                                         |
+| GET `/auth/me`                   | session              | Own `{userId,name,email}`                                                                                                 |
+| GET `/categories`                | none                 | Paginated `[{categoryId,categoryName}]`, ordered by category ID                                                           |
+| GET `/locations`                 | none                 | Paginated `[{locationId,locationName,detail}]` (implemented in BE003)                                                     |
+| GET `/item-reports`              | session              | Paginated reports, optional filters, newest report ID first                                                               |
+| GET `/item-reports/:id`          | session              | Single report or 404 with viewer-specific `isOwner`; reporter identity omitted                                            |
+| POST `/item-reports`             | session              | Create report as current user, `OPEN`; 201                                                                                |
+| PATCH `/item-reports/:id`        | owner session        | Safe field update; other owners/missing reports return 404                                                                |
+| PATCH `/item-reports/:id/status` | owner session        | Report status lifecycle transition (`RESOLVED`, `CLOSED`); non-owner returns 404                                          |
+| GET `/item-reports/me`           | session              | Paginated own reports, newest first, with optional `type`, `status` and `q` filters                                       |
+| GET `/item-reports/:id/claims`   | report-owner session | Paginated claims submitted on owned report; non-owner returns 404 (BE012)                                                 |
+| GET `/claims`                    | session              | Own claims only, newest first, with optional `reportId` filter                                                            |
+| GET `/claims/:id`                | claimant session     | Own claim/evidence or non-disclosing 404                                                                                  |
+| POST `/claims`                   | session              | Creates a PENDING claim on another user's open FOUND report. 201, 409 for duplicate pending, 422 for an ineligible report |
+| PATCH `/claims/:id/status`       | report-owner session | Review and approve/reject claim (`APPROVED`, `REJECTED`); non-report-owner returns 404                                    |
 
 ## Requests and output
 
@@ -88,7 +88,11 @@ PATCH accepts only `title`, `description`, `image`, `categoryId`, `locationId`, 
 
 Both report lists accept `q` for a case-insensitive literal substring of the report title. It is trimmed and limited to 255 characters. A blank value is equivalent to omitting it, and characters such as `%` and `_` are literal. Search and status (`OPEN`, `RESOLVED`, `CLOSED`) apply before pagination. The dashboard defaults to open reports, while **รายการของฉัน** defaults to all statuses. The signed-in **รายการของฉัน** page at `/reports/mine` uses the owner-scoped list and existing report edit and close endpoints.
 
-Claim creation: `{ "reportId": 1, "evidence": "Private identifying details" }`. Evidence is required after trimming, max 10000. Output to the authenticated claimant: `{claimId,reportId,userId,evidence,status,claimDate,updatedAt}`. Clients cannot supply identity, status, claimDate or updatedAt. Only existing report FK eligibility is enforced; no undocumented LOST/FOUND, self-claim, duplicate-request, lifecycle or approval rule is assumed. The report detail dialog offers submission for other users’ open found reports. Each claimant can view only their own submissions. The report owner reviews incoming claims in the same dialog. Claim approval is a claim status change. Return confirmation uses its existing separate workflow.
+Claim creation accepts `{ "reportId": 1, "evidence": "Private identifying details" }`. Evidence is required after trimming, with a maximum of 10,000 characters. The session supplies the claimant, and PostgreSQL assigns PENDING and timestamps. The server locks and checks the target report in the same statement that creates a claim. Each claimant can have one PENDING claim per report. Once reviewed, they can apply again if the report is still eligible. Only the claimant and report owner can read evidence. Owners review claims in the report dialog. The bell receives `CLAIM_SUBMITTED` for the owner and `CLAIM_APPROVED` or `CLAIM_REJECTED` for the claimant. Each event contains an authorized report link and omits the evidence. Claim approval leaves physical return confirmation to its existing workflow.
+
+GET `/item-reports/:id/contact[?matchId=<id>]` requires a complete authenticated account. It returns `{ preferences, email, phone }`. Only a report owner receives non-null preferences. For an open found report, an approved claimant sees the channels its owner selected. A match participant supplying a match ID sees the other reporter's selected channels only when the suggestion is published, current, both reports remain open, the return is incomplete, and both participants opted in on their own reports. Other viewers receive null values. PUT on the same path accepts `{ shareEmail, sharePhone }` through a same-origin owner session and returns the saved preferences. Both channels default to false. Responses use `Cache-Control: no-store`.
+
+GET `/item-reports/:id/matching` requires the report owner's session and returns `{ enabled, open, pendingCount, failedCount, checkedCount, latestMatchId }` for current report revisions. A non-owner receives 404. See [Matching](MATCHING.md).
 
 ## Error statuses
 

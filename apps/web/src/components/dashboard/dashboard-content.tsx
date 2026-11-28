@@ -332,6 +332,7 @@ export function DashboardContent({
         <ReportDetail
           key={selected}
           reportId={selected}
+          showMatching={owned}
           onManaged={
             owned
               ? () => {
