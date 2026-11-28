@@ -1,5 +1,7 @@
 'use client';
 
+import { useActionConfirmation } from '@/components/confirmation/use-action-confirmation';
+
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -119,6 +121,7 @@ export function MatchReturnExperience({
   onDismiss?: () => void;
 }) {
   const motion = useShellMotion();
+  const ask = useActionConfirmation();
   const router = useRouter();
   const titleId = useId();
   const descriptionId = useId();
@@ -129,9 +132,6 @@ export function MatchReturnExperience({
   );
   const [notice, setNotice] = useState('');
   const [reviewedRevision, setReviewedRevision] = useState<string | null>(null);
-  const [confirmingRevision, setConfirmingRevision] = useState<string | null>(
-    null,
-  );
   const [saving, setSaving] = useState(false);
   const read = useRef<AbortController | null>(null);
   const write = useRef<AbortController | null>(null);
@@ -204,23 +204,15 @@ export function MatchReturnExperience({
   const showingProgress = Boolean(
     ownConfirmed || (currentRevision && reviewedRevision === currentRevision),
   );
-  const confirming = Boolean(
-    currentRevision &&
-    confirmingRevision === currentRevision &&
-    reviewedRevision === currentRevision &&
-    !ownConfirmed,
-  );
   const stage = !pair
     ? unavailable || notice
       ? 'unavailable'
       : 'loading'
     : returned
       ? 'complete'
-      : confirming
-        ? 'confirm'
-        : showingProgress
-          ? 'progress'
-          : 'review';
+      : showingProgress
+        ? 'progress'
+        : 'review';
   useEffect(() => {
     if (!open) return;
     if (body.current) body.current.scrollTop = 0;
@@ -228,7 +220,17 @@ export function MatchReturnExperience({
   }, [open, stage]);
 
   async function confirm() {
-    if (!pair || !confirming || write.current) return;
+    if (!pair || stage !== 'progress' || ownConfirmed || write.current) return;
+    if (
+      !(await ask({
+        title:
+          pair.role === 'FOUND' ? 'คืนของแล้วใช่ไหม?' : 'ได้รับของแล้วใช่ไหม?',
+        description: 'ประกาศจะปิดเมื่อทั้งสองฝ่ายยืนยัน',
+        confirmLabel: 'ยืนยัน',
+        icon: 'check',
+      }))
+    )
+      return;
     read.current?.abort();
     read.current = null;
     const request = new AbortController();
@@ -248,7 +250,6 @@ export function MatchReturnExperience({
       });
       if (!request.signal.aborted) {
         setPair(result);
-        setConfirmingRevision(null);
       }
     } catch (error) {
       if (request.signal.aborted) return;
@@ -261,7 +262,6 @@ export function MatchReturnExperience({
       } else {
         setNotice('บันทึกไม่สำเร็จ ลองยืนยันอีกครั้งได้');
       }
-      setConfirmingRevision(null);
     } finally {
       if (write.current === request) {
         write.current = null;
@@ -281,7 +281,6 @@ export function MatchReturnExperience({
       unavailable === 'missing' ? 'รายการนี้เปิดดูไม่ได้แล้ว' : 'จับคู่สิ่งของ',
     review: 'ของสองชิ้นนี้อาจตรงกัน',
     progress: 'ยืนยันการคืนของ',
-    confirm: 'ยืนยันว่า' + action + '?',
     complete: 'ของกลับถึงมือเจ้าของแล้ว',
   }[stage];
   const description = {
@@ -294,7 +293,6 @@ export function MatchReturnExperience({
           : 'โหลดรายละเอียดไม่สำเร็จ',
     review: 'เทียบรูป สถานที่ และลักษณะ ก่อนนัดรับของ',
     progress: 'กดยืนยันเมื่อส่งมอบของกันแล้ว',
-    confirm: 'เมื่อทั้งสองฝ่ายยืนยัน ระบบจะปิดประกาศทั้งสองรายการ',
     complete: 'ทั้งสองฝ่ายยืนยันแล้ว และระบบปิดประกาศให้เรียบร้อย',
   }[stage];
   const reveal = stage === 'review' || stage === 'complete';
@@ -566,14 +564,18 @@ export function MatchReturnExperience({
           <>
             {!ownConfirmed ? (
               <>
-                <Button onClick={() => setReviewedRevision(null)}>
+                <Button
+                  disabled={saving}
+                  onClick={() => setReviewedRevision(null)}
+                >
                   ดูสองประกาศ
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={() => setConfirmingRevision(currentRevision)}
+                  disabled={saving}
+                  onClick={() => void confirm()}
                 >
-                  {action}
+                  {saving ? 'กำลังบันทึก…' : action}
                 </Button>
               </>
             ) : (
@@ -581,23 +583,6 @@ export function MatchReturnExperience({
                 ปิดหน้าต่าง
               </Button>
             )}
-          </>
-        )}
-        {stage === 'confirm' && (
-          <>
-            <Button
-              disabled={saving}
-              onClick={() => setConfirmingRevision(null)}
-            >
-              ย้อนกลับ
-            </Button>
-            <Button
-              variant="contained"
-              disabled={saving}
-              onClick={() => void confirm()}
-            >
-              {saving ? 'กำลังบันทึก…' : 'ยืนยัน'}
-            </Button>
           </>
         )}
         {stage === 'complete' && (

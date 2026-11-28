@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { confirmAction } from './confirm-action';
 import { test, expect, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import sharp from 'sharp';
@@ -126,6 +127,7 @@ test('edits a real private profile, uploads a photo and reads account notificati
   await page
     .getByRole('button', { name: 'บันทึกการเปลี่ยนแปลง', exact: true })
     .click();
+  await confirmAction(page, 'บันทึก');
   await expect(page.getByRole('status')).toContainText(
     'บันทึกข้อมูลเรียบร้อยแล้ว',
   );
@@ -177,6 +179,7 @@ test('edits a real private profile, uploads a photo and reads account notificati
       mimeType: 'image/png',
       buffer: photo,
     });
+    await confirmAction(page, 'ใช้รูปนี้');
     await expect(
       page.locator('aside[aria-label="รูปและข้อมูลบัญชี"] [aria-busy="true"]'),
     ).toBeVisible();
@@ -229,7 +232,14 @@ test('edits a real private profile, uploads a photo and reads account notificati
     ).violations,
   ).toEqual([]);
   await page.screenshot({ path: 'tmp/profile/notifications.png' });
+  const markRead = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/v1/notifications' &&
+      response.request().method() === 'PATCH',
+  );
   await panel.getByRole('button', { name: 'อ่านทั้งหมด', exact: true }).click();
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  expect((await markRead).ok()).toBe(true);
   await expect(panel.getByText('อ่านครบแล้ว', { exact: true })).toBeVisible();
   await expect(
     panel.getByRole('button', { name: 'อ่านทั้งหมด', exact: true }),
@@ -303,6 +313,20 @@ test('edits a real private profile, uploads a photo and reads account notificati
   ).toBe(true);
   await page.keyboard.press('Escape');
   await expect(page.locator('#notification-panel')).toHaveCount(0);
+  const removeAvatar = page.getByRole('button', { name: 'ลบรูป', exact: true });
+  await removeAvatar.click();
+  const avatarConfirmation = page.getByRole('alertdialog', {
+    name: 'ลบรูปโปรไฟล์ไหม?',
+  });
+  await avatarConfirmation
+    .getByRole('button', { name: 'ยกเลิก', exact: true })
+    .click();
+  await expect(removeAvatar).toBeFocused();
+  expect((await page.request.get('/api/v1/profile/avatar')).status()).toBe(200);
+  await removeAvatar.click();
+  await confirmAction(page, 'ลบรูป');
+  await expect(page.getByRole('status')).toContainText('ลบรูปโปรไฟล์แล้ว');
+  expect((await page.request.get('/api/v1/profile/avatar')).status()).toBe(404);
   expect(errors).toEqual([]);
 });
 
@@ -366,6 +390,7 @@ test('disables Entra identity fields on profile while keeping contact details ed
     await page
       .getByRole('button', { name: 'บันทึกการเปลี่ยนแปลง', exact: true })
       .click();
+    await confirmAction(page, 'บันทึก');
     await expect(page.getByRole('status')).toContainText(
       'บันทึกข้อมูลเรียบร้อยแล้ว',
     );

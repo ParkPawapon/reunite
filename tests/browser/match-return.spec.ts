@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { confirmAction } from './confirm-action';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile } from 'node:fs/promises';
 import { isolatedServerDatabase } from './isolated-server-database';
@@ -186,15 +187,14 @@ test('opens the match from alerts in one dialog and completes the return on two 
     await expect(review).toBeVisible();
     await page.getByRole('button', { name: 'ไปที่การคืนของ' }).click();
     await page.getByRole('button', { name: 'ได้รับของแล้ว' }).click();
-    await expect(page.getByRole('dialog')).toHaveCount(1);
-    await page
-      .getByRole('dialog')
-      .getByRole('button', { name: 'ยืนยัน', exact: true })
-      .click();
+    await expect(
+      page.getByRole('alertdialog', { name: 'ได้รับของแล้วใช่ไหม?' }),
+    ).toBeVisible();
+    await confirmAction(page, 'ยืนยัน');
     await expect(page.getByText('คุณยืนยันแล้ว กำลังรออีกฝ่าย')).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'ยืนยันการคืนของ' }),
-    ).toBeFocused();
+    ).toBeVisible();
     expect(
       (
         await pool.query(
@@ -243,10 +243,15 @@ test('opens the match from alerts in one dialog and completes the return on two 
     await finder
       .getByRole('button', { name: 'คืนของแล้ว', exact: true })
       .click();
-    await finder
-      .getByRole('dialog')
-      .getByRole('button', { name: 'ยืนยัน', exact: true })
-      .click();
+    const mobileConfirm = finder.getByRole('alertdialog', {
+      name: 'คืนของแล้วใช่ไหม?',
+    });
+    await expect(
+      mobileConfirm.getByRole('button', { name: 'ยกเลิก', exact: true }),
+    ).toBeFocused();
+    const mobileConfirmationBounds = await mobileConfirm.boundingBox();
+    expect(mobileConfirmationBounds?.width).toBeLessThan(320);
+    await confirmAction(finder, 'ยืนยัน');
     await finder.setViewportSize({ width: 390, height: 844 });
     await expect(
       finder.getByRole('heading', { name: 'ของกลับถึงมือเจ้าของแล้ว' }),

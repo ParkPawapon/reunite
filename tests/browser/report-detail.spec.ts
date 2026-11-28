@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { confirmAction } from './confirm-action';
 import AxeBuilder from '@axe-core/playwright';
 import sharp from 'sharp';
 import { mkdir } from 'node:fs/promises';
@@ -321,9 +322,11 @@ test('keeps photo upload errors actionable, renders the full item photo and retr
     return route.continue();
   });
   await picker.setInputFiles(file);
+  await confirmAction(page, 'แนบรูป');
   await expect(dialog.getByRole('alert')).toContainText('บันทึกรูปไม่สำเร็จ');
   rejectUpload = false;
   await picker.setInputFiles(file);
+  await confirmAction(page, 'แนบรูป');
   await expect(
     dialog.getByText('เปิดรูปไม่สำเร็จ', { exact: true }),
   ).toBeVisible();
@@ -341,6 +344,7 @@ test('keeps photo upload errors actionable, renders the full item photo and retr
     dialog.getByRole('button', { name: 'เปลี่ยนรูปสิ่งของ', exact: true }),
   ).toBeEnabled();
   await picker.setInputFiles(file);
+  await confirmAction(page, 'แนบรูป');
   await expect(
     dialog.getByRole('button', { name: 'ดูรูปที่ 2', exact: true }),
   ).toBeVisible();
@@ -391,6 +395,17 @@ test('keeps photo upload errors actionable, renders the full item photo and retr
   ).toBeLessThan(24);
   expect(fullLinkBox.x).toBeGreaterThan(thumbBox.x + thumbBox.width);
   await dialog.getByRole('button', { name: 'ลบรูปที่ 2', exact: true }).click();
+  const deleteConfirmation = page.getByRole('alertdialog', {
+    name: 'ลบรูปที่ 2 ไหม?',
+  });
+  await deleteConfirmation
+    .getByRole('button', { name: 'ยกเลิก', exact: true })
+    .click();
+  await expect(
+    dialog.getByRole('button', { name: 'ดูรูปที่ 2', exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'ลบรูปที่ 2', exact: true }).click();
+  await confirmAction(page, 'ลบรูป');
   await expect(
     dialog.getByRole('button', { name: 'ดูรูปที่ 2', exact: true }),
   ).toHaveCount(0);
@@ -412,6 +427,7 @@ test('keeps photo upload errors actionable, renders the full item photo and retr
       staleReads.push(request.url());
   });
   await dialog.getByRole('button', { name: 'ลบรูป', exact: true }).click();
+  await confirmAction(page, 'ลบรูป');
   await expect(
     dialog.getByRole('button', { name: 'แนบรูปสิ่งของ', exact: true }),
   ).toBeEnabled();

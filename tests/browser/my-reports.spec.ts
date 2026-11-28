@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { isolatedServerDatabase } from './isolated-server-database';
 import { browserAccount } from './test-account';
+import { confirmAction } from './confirm-action';
 
 test('searches the full board while typing and lets an owner edit and close only their reports', async ({
   page,
-}) => {
+}, testInfo) => {
   test.skip(
     !!process.env.PLAYWRIGHT_BASE_URL,
     'Requires the managed disposable report fixtures',
@@ -208,6 +209,17 @@ test('searches the full board while typing and lets an owner edit and close only
     await expect(picker).toBeHidden();
     await dialog.getByLabel('ลักษณะสิ่งของ').fill('ด้ามจับลายทาง');
     await dialog.getByRole('button', { name: 'บันทึกการแก้ไข' }).click();
+    const saveConfirm = page.getByRole('alertdialog', {
+      name: 'บันทึกการแก้ไขไหม?',
+    });
+    await saveConfirm
+      .getByRole('button', { name: 'ยกเลิก', exact: true })
+      .click();
+    await expect(dialog.getByLabel('ชื่อสิ่งของ', { exact: true })).toHaveValue(
+      newTitle,
+    );
+    await dialog.getByRole('button', { name: 'บันทึกการแก้ไข' }).click();
+    await confirmAction(page, 'บันทึก');
     await expect(dialog.getByText('บันทึกการแก้ไขแล้ว')).toBeVisible();
     await expect(dialog.getByRole('heading', { name: newTitle })).toBeVisible();
     await expect(dialog.getByText(place, { exact: true })).toBeVisible();
@@ -217,15 +229,28 @@ test('searches the full board while typing and lets an owner edit and close only
     await dialog
       .getByRole('button', { name: 'ปิดประกาศ', exact: true })
       .click();
-    await expect(
-      dialog.getByRole('heading', { name: 'ยืนยันการปิดประกาศ' }),
-    ).toBeFocused();
-    await dialog.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
+    const closeConfirmation = page.getByRole('alertdialog', {
+      name: 'ปิดประกาศไหม?',
+    });
+    const closeCancel = closeConfirmation.getByRole('button', {
+      name: 'ยกเลิก',
+      exact: true,
+    });
+    await expect(closeCancel).toBeFocused();
+    const bounds = await closeConfirmation.boundingBox();
+    expect(bounds).toBeTruthy();
+    expect((bounds?.x ?? 0) + (bounds?.width ?? 0) / 2).toBeCloseTo(195, 0);
+    const preview = testInfo.outputPath('close-report-confirmation.png');
+    await page.screenshot({ path: preview, animations: 'disabled' });
+    await testInfo.attach('Close report confirmation mobile', {
+      path: preview,
+    });
+    await closeCancel.click();
     await expect(dialog.getByText('เปิดอยู่', { exact: true })).toBeVisible();
     await dialog
       .getByRole('button', { name: 'ปิดประกาศ', exact: true })
       .click();
-    await dialog.getByRole('button', { name: 'ยืนยันปิดประกาศ' }).click();
+    await confirmAction(page, 'ปิดประกาศ');
     await expect(
       dialog.getByText('ปิดประกาศแล้ว', { exact: true }),
     ).toBeVisible();
@@ -376,6 +401,7 @@ test('submits a private claim and shows the owner decision in report details', a
     await claim
       .getByRole('button', { name: 'อนุมัติคำร้อง', exact: true })
       .click();
+    await confirmAction(page, 'อนุมัติ');
     await expect(claim.getByText('อนุมัติแล้ว', { exact: true })).toBeVisible();
     const secondClaim = ownerDialog
       .getByRole('listitem')
@@ -384,6 +410,7 @@ test('submits a private claim and shows the owner decision in report details', a
     await secondClaim
       .getByRole('button', { name: 'ไม่อนุมัติคำร้อง', exact: true })
       .click();
+    await confirmAction(page, 'ไม่อนุมัติ');
     await expect(
       secondClaim.getByText('ไม่อนุมัติ', { exact: true }),
     ).toBeVisible();

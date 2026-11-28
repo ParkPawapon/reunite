@@ -75,7 +75,7 @@ export function ProfileIdentity({ editor }: { editor: ProfileEditor }) {
         <p className={styles.photoHelp}>
           {photoPending
             ? 'กำลังบันทึกรูปโปรไฟล์…'
-            : 'JPG, PNG, WebP · ไม่เกิน 2 MB · บันทึกทันทีเมื่อเลือก'}
+            : 'JPG, PNG, WebP · ไม่เกิน 2 MB'}
         </p>
       </div>
     </aside>

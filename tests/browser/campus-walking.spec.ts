@@ -1,4 +1,5 @@
 import { AxeBuilder } from '@axe-core/playwright';
+import { confirmAction } from './confirm-action';
 import { expect, test, type Page } from '@playwright/test';
 import anchors from '../../apps/web/src/app/research/kmutt-bangmod/anchors.generated.json' with { type: 'json' };
 import type { MapPoint } from '../../apps/web/src/app/research/kmutt-bangmod/walking';
@@ -61,6 +62,7 @@ test('requires a valid session, restores a shared route after sign-in and reject
   if (!session) throw new Error('Missing authenticated session cookie');
   await page.getByRole('button', { name: 'บัญชีของคุณ', exact: true }).click();
   await page.getByRole('menuitem', { name: 'ออกจากระบบ', exact: true }).click();
+  await confirmAction(page, 'ออกจากระบบ');
   await expect(page).toHaveURL(/\/login$/);
   await context.addCookies([session]);
   await page.goto('/map#place=N10');
