@@ -67,6 +67,11 @@ it('BE006 uses its domain repository contract', async () => {
   const row = {
     reportId: 7,
     userId: 4,
+    publisher: {
+      name: 'Report publisher',
+      email: 'owner@example.test',
+      phone: null,
+    },
     categoryId: 1,
     locationId: 2,
     type: 'FOUND' as const,

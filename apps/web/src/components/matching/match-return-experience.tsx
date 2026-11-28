@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Skeleton from '@mui/material/Skeleton';
+import { PublisherContact } from '@/components/item-reports/publisher-contact';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
 import {
@@ -106,6 +107,12 @@ function ItemCard({
         {item.description && (
           <p className={styles.description}>{item.description}</p>
         )}
+        <section className={styles.publisher}>
+          <h4>ผู้แจ้งประกาศ</h4>
+          <dl>
+            <PublisherContact publisher={item.publisher} />
+          </dl>
+        </section>
       </div>
     </article>
   );

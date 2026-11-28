@@ -31,6 +31,23 @@ export type Report = Omit<ReportInput, 'description' | 'image'> & {
   createdAt: string;
   updatedAt: string;
 };
+export type ReportPublisher = {
+  name: string | null;
+  email: string;
+  phone: string | null;
+};
+
+export function reportPublisher(account: ReportPublisher): ReportPublisher {
+  const name = account.name?.trim();
+  // Microsoft sign-in can store a username as the account name.
+  return {
+    name: name && !/^\S+@\S+$/u.test(name) ? name : null,
+    email: account.email,
+    phone: account.phone?.trim() || null,
+  };
+}
+
+export type ReportDetail = Report & { publisher: ReportPublisher };
 export type ReportBrowse = Page & {
   type?: ReportType;
   q?: string;
@@ -42,7 +59,7 @@ export type ReportFilter = ReportBrowse & {
 };
 export interface ReportRepository {
   list(filter: ReportFilter): Promise<Report[]>;
-  find(id: number): Promise<Report | null>;
+  find(id: number): Promise<ReportDetail | null>;
   create(userId: number, input: ReportInput): Promise<Report>;
   updateOwned(
     id: number,

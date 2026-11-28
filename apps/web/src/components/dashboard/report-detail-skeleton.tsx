@@ -32,6 +32,19 @@ export function ReportDetailSkeleton({ motion }: { motion: boolean }) {
           </div>
         ))}
       </div>
+      <div className={styles.publisher} aria-hidden="true">
+        <h3>
+          <Skeleton width={90} height="1em" animation={animation} />
+        </h3>
+        <div className={styles.publisherDetails}>
+          {[0, 1, 2].map((index) => (
+            <div key={index}>
+              <Skeleton width={60} height={18} animation={animation} />
+              <Skeleton width="85%" height={24} animation={animation} />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

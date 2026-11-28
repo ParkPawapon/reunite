@@ -23,9 +23,9 @@ test('opens the match from alerts in one dialog and completes the return on two 
   const finder = await phone.newPage();
   try {
     await pool.query(
-      `INSERT INTO users(name,email,password_hash)
-       SELECT label,profiles.email,password_hash FROM users CROSS JOIN
-        (VALUES ('เจ้าของร่มทดสอบ',$2::text),('ผู้พบร่มทดสอบ',$3::text)) AS profiles(label,email)
+      `INSERT INTO users(name,email,password_hash,phone)
+       SELECT label,profiles.email,password_hash,profiles.phone FROM users CROSS JOIN
+        (VALUES ('เจ้าของร่มทดสอบ',$2::text,'0812345678'),('ผู้พบร่มทดสอบ',$3::text,NULL)) AS profiles(label,email,phone)
         WHERE users.email=$1`,
       [browserAccount.email, ownerEmail, finderEmail],
     );
@@ -119,6 +119,22 @@ test('opens the match from alerts in one dialog and completes the return on two 
     expect(entryDelays).toHaveLength(3);
     expect(entryDelays[1]).toBeGreaterThan(entryDelays[0] ?? 0);
     expect(entryDelays[2]).toBeGreaterThan(entryDelays[1] ?? 0);
+    const lostCard = review.getByRole('article').filter({
+      hasText: 'เจ้าของร่มทดสอบ',
+    });
+    const foundCard = review.getByRole('article').filter({
+      hasText: 'ผู้พบร่มทดสอบ',
+    });
+    await expect(lostCard.getByText(ownerEmail, { exact: true })).toBeVisible();
+    await expect(
+      lostCard.getByText('0812345678', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      foundCard.getByText(finderEmail, { exact: true }),
+    ).toBeVisible();
+    await expect(
+      foundCard.getByText('ไม่ระบุเบอร์โทรศัพท์', { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'ของสองชิ้นนี้อาจตรงกัน' }),
     ).toBeFocused();
