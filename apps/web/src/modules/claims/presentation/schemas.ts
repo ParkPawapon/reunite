@@ -8,3 +8,7 @@ export const claimStatusPatchSchema = z.strictObject({
   status: z.enum(['APPROVED', 'REJECTED']),
   resolutionNote: z.string().trim().min(1).max(1000).nullable().optional(),
 });
+
+export const claimHandoverSchema = z.strictObject({
+  confirmed: z.literal(true),
+});

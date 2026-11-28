@@ -82,7 +82,11 @@ beforeAll(async () => {
   process.env.APP_BASE_URL = origin;
   process.env.LOG_LEVEL = 'silent';
   await fixture.open();
-  await migrate(pool, (await readMigrations()).slice(0, -1));
+  const migrations = await readMigrations();
+  await migrate(
+    pool,
+    migrations.filter(({ version }) => version < '0015'),
+  );
   await pool.query(`
     INSERT INTO users(name,email,password_hash,phone)
     VALUES ('Finder','finder@example.test','unused-fixture','0800000001'),
@@ -99,7 +103,7 @@ beforeAll(async () => {
     VALUES (4,2,'First legacy evidence',now()-interval '1 minute'),
            (4,2,'Second legacy evidence',now());
   `);
-  expect(await migrate(pool)).toEqual(['0015']);
+  expect(await migrate(pool)).toEqual(['0015', '0016']);
   [owner, claimant, other] = await Promise.all([
     session(1),
     session(2),
@@ -115,6 +119,84 @@ it('keeps the oldest pending record and retains duplicate evidence during migrat
   expect(rows).toEqual([
     { evidence: 'First legacy evidence', status: 'PENDING' },
     { evidence: 'Second legacy evidence', status: 'REJECTED' },
+  ]);
+});
+
+it('blocks approval of a pending claim on a closed report', async () => {
+  const {
+    rows: [claim],
+  } = await pool.query<{ claim_id: number }>(
+    "SELECT claim_id FROM claims WHERE report_id=4 AND status='PENDING'",
+  );
+  if (!claim) throw new Error('Missing closed report claim fixture');
+  const response = await api.patchClaimStatus(
+    request(`claims/${claim.claim_id}/status`, owner, 'PATCH', {
+      status: 'APPROVED',
+    }),
+    context(claim.claim_id),
+  );
+  expect(response.status).toBe(404);
+  const { rows } = await pool.query(
+    'SELECT status FROM claims WHERE claim_id=$1',
+    [claim.claim_id],
+  );
+  expect(rows).toEqual([{ status: 'PENDING' }]);
+});
+
+it('confirms a manual handover once per side, including simultaneous submissions', async () => {
+  const {
+    rows: [report],
+  } = await pool.query<{ report_id: number }>(
+    `INSERT INTO item_reports(user_id,category_id,location_id,type,title,event_datetime)
+     VALUES (1,1,1,'FOUND','Manual return fixture',now()) RETURNING report_id`,
+  );
+  if (!report) throw new Error('Missing handover report fixture');
+  const {
+    data: { claimId },
+  } = await (await submit(report.report_id, claimant)).json();
+  const confirm = (cookie?: string) =>
+    api.confirmClaimHandover(
+      request(`claims/${claimId}/handover`, cookie, 'PATCH', {
+        confirmed: true,
+      }),
+      context(claimId),
+    );
+  expect((await confirm()).status).toBe(401);
+  expect((await confirm(other)).status).toBe(404);
+  expect((await confirm(owner)).status).toBe(404);
+  const approved = await api.patchClaimStatus(
+    request(`claims/${claimId}/status`, owner, 'PATCH', { status: 'APPROVED' }),
+    context(claimId),
+  );
+  expect(approved.status).toBe(200);
+  const responses = await Promise.all([
+    confirm(owner),
+    confirm(claimant),
+    confirm(owner),
+  ]);
+  expect(responses.map(({ status }) => status)).toEqual([200, 200, 200]);
+  const completed = await confirm(claimant);
+  expect(completed.status).toBe(200);
+  expect(await completed.json()).toMatchObject({
+    data: {
+      finderConfirmedAt: expect.any(String),
+      claimantConfirmedAt: expect.any(String),
+    },
+  });
+  const item = await pool.query(
+    'SELECT status FROM item_reports WHERE report_id=$1',
+    [report.report_id],
+  );
+  expect(item.rows).toEqual([{ status: 'RESOLVED' }]);
+  const alerts = await pool.query(
+    `SELECT kind FROM notifications
+      WHERE report_id=$1 AND kind IN ('CLAIM_PARTNER_CONFIRMED', 'CLAIM_RETURNED')
+      ORDER BY notification_id`,
+    [report.report_id],
+  );
+  expect(alerts.rows).toEqual([
+    { kind: 'CLAIM_PARTNER_CONFIRMED' },
+    { kind: 'CLAIM_RETURNED' },
   ]);
 });
 
@@ -174,7 +256,7 @@ it('reveals only opted-in contact details after approval and revokes visibility'
   expect((await preferences(1, owner, false, false)).status).toBe(200);
   expect(await (await contact(1, claimant)).json()).toEqual({ data: hidden });
   const result = await pool.query(
-    "SELECT user_id,kind,report_id FROM notifications WHERE kind='CLAIM_APPROVED'",
+    "SELECT user_id,kind,report_id FROM notifications WHERE kind='CLAIM_APPROVED' AND report_id=1",
   );
   expect(result.rows).toEqual([
     { user_id: 2, kind: 'CLAIM_APPROVED', report_id: 1 },

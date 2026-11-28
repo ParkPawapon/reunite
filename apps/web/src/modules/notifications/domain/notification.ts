@@ -8,7 +8,9 @@ export type AccountNotification = {
     | 'MATCH_RETURNED'
     | 'CLAIM_SUBMITTED'
     | 'CLAIM_APPROVED'
-    | 'CLAIM_REJECTED';
+    | 'CLAIM_REJECTED'
+    | 'CLAIM_PARTNER_CONFIRMED'
+    | 'CLAIM_RETURNED';
   matchId?: number;
   reportId?: number;
   createdAt: string;

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { isolatedServerDatabase } from './isolated-server-database';
 import { browserAccount } from './test-account';
@@ -304,10 +305,12 @@ test('submits a private claim and shows the owner decision in report details', a
     'Requires managed disposable fixtures',
   );
   const pool = await isolatedServerDatabase();
-  const title = 'กระเป๋าทดสอบคำร้อง ClaimTag';
-  const owner = 'claim-browser-owner@example.test';
-  const claimant = 'claim-browser-claimant@example.test';
-  const peer = 'claim-browser-peer@example.test';
+  const fixture = randomUUID().slice(0, 8);
+  const searchTerm = `ClaimTag-${fixture}`;
+  const title = `กระเป๋าทดสอบคำร้อง ${searchTerm}`;
+  const owner = `claim-browser-owner-${fixture}@example.test`;
+  const claimant = `claim-browser-claimant-${fixture}@example.test`;
+  const peer = `claim-browser-peer-${fixture}@example.test`;
   const baseURL = 'http://localhost:3100';
   const claimantPage = await browser.newPage({ baseURL });
   const peerPage = await browser.newPage({ baseURL });
@@ -331,12 +334,12 @@ test('submits a private claim and shows the owner decision in report details', a
       name: 'ค้นหาชื่อสิ่งของ',
     });
     await search.click();
-    await search.pressSequentially('ClaimTag');
-    await expect(search).toHaveValue('ClaimTag');
+    await search.pressSequentially(searchTerm);
+    await expect(search).toHaveValue(searchTerm);
     await expect(
       target.getByRole('button', { name: 'ล้างการค้นหา' }),
     ).toBeVisible();
-    await expect(target.getByText('ผลการค้นหา “ClaimTag”')).toBeVisible();
+    await expect(target.getByText(`ผลการค้นหา “${searchTerm}”`)).toBeVisible();
     await target.getByRole('button', { name: title, exact: true }).click();
     return target.getByRole('dialog');
   }
@@ -452,6 +455,9 @@ test('submits a private claim and shows the owner decision in report details', a
       .getByRole('button', { name: 'คำร้องขอรับของได้รับอนุมัติ' })
       .click();
     await expect(
+      claimantDialog.getByRole('heading', { name: title }),
+    ).toBeVisible();
+    await expect(
       claimantDialog.getByText('อนุมัติแล้ว', { exact: true }),
     ).toBeVisible();
     await expect(
@@ -462,6 +468,19 @@ test('submits a private claim and shows the owner decision in report details', a
     ).toHaveCount(0);
     await expect(
       claimantDialog.getByText(owner, { exact: true }),
+    ).toBeVisible();
+    await claimantDialog.getByRole('button', { name: 'ได้รับของแล้ว' }).click();
+    await confirmAction(claimantPage, 'ได้รับของแล้ว');
+    await expect(claimantDialog.getByText('รออีกฝ่ายยืนยัน')).toBeVisible();
+
+    await page.bringToFront();
+    await claim.getByRole('button', { name: 'คืนของแล้ว' }).click();
+    await confirmAction(page, 'คืนของแล้ว');
+    await expect(
+      ownerDialog.getByText('ได้คืนแล้ว', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      ownerDialog.getByText('ยืนยันการคืนของครบทั้งสองฝ่ายแล้ว'),
     ).toBeVisible();
   } finally {
     await Promise.all([

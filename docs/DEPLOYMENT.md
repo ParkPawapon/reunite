@@ -33,7 +33,7 @@ Set these values in the **Production** environment:
 
 Keep Production secrets out of Preview. A functional preview needs a separate database and an `APP_BASE_URL` matching its own tested HTTPS origin. On Production, verify `GET /api/v1/health/live` and `/api/v1/health/ready`, then log in with a provisioned account. Check the protected dashboard, category/location lists, profile, report creation and image readback, claim ownership, and logout. Item-photo inputs are capped at 4 MiB to fit the Vercel Function payload limit and are stored as WebP up to 1 MiB. Check database size and backup/restore procedures before allowing real student data. [Vercel Function limits](https://vercel.com/docs/functions/limitations)
 
-For Microsoft sign-in, follow the [KMUTT Entra setup](MICROSOFT_SSO.md) before enabling the server variables. Apply migrations through `0015` with the migration role and reapply the runtime grants before deploying the web build. Migration `0015` briefly locks reports and claims. Schedule it during low use after a verified backup. It keeps the oldest pending claim per claimant/report and closes duplicate pending records while retaining their evidence.
+For Microsoft sign-in, follow the [KMUTT Entra setup](MICROSOFT_SSO.md) before enabling the server variables. Apply migrations through `0016` with the migration role and reapply the runtime grants before deploying the web build. Schedule migrations during low use after a verified backup. Migration `0016` adds participant confirmation timestamps and enables handover notifications.
 
 ## Docker
 

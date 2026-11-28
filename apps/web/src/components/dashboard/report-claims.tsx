@@ -5,6 +5,7 @@ import { useActionConfirmation } from '@/components/confirmation/use-action-conf
 import { ShellIcon } from '@/components/shell/shell-icon';
 import {
   ClaimRequestError,
+  confirmClaimHandover,
   loadReportClaims,
   reviewClaim,
   submitClaim,
@@ -23,10 +24,12 @@ const statusLabel = {
 export function ReportClaims({
   row,
   onPendingChange,
+  onHandoverCompleted,
   initiallyExpanded = false,
 }: {
   row: ReportRow;
   onPendingChange: (pending: boolean) => void;
+  onHandoverCompleted: () => void;
   initiallyExpanded?: boolean;
 }) {
   const headingId = useId();
@@ -50,7 +53,7 @@ export function ReportClaims({
   const key = `${page}:${revision}`;
   const current = result?.key === key ? result : null;
   const claims = current?.data?.claims ?? [];
-  const claimable = row.status === 'OPEN';
+  const claimable = row.status === 'OPEN' && row.type === 'FOUND';
   const hasPendingClaim =
     !owner && claims.some((claim) => claim.status === 'PENDING');
 
@@ -71,6 +74,7 @@ export function ReportClaims({
   async function save(
     operation: (signal: AbortSignal) => Promise<ClaimRecord>,
     message: string,
+    onSaved?: (claim: ClaimRecord) => void,
   ) {
     if (request.current) return;
     const controller = new AbortController();
@@ -80,13 +84,14 @@ export function ReportClaims({
     setError('');
     setNotice('');
     try {
-      await operation(controller.signal);
+      const claim = await operation(controller.signal);
       if (controller.signal.aborted) return;
       setReview(null);
       setEvidence('');
       setNotice(message);
       if (!owner) setPage(0);
       setRevision((value) => value + 1);
+      onSaved?.(claim);
     } catch (cause) {
       if (controller.signal.aborted) return;
       const status = cause instanceof ClaimRequestError ? cause.status : 0;
@@ -129,6 +134,27 @@ export function ReportClaims({
     await save(
       (signal) => reviewClaim(claimId, status, note.trim(), signal),
       approved ? 'อนุมัติคำร้องแล้ว' : 'บันทึกผลไม่อนุมัติแล้ว',
+    );
+  }
+
+  async function confirmHandover(claimId: number) {
+    const label = owner ? 'คืนของแล้ว' : 'ได้รับของแล้ว';
+    if (
+      !(await ask({
+        title: owner ? 'คืนของให้ผู้ยื่นแล้วใช่ไหม?' : 'ได้รับของแล้วใช่ไหม?',
+        description: 'เมื่อทั้งสองฝ่ายยืนยัน ประกาศจะขึ้นว่าได้คืนแล้ว',
+        confirmLabel: label,
+        icon: 'check',
+      }))
+    )
+      return;
+    await save(
+      (signal) => confirmClaimHandover(claimId, signal),
+      'บันทึกการยืนยันแล้ว',
+      (claim) => {
+        if (claim.finderConfirmedAt && claim.claimantConfirmedAt)
+          onHandoverCompleted();
+      },
     );
   }
 
@@ -225,7 +251,9 @@ export function ReportClaims({
                           className={styles.claimStatus}
                           data-status={claim.status}
                         >
-                          {statusLabel[claim.status]}
+                          {claim.status === 'PENDING' && !claimable
+                            ? 'สิ้นสุดการพิจารณา'
+                            : statusLabel[claim.status]}
                         </strong>
                       </div>
                       <p>{claim.evidence}</p>
@@ -234,7 +262,17 @@ export function ReportClaims({
                           ข้อความจากผู้แจ้งประกาศ · {claim.resolutionNote}
                         </p>
                       )}
+                      {claim.status === 'APPROVED' && (
+                        <ClaimHandover
+                          claim={claim}
+                          claimable={claimable}
+                          owner={owner}
+                          pending={pending}
+                          onConfirm={() => void confirmHandover(claim.claimId)}
+                        />
+                      )}
                       {owner &&
+                        claimable &&
                         claim.status === 'PENDING' &&
                         (review?.id === claim.claimId ? (
                           <fieldset
@@ -384,5 +422,48 @@ export function ReportClaims({
           ))}
       </div>
     </section>
+  );
+}
+
+function ClaimHandover({
+  claim,
+  claimable,
+  owner,
+  pending,
+  onConfirm,
+}: {
+  claim: ClaimRecord;
+  claimable: boolean;
+  owner: boolean;
+  pending: boolean;
+  onConfirm: () => void;
+}) {
+  const { finderConfirmedAt, claimantConfirmedAt } = claim;
+  const completed = Boolean(finderConfirmedAt && claimantConfirmedAt);
+  const confirmed = Boolean(owner ? finderConfirmedAt : claimantConfirmedAt);
+  const status = completed
+    ? 'ยืนยันการคืนของครบทั้งสองฝ่ายแล้ว'
+    : !claimable
+      ? 'ประกาศสิ้นสุดแล้ว'
+      : confirmed
+        ? 'รออีกฝ่ายยืนยัน'
+        : 'ยืนยันเมื่อส่งมอบของเรียบร้อยแล้ว';
+  return (
+    <div className={styles.claimHandover}>
+      <div>
+        <strong>การคืนของ</strong>
+        <p>{status}</p>
+      </div>
+      {claimable && !confirmed && (
+        <button
+          type="button"
+          className={styles.outlineBtn}
+          disabled={pending}
+          onClick={onConfirm}
+        >
+          {owner ? 'คืนของแล้ว' : 'ได้รับของแล้ว'}
+        </button>
+      )}
+    </div>
   );
 }

@@ -8,6 +8,8 @@ export type Claim = {
   status: ClaimStatus;
   resolutionNote?: string | null;
   resolvedBy?: number | null;
+  finderConfirmedAt?: string;
+  claimantConfirmedAt?: string;
   claimDate: string;
   updatedAt: string;
 };
@@ -27,6 +29,7 @@ export interface ClaimRepository {
     reportOwnerId: number,
     decision: ClaimStatusDecision,
   ): Promise<Claim | null>;
+  confirmHandover(claimId: number, userId: number): Promise<Claim | null>;
   listForReportOwner(
     reportId: number,
     reportOwnerId: number,

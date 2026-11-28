@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: '37 2 * * *'
   workflow_dispatch:
+    inputs:
+      test_alert:
+        description: Trigger a test failure to verify operator notifications
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -27,5 +32,5 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_STORAGE_MONITOR_URL }}
           DB_SSL: verify-full
           DB_SSL_CA: ${{ secrets.DATABASE_STORAGE_MONITOR_CA }}
-          DB_STORAGE_LIMIT_MIB: ${{ vars.DATABASE_STORAGE_LIMIT_MIB }}
+          DB_STORAGE_LIMIT_MIB: ${{ inputs.test_alert && '0.01' || vars.DATABASE_STORAGE_LIMIT_MIB }}
           DB_STORAGE_ALERT_PERCENT: ${{ vars.DATABASE_STORAGE_ALERT_PERCENT || '80' }}
