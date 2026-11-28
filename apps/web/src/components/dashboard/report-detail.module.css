@@ -386,8 +386,7 @@
   border: 1px solid var(--color-orange-200);
   background: var(--color-orange-50);
 }
-.manageCard,
-.dangerCard {
+.manageCard {
   display: grid;
   gap: 14px;
   padding: 18px 20px;
@@ -395,25 +394,15 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface);
 }
-.dangerCard {
-  border-color: color-mix(
-    in srgb,
-    var(--color-danger) 30%,
-    var(--color-border)
-  );
-  background: color-mix(in srgb, var(--color-danger) 5%, var(--color-surface));
-}
 .sectionHeader,
-.manageCardHead,
-.dangerHeader {
+.manageCardHead {
   display: flex;
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
 }
 .sectionIcon,
-.sectionIconStrong,
-.dangerIcon {
+.sectionIconStrong {
   display: grid;
   place-items: center;
   width: 40px;
@@ -427,17 +416,12 @@
   background: var(--color-surface);
   border: 1px solid var(--color-orange-200);
 }
-.dangerIcon {
-  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
-  color: var(--color-danger);
-}
 .sectionCopy {
   flex: 1 1 14rem;
   min-width: 0;
 }
 .sectionCopy strong,
-.manageCardHead h3,
-.dangerHeader h3 {
+.manageCardHead h3 {
   display: block;
   margin: 0;
   font-size: 15px;
@@ -445,12 +429,8 @@
   line-height: 1.4;
   color: var(--color-text);
 }
-.dangerHeader h3:focus {
-  outline: none;
-}
 .sectionCopy p,
-.manageCardHead p,
-.dangerHeader p {
+.manageCardHead p {
   margin: 2px 0 0;
   color: var(--color-text-muted);
   font-size: 12.5px;
@@ -576,7 +556,6 @@
 .outlineBtn,
 .dangerOutlineBtn,
 .quietDangerBtn,
-.dangerBtn,
 .ghostBtn,
 .backBtn {
   display: inline-flex;
@@ -655,14 +634,6 @@
   background: color-mix(in srgb, var(--color-danger) 7%, var(--color-surface));
   color: var(--color-danger);
 }
-.dangerBtn {
-  border: 1px solid var(--color-danger);
-  background: var(--color-danger);
-  color: var(--color-neutral-white);
-}
-.dangerBtn:not(:disabled):hover {
-  background: color-mix(in srgb, var(--color-danger) 88%, var(--color-text));
-}
 .ghostBtn,
 .backBtn {
   border: 1px solid transparent;
@@ -689,7 +660,6 @@
   .outlineBtn,
   .dangerOutlineBtn,
   .quietDangerBtn,
-  .dangerBtn,
   .ghostBtn,
   .backBtn
 ):disabled {
@@ -884,23 +854,6 @@
   color: var(--color-text-muted);
   font-size: 13px;
 }
-.dangerItemSummary {
-  display: grid;
-  gap: 2px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-}
-.dangerItemSummary strong {
-  font-size: 14px;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.dangerItemSummary span {
-  font-size: 12.5px;
-  color: var(--color-text-muted);
-}
 .footer {
   flex: none;
   display: flex;
@@ -966,7 +919,6 @@
 .outlineBtn:focus-visible,
 .dangerOutlineBtn:focus-visible,
 .quietDangerBtn:focus-visible,
-.dangerBtn:focus-visible,
 .ghostBtn:focus-visible,
 .backBtn:focus-visible,
 .galleryThumb:focus-visible,
@@ -1027,8 +979,7 @@
     max-height: 210px;
   }
   .claimBannerCard,
-  .manageCard,
-  .dangerCard {
+  .manageCard {
     padding: 14px 16px;
   }
   .sectionHeaderAction {

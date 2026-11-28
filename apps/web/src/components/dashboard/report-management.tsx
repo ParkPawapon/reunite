@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useActionConfirmation } from '@/components/confirmation/use-action-confirmation';
 import { bangkokEventFields } from '@/components/item-reports/report-format';
 import { ReportLocationChoice } from '@/components/item-reports/report-location-choice';
 import { ThaiDateTimeField } from '@/components/item-reports/thai-datetime-field';
@@ -8,7 +9,6 @@ import { validateReport } from '@/components/item-reports/report-validation';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { REPORT_TITLE_LIMIT } from '@/modules/item-reports/domain/report';
 import {
-  closeReport,
   loadReportOptions,
   ReportRequestError,
   updateReportDetails,
@@ -20,14 +20,12 @@ type Catalogs = Awaited<ReturnType<typeof loadReportOptions>>;
 
 export function ReportManagement({
   row,
-  mode,
   formId,
   onUpdated,
   onPendingChange,
   onEditReadyChange,
 }: {
   row: ReportRow;
-  mode: 'edit' | 'close';
   formId: string;
   onUpdated: (row: ReportRow, message: string) => void;
   onPendingChange: (pending: boolean) => void;
@@ -45,14 +43,10 @@ export function ReportManagement({
   const [error, setError] = useState('');
   const request = useRef<AbortController | null>(null);
   const titleField = useRef<HTMLInputElement>(null);
-  const closeHeading = useRef<HTMLHeadingElement>(null);
+  const ask = useActionConfirmation();
 
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
-    if (mode !== 'edit') {
-      onEditReadyChange(false);
-      return;
-    }
     onEditReadyChange(false);
     const controller = new AbortController();
     void loadReportOptions(controller.signal)
@@ -68,11 +62,10 @@ export function ReportManagement({
         }
       });
     return () => controller.abort();
-  }, [mode, attempt, onEditReadyChange]);
+  }, [attempt, onEditReadyChange]);
   useEffect(() => {
-    if (mode === 'edit' && catalogs) titleField.current?.focus();
-    if (mode === 'close') closeHeading.current?.focus();
-  }, [mode, catalogs]);
+    if (catalogs) titleField.current?.focus();
+  }, [catalogs]);
   async function save(
     persist: (signal: AbortSignal) => Promise<ReportRow>,
     message: string,
@@ -105,7 +98,7 @@ export function ReportManagement({
       }
     }
   }
-  function edit(event: FormEvent<HTMLFormElement>) {
+  async function edit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const title = String(form.get('title') ?? '').trim();
@@ -159,6 +152,14 @@ export function ReportManagement({
       onUpdated(row, 'ไม่มีข้อมูลที่เปลี่ยนแปลง');
       return;
     }
+    if (
+      !(await ask({
+        title: 'บันทึกการแก้ไขไหม?',
+        confirmLabel: 'บันทึก',
+        icon: 'edit',
+      }))
+    )
+      return;
     void save(
       async (signal) => ({
         ...(await updateReportDetails(row.reportId, fields, signal)),
@@ -169,143 +170,102 @@ export function ReportManagement({
     );
   }
   return (
-    <section
-      className={mode === 'close' ? styles.dangerCard : styles.manageCard}
-      aria-label={mode === 'close' ? 'ยืนยันการปิดประกาศ' : 'แก้ไขรายการ'}
-    >
-      {mode === 'edit' && (
-        <form id={formId} className={styles.manageForm} onSubmit={edit}>
-          <div className={styles.manageCardHead}>
-            <span className={styles.sectionIcon}>
-              <ShellIcon name="edit" width={18} height={18} />
-            </span>
-            <div>
-              <h3>แก้ไขรายการ</h3>
-              <p className={styles.mutedText}>
-                ปรับชื่อ หมวดหมู่ สถานที่
-                หรือรายละเอียดเพื่อให้ค้นหาและจับคู่แม่นยำขึ้น
-              </p>
-            </div>
-          </div>
-          {catalogs ? (
-            <fieldset disabled={pending} className={styles.manageFields}>
-              <label>
-                ชื่อสิ่งของ
-                <input
-                  name="title"
-                  defaultValue={row.title}
-                  maxLength={REPORT_TITLE_LIMIT}
-                  required
-                  ref={titleField}
-                />
-              </label>
-              <div className={styles.catalogFields}>
-                <label>
-                  หมวดหมู่
-                  <select
-                    name="category"
-                    defaultValue={row.categoryId}
-                    required
-                  >
-                    {catalogs.categories.map(({ id, name }) => (
-                      <option key={id} value={id}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className={styles.editLocation}>
-                  <ReportLocationChoice
-                    id={locationFieldId}
-                    label={row.type === 'LOST' ? 'สถานที่หาย' : 'สถานที่พบ'}
-                    placeholder="ค้นหาอาคารหรือบริเวณ"
-                    options={catalogs.locations}
-                    value={locationId}
-                    onChange={setLocationId}
-                    disabled={pending}
-                  />
-                </div>
-              </div>
-              <ThaiDateTimeField
-                id={dateFieldId}
-                label={
-                  row.type === 'LOST' ? 'วันและเวลาที่หาย' : 'วันและเวลาที่พบ'
-                }
-                required
-                compact
-                disabled={pending}
-                date={eventDate}
-                time={eventTime}
-                nameDate="date"
-                nameTime="time"
-                onChange={({ date, time }) => {
-                  setEventDate(date);
-                  setEventTime(time);
-                }}
-              />
-              <label>
-                ลักษณะสิ่งของ
-                <textarea
-                  name="description"
-                  rows={3}
-                  maxLength={10000}
-                  defaultValue={row.description ?? ''}
-                />
-              </label>
-            </fieldset>
-          ) : !error ? (
-            <p className={styles.mutedText} role="status">
-              กำลังโหลดหมวดหมู่และสถานที่…
+    <section className={styles.manageCard} aria-label="แก้ไขรายการ">
+      <form id={formId} className={styles.manageForm} onSubmit={edit}>
+        <div className={styles.manageCardHead}>
+          <span className={styles.sectionIcon}>
+            <ShellIcon name="edit" width={18} height={18} />
+          </span>
+          <div>
+            <h3>แก้ไขรายการ</h3>
+            <p className={styles.mutedText}>
+              ปรับชื่อ หมวดหมู่ สถานที่
+              หรือรายละเอียดเพื่อให้ค้นหาและจับคู่แม่นยำขึ้น
             </p>
-          ) : (
-            <div className={styles.editReloadRow}>
-              <button
-                type="button"
-                className={styles.outlineBtn}
-                onClick={() => {
-                  setError('');
-                  setAttempt((value) => value + 1);
-                }}
-              >
-                <ShellIcon name="refresh" width={15} height={15} />
-                ลองโหลดอีกครั้ง
-              </button>
-            </div>
-          )}
-        </form>
-      )}
-      {mode === 'close' && (
-        <form
-          id={formId}
-          className={styles.manageForm}
-          onSubmit={(event) => {
-            event.preventDefault();
-            void save(
-              async (signal) => ({
-                ...row,
-                ...(await closeReport(row.reportId, signal)),
-              }),
-              'ปิดประกาศแล้ว',
-            );
-          }}
-        >
-          <div className={styles.dangerHeader}>
-            <span className={styles.dangerIcon}>
-              <ShellIcon name="alert" width={20} height={20} />
-            </span>
-            <div>
-              <h3 ref={closeHeading} tabIndex={-1}>
-                ยืนยันการปิดประกาศ
-              </h3>
-              <p>เมื่อยืนยัน ระบบจะเปลี่ยนสถานะประกาศเป็น “ปิดแล้ว”</p>
-            </div>
           </div>
-          <div className={styles.dangerItemSummary}>
-            <strong>{row.title}</strong>
-            <span>{row.locationName}</span>
+        </div>
+        {catalogs ? (
+          <fieldset disabled={pending} className={styles.manageFields}>
+            <label>
+              ชื่อสิ่งของ
+              <input
+                name="title"
+                defaultValue={row.title}
+                maxLength={REPORT_TITLE_LIMIT}
+                required
+                ref={titleField}
+              />
+            </label>
+            <div className={styles.catalogFields}>
+              <label>
+                หมวดหมู่
+                <select name="category" defaultValue={row.categoryId} required>
+                  {catalogs.categories.map(({ id, name }) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className={styles.editLocation}>
+                <ReportLocationChoice
+                  id={locationFieldId}
+                  label={row.type === 'LOST' ? 'สถานที่หาย' : 'สถานที่พบ'}
+                  placeholder="ค้นหาอาคารหรือบริเวณ"
+                  options={catalogs.locations}
+                  value={locationId}
+                  onChange={setLocationId}
+                  disabled={pending}
+                />
+              </div>
+            </div>
+            <ThaiDateTimeField
+              id={dateFieldId}
+              label={
+                row.type === 'LOST' ? 'วันและเวลาที่หาย' : 'วันและเวลาที่พบ'
+              }
+              required
+              compact
+              disabled={pending}
+              date={eventDate}
+              time={eventTime}
+              nameDate="date"
+              nameTime="time"
+              onChange={({ date, time }) => {
+                setEventDate(date);
+                setEventTime(time);
+              }}
+            />
+            <label>
+              ลักษณะสิ่งของ
+              <textarea
+                name="description"
+                rows={3}
+                maxLength={10000}
+                defaultValue={row.description ?? ''}
+              />
+            </label>
+          </fieldset>
+        ) : !error ? (
+          <p className={styles.mutedText} role="status">
+            กำลังโหลดหมวดหมู่และสถานที่…
+          </p>
+        ) : (
+          <div className={styles.editReloadRow}>
+            <button
+              type="button"
+              className={styles.outlineBtn}
+              onClick={() => {
+                setError('');
+                setAttempt((value) => value + 1);
+              }}
+            >
+              <ShellIcon name="refresh" width={15} height={15} />
+              ลองโหลดอีกครั้ง
+            </button>
           </div>
-        </form>
-      )}
+        )}
+      </form>
       {error && (
         <p className={styles.formError} role="alert">
           {error}

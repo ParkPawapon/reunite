@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useActionConfirmation } from '@/components/confirmation/use-action-confirmation';
 import type { StudentProfile } from '@/modules/users/domain/profile';
 import { profileSchema } from '@/modules/users/presentation/profile-schema';
 import {
@@ -34,6 +35,7 @@ function message(error: unknown) {
   return 'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง';
 }
 export function useProfileEditor(initial: StudentProfile) {
+  const ask = useActionConfirmation();
   const [profile, setProfile] = useState(initial);
   const [values, setValues] = useState(() => fields(initial));
   const [password, setPassword] = useState('');
@@ -68,7 +70,7 @@ export function useProfileEditor(initial: StudentProfile) {
   }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (formRequest.current || photoRequest.current) return;
+    if (!dirty || formRequest.current || photoRequest.current) return;
     setFailure('');
     setSuccess('');
     const parsed = profileSchema.safeParse({
@@ -94,6 +96,14 @@ export function useProfileEditor(initial: StudentProfile) {
       return;
     }
     setErrors({});
+    if (
+      !(await ask({
+        title: 'บันทึกโปรไฟล์?',
+        confirmLabel: 'บันทึก',
+        icon: 'user',
+      }))
+    )
+      return;
     const controller = new AbortController();
     formRequest.current = controller;
     setPending(true);
@@ -128,6 +138,7 @@ export function useProfileEditor(initial: StudentProfile) {
   }
   async function photo(file?: File, remove = false) {
     if (photoRequest.current || formRequest.current) return;
+    if (input.current) input.current.value = '';
     setFailure('');
     setSuccess('');
     if (
@@ -139,6 +150,24 @@ export function useProfileEditor(initial: StudentProfile) {
       setFailure('เลือกรูป JPG, PNG หรือ WebP ขนาดไม่เกิน 2 MB');
       return;
     }
+    if (
+      !(await ask(
+        remove
+          ? {
+              title: 'ลบรูปโปรไฟล์ไหม?',
+              description: 'ระบบจะแสดงตัวอักษรชื่อคุณแทนรูป',
+              confirmLabel: 'ลบรูป',
+              icon: 'trash',
+              tone: 'danger',
+            }
+          : {
+              title: 'ใช้รูปนี้เป็นรูปโปรไฟล์?',
+              confirmLabel: 'ใช้รูปนี้',
+              icon: 'camera',
+            },
+      ))
+    )
+      return;
     const controller = new AbortController();
     photoRequest.current = controller;
     setPhotoPending(true);
@@ -170,7 +199,6 @@ export function useProfileEditor(initial: StudentProfile) {
         photoRequest.current = null;
         setPhotoPending(false);
       }
-      if (input.current) input.current.value = '';
     }
   }
   function change(key: keyof ProfileFields, value: string) {

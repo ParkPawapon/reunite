@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { confirmAction } from './confirm-action';
 import { expect, test, type Locator } from '@playwright/test';
 import { isolatedServerDatabase } from './isolated-server-database';
 
@@ -114,6 +115,7 @@ test('requires a Microsoft-linked user to finish setup before using the app', as
     await expect(alert).toHaveText('กรุณาเลือกสาขาวิชา');
     await choose(major, 'วิศวกรรมคอมพิวเตอร์');
     await save.click();
+    await confirmAction(page, 'บันทึกและไปต่อ');
     await expect(page).toHaveURL(/\/dashboard$/);
     expect((await page.request.get('/api/v1/item-reports')).status()).toBe(200);
     expect(

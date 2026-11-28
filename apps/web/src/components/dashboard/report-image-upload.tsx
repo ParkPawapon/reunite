@@ -1,4 +1,6 @@
 'use client';
+
+import { useActionConfirmation } from '@/components/confirmation/use-action-confirmation';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import IconButton from '@mui/material/IconButton';
@@ -58,6 +60,7 @@ export function ReportImageUpload({
   shown?: boolean;
   refreshing?: boolean;
 }) {
+  const ask = useActionConfirmation();
   const [access, setAccess] = useState<
     | { kind: 'loading' }
     | { kind: 'unavailable' }
@@ -117,7 +120,6 @@ export function ReportImageUpload({
   async function uploadFiles(files: File[], replaceSlot?: 1 | 2 | 3) {
     if (request.current || refreshing || access.kind !== 'ready') return;
     if (!files.length) return;
-    setSaved('');
     const maxAllowed = access.maxImages;
     if (!replaceSlot && access.slots.length + files.length > maxAllowed) {
       setError(`แนบได้สูงสุด ${maxAllowed} รูปต่อรายการ`);
@@ -137,6 +139,24 @@ export function ReportImageUpload({
         return;
       }
     }
+    if (
+      !(await ask(
+        replaceSlot
+          ? {
+              title: 'เปลี่ยนรูปสิ่งของไหม?',
+              description: 'รูปใหม่จะแทนรูปเดิม',
+              confirmLabel: 'เปลี่ยนรูป',
+              icon: 'image',
+            }
+          : {
+              title: 'แนบรูปสิ่งของไหม?',
+              confirmLabel: 'แนบรูป',
+              icon: 'camera',
+            },
+      ))
+    )
+      return;
+    setSaved('');
     const controller = new AbortController();
     request.current = controller;
     setBusy(true);
@@ -205,6 +225,19 @@ export function ReportImageUpload({
 
   async function removeSlot(slot: 1 | 2 | 3) {
     if (request.current || refreshing || access.kind !== 'ready') return;
+    if (
+      !(await ask({
+        title:
+          access.slots.length === 1
+            ? 'ลบรูปสิ่งของไหม?'
+            : `ลบรูปที่ ${slot} ไหม?`,
+        description: 'รูปนี้จะออกจากประกาศทันที',
+        confirmLabel: 'ลบรูป',
+        icon: 'trash',
+        tone: 'danger',
+      }))
+    )
+      return;
     setSaved('');
     const controller = new AbortController();
     request.current = controller;

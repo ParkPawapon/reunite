@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { useActionConfirmation } from '@/components/confirmation/use-action-confirmation';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import {
   ClaimRequestError,
@@ -27,6 +28,7 @@ export function ReportClaims({
   onPendingChange: (pending: boolean) => void;
 }) {
   const headingId = useId();
+  const ask = useActionConfirmation();
   const owner = row.isOwner === true;
   const [expanded, setExpanded] = useState(false);
   const [page, setPage] = useState(0);
@@ -99,6 +101,27 @@ export function ReportClaims({
         onPendingChange(false);
       }
     }
+  }
+
+  async function decide(
+    claimId: number,
+    status: 'APPROVED' | 'REJECTED',
+    note: string,
+  ) {
+    const approved = status === 'APPROVED';
+    if (
+      !(await ask({
+        title: approved ? 'อนุมัติคำร้องไหม?' : 'ไม่อนุมัติคำร้องใช่ไหม?',
+        confirmLabel: approved ? 'อนุมัติ' : 'ไม่อนุมัติ',
+        icon: approved ? 'check' : 'box',
+        ...(approved ? {} : { tone: 'danger' }),
+      }))
+    )
+      return;
+    await save(
+      (signal) => reviewClaim(claimId, status, note.trim(), signal),
+      approved ? 'อนุมัติคำร้องแล้ว' : 'บันทึกผลไม่อนุมัติแล้ว',
+    );
   }
 
   return (
@@ -236,15 +259,10 @@ export function ReportClaims({
                                 className={styles.dangerOutlineBtn}
                                 type="button"
                                 onClick={() =>
-                                  void save(
-                                    (signal) =>
-                                      reviewClaim(
-                                        claim.claimId,
-                                        'REJECTED',
-                                        review.note.trim(),
-                                        signal,
-                                      ),
-                                    'บันทึกผลไม่อนุมัติแล้ว',
+                                  void decide(
+                                    claim.claimId,
+                                    'REJECTED',
+                                    review.note,
                                   )
                                 }
                               >
@@ -254,15 +272,10 @@ export function ReportClaims({
                                 className={styles.primaryBtn}
                                 type="button"
                                 onClick={() =>
-                                  void save(
-                                    (signal) =>
-                                      reviewClaim(
-                                        claim.claimId,
-                                        'APPROVED',
-                                        review.note.trim(),
-                                        signal,
-                                      ),
-                                    'อนุมัติคำร้องแล้ว',
+                                  void decide(
+                                    claim.claimId,
+                                    'APPROVED',
+                                    review.note,
                                   )
                                 }
                               >

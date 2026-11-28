@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import sharp from 'sharp';
 import { authenticateBrowserAccount, browserAccount } from './test-account';
+import { confirmAction } from './confirm-action';
 
 test.beforeEach(() => {
   test.skip(
@@ -49,6 +50,7 @@ test('shows the report board without a matching panel, an icon-only refresh cont
     mimeType: 'image/png',
     buffer: photo,
   });
+  await confirmAction(page, 'แนบรูป');
   await expect(
     dialog.getByRole('img', { name: 'รูป ของหายทดสอบ 12', exact: true }),
   ).toBeVisible();
@@ -56,6 +58,7 @@ test('shows the report board without a matching panel, an icon-only refresh cont
     dialog.getByRole('button', { name: 'เปลี่ยนรูปสิ่งของ', exact: true }),
   ).toBeVisible();
   await dialog.getByRole('button', { name: 'ลบรูป', exact: true }).click();
+  await confirmAction(page, 'ลบรูป');
   await expect(
     dialog.getByRole('button', { name: 'แนบรูปสิ่งของ', exact: true }),
   ).toBeVisible();
@@ -522,21 +525,71 @@ test('uses real session data, responsive navigation, truthful report loading and
           .analyze()
       ).violations,
     ).toEqual([]);
-    await page.route('**/api/v1/auth/logout', (route) =>
-      route.fulfill({
+    let logoutRequests = 0;
+    await page.route('**/api/v1/auth/logout', (route) => {
+      logoutRequests++;
+      return route.fulfill({
         status: 503,
         json: { error: { message: 'Untrusted error detail' } },
-      }),
-    );
+      });
+    });
+    const exit = page.getByRole('menuitem', {
+      name: 'ออกจากระบบ',
+      exact: true,
+    });
+    await exit.click();
+    const confirmation = page.getByRole('alertdialog', {
+      name: 'ออกจากระบบไหม?',
+    });
+    await expect(
+      confirmation.getByRole('button', { name: 'ยกเลิก' }),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(
+      confirmation.getByRole('button', { name: 'ออกจากระบบ' }),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(
+      confirmation.getByRole('button', { name: 'ยกเลิก' }),
+    ).toBeFocused();
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+    const confirmPreview = testInfo.outputPath('logout-confirmation.png');
+    const mobileViewport = page.viewportSize();
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    const centered = await confirmation.boundingBox();
+    expect(centered?.width).toBeCloseTo(416);
+    expect((centered?.x ?? 0) + (centered?.width ?? 0) / 2).toBeCloseTo(720);
+    await confirmation.screenshot({
+      path: confirmPreview,
+      animations: 'disabled',
+    });
+    if (mobileViewport) await page.setViewportSize(mobileViewport);
+    await testInfo.attach('Logout confirmation desktop', {
+      path: confirmPreview,
+    });
+    await page.keyboard.press('Escape');
+    await expect(confirmation).toBeHidden();
+    await expect(exit).toBeFocused();
+    expect(logoutRequests).toBe(0);
+    expect((await page.request.get('/api/v1/auth/me')).status()).toBe(200);
     await page
       .getByRole('menuitem', { name: 'ออกจากระบบ', exact: true })
       .click();
+    await confirmAction(page, 'ออกจากระบบ');
     await expect(page.getByRole('alert')).toContainText('ออกจากระบบไม่สำเร็จ');
+    expect(logoutRequests).toBe(1);
     await expect(page.getByText('Untrusted error detail')).toHaveCount(0);
     await page.unroute('**/api/v1/auth/logout');
     await page
       .getByRole('menuitem', { name: 'ออกจากระบบ', exact: true })
       .click();
+    await confirmAction(page, 'ออกจากระบบ');
     await expect(page).toHaveURL(/\/login$/);
     expect((await page.request.get('/api/v1/auth/me')).status()).toBe(401);
     await page.goto('/dashboard');

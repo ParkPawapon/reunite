@@ -2,6 +2,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import Dialog from '@mui/material/Dialog';
 import Skeleton from '@mui/material/Skeleton';
+import { useActionConfirmation } from '@/components/confirmation/use-action-confirmation';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
 import {
@@ -9,6 +10,7 @@ import {
   formatEventTime,
 } from '@/components/item-reports/report-format';
 import {
+  closeReport,
   loadReportDetail,
   loadReportImages,
   ReportRequestError,
@@ -34,20 +36,21 @@ export function ReportDetail({
 }) {
   const titleId = useId();
   const editFormId = useId();
-  const closeFormId = useId();
   const title = useRef<HTMLHeadingElement>(null);
   const editBtn = useRef<HTMLButtonElement>(null);
-  const closeBtn = useRef<HTMLButtonElement>(null);
-  const returnFocus = useRef<'edit' | 'close' | 'title' | null>(null);
+  const returnFocus = useRef<'edit' | 'title' | null>(null);
+  const closeRequest = useRef<AbortController | null>(null);
+  const ask = useActionConfirmation();
   const motion = useShellMotion();
   const [open, setOpen] = useState(true);
   const [revision, setRevision] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [managing, setManaging] = useState(false);
   const [claimPending, setClaimPending] = useState(false);
-  const [mode, setMode] = useState<'edit' | 'close' | null>(null);
+  const [editing, setEditing] = useState(false);
   const [editCatalogReady, setEditCatalogReady] = useState(false);
   const [notice, setNotice] = useState('');
+  const [closeError, setCloseError] = useState('');
   const [gallery, setGallery] = useState<{
     reportId: number;
     revision: number;
@@ -58,15 +61,15 @@ export function ReportDetail({
     | { kind: 'error'; missing: boolean }
     | { kind: 'ready'; row: ReportRow }
   >({ kind: 'loading' });
+  const row = state.kind === 'ready' ? state.row : null;
   useEffect(() => {
-    if (mode !== null || !returnFocus.current) return;
+    if (editing || !returnFocus.current) return;
     const target = returnFocus.current;
     returnFocus.current = null;
     if (target === 'edit') editBtn.current?.focus({ preventScroll: true });
-    else if (target === 'close')
-      closeBtn.current?.focus({ preventScroll: true });
     else title.current?.focus({ preventScroll: true });
-  }, [mode]);
+  }, [editing, row?.status]);
+  useEffect(() => () => closeRequest.current?.abort(), [reportId]);
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
@@ -98,7 +101,6 @@ export function ReportDetail({
       controller.abort();
     };
   }, [reportId, revision]);
-  const row = state.kind === 'ready' ? state.row : null;
   const imageHref = reportImageHref(row?.image ?? null);
   const managedImage = imageHref === `/api/v1/item-reports/${reportId}/image`;
   useEffect(() => {
@@ -127,16 +129,63 @@ export function ReportDetail({
   const close = () => {
     if (!saving) setOpen(false);
   };
-  const openManagement = (next: 'edit' | 'close') => {
+  const openManagement = () => {
     setNotice('');
+    setCloseError('');
     setEditCatalogReady(false);
-    setMode(next);
+    setEditing(true);
   };
   const cancelManagement = () => {
     if (managing) return;
-    returnFocus.current = mode ?? 'title';
-    setMode(null);
+    returnFocus.current = 'edit';
+    setEditing(false);
   };
+  function reportUpdated(next: ReportRow, message: string) {
+    setState((current) =>
+      current.kind === 'ready'
+        ? { kind: 'ready', row: { ...current.row, ...next } }
+        : current,
+    );
+    setRefreshing(true);
+    setRevision((value) => value + 1);
+    setNotice(message);
+    onManaged?.();
+  }
+  async function confirmCloseReport() {
+    if (!row || row.status !== 'OPEN' || saving || closeRequest.current) return;
+    if (
+      !(await ask({
+        title: 'ปิดประกาศไหม?',
+        description: 'รายการจะย้ายไปสถานะปิดแล้ว',
+        detail: row.title,
+        confirmLabel: 'ปิดประกาศ',
+        icon: 'box',
+        tone: 'danger',
+      }))
+    )
+      return;
+    const controller = new AbortController();
+    closeRequest.current = controller;
+    setManaging(true);
+    setCloseError('');
+    setNotice('');
+    try {
+      const next = await closeReport(row.reportId, controller.signal);
+      if (controller.signal.aborted) return;
+      returnFocus.current = 'title';
+      reportUpdated({ ...row, ...next }, 'ปิดประกาศแล้ว');
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setCloseError(
+        error instanceof ReportRequestError && error.status === 401
+          ? 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบอีกครั้ง'
+          : 'ปิดประกาศไม่สำเร็จ กรุณาลองอีกครั้ง',
+      );
+    } finally {
+      closeRequest.current = null;
+      if (!controller.signal.aborted) setManaging(false);
+    }
+  }
   return (
     <Dialog
       className={styles.root}
@@ -199,7 +248,12 @@ export function ReportDetail({
         tabIndex={0}
         aria-busy={state.kind === 'loading' || refreshing || saving}
       >
-        {notice && mode === null && (
+        {closeError && (
+          <p className={styles.formError} role="alert">
+            {closeError}
+          </p>
+        )}
+        {notice && !editing && (
           <div className={styles.noticeBanner} role="status">
             <ShellIcon name="check" width={16} height={16} />
             <span>{notice}</span>
@@ -236,7 +290,7 @@ export function ReportDetail({
             )}
           </div>
         ) : (
-          <div className={styles.viewStack} hidden={mode !== null}>
+          <div className={styles.viewStack} hidden={editing}>
             <div
               className={styles.overviewGrid}
               data-has-media={managedImage && photoHrefs.length > 0}
@@ -336,31 +390,20 @@ export function ReportDetail({
             </div>
           </div>
         )}
-        {row && canManage && mode !== null && (
+        {row && canManage && editing && (
           <ReportManagement
-            key={mode}
             row={row}
-            mode={mode}
-            formId={mode === 'edit' ? editFormId : closeFormId}
+            formId={editFormId}
             onPendingChange={setManaging}
             onEditReadyChange={setEditCatalogReady}
             onUpdated={(next, message) => {
-              const previousMode = mode;
-              setState((current) =>
-                current.kind === 'ready'
-                  ? { kind: 'ready', row: { ...current.row, ...next } }
-                  : current,
-              );
-              setRefreshing(true);
-              setRevision((value) => value + 1);
-              setNotice(message);
-              returnFocus.current = previousMode === 'edit' ? 'edit' : 'title';
-              setMode(null);
-              onManaged?.();
+              returnFocus.current = 'edit';
+              setEditing(false);
+              reportUpdated(next, message);
             }}
           />
         )}
-        <div className={styles.sectionStack} hidden={mode !== null}>
+        <div className={styles.sectionStack} hidden={editing}>
           <ReportImageUpload
             reportId={reportId}
             shown={state.kind === 'ready'}
@@ -395,7 +438,7 @@ export function ReportDetail({
         </div>
       </div>
       <footer className={styles.footer}>
-        {mode === 'edit' ? (
+        {editing ? (
           <>
             <p className={styles.footerMeta}>แก้ไขข้อมูลรายการ</p>
             <div className={styles.footerActions}>
@@ -414,30 +457,6 @@ export function ReportDetail({
                 disabled={managing || !editCatalogReady}
               >
                 {managing ? 'กำลังบันทึก…' : 'บันทึกการแก้ไข'}
-              </button>
-            </div>
-          </>
-        ) : mode === 'close' ? (
-          <>
-            <p className={styles.footerMeta}>
-              ปิดประกาศแล้วจะไม่แสดงในการค้นหา
-            </p>
-            <div className={styles.footerActions}>
-              <button
-                type="button"
-                className={styles.outlineBtn}
-                onClick={cancelManagement}
-                disabled={managing}
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="submit"
-                form={closeFormId}
-                className={styles.dangerBtn}
-                disabled={managing}
-              >
-                {managing ? 'กำลังปิด…' : 'ยืนยันปิดประกาศ'}
               </button>
             </div>
           </>
@@ -463,12 +482,11 @@ export function ReportDetail({
                   <span className={styles.footerSep} aria-hidden="true" />
                   <button
                     type="button"
-                    ref={closeBtn}
                     className={styles.quietDangerBtn}
-                    onClick={() => openManagement('close')}
+                    onClick={() => void confirmCloseReport()}
                     disabled={saving}
                   >
-                    ปิดประกาศ
+                    {managing ? 'กำลังปิด…' : 'ปิดประกาศ'}
                   </button>
                 </>
               )}
@@ -478,7 +496,7 @@ export function ReportDetail({
                 type="button"
                 ref={editBtn}
                 className={styles.primaryBtn}
-                onClick={() => openManagement('edit')}
+                onClick={openManagement}
                 disabled={saving}
               >
                 <ShellIcon name="edit" width={16} height={16} />

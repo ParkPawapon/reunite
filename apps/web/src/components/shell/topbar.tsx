@@ -5,6 +5,10 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
 import { submitLogout } from '@/modules/auth/presentation/logout-client';
+import {
+  logoutConfirmation,
+  useActionConfirmation,
+} from '@/components/confirmation/use-action-confirmation';
 import { ShellIcon } from './shell-icon';
 import { NotificationBell } from './notification-bell';
 import { ProfileAvatar } from './profile-avatar';
@@ -37,6 +41,7 @@ export function Topbar({
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState('');
   const request = useRef<AbortController | null>(null);
+  const ask = useActionConfirmation();
   useEffect(
     () => () => {
       request.current?.abort();
@@ -46,7 +51,7 @@ export function Topbar({
   );
 
   async function logout() {
-    if (request.current) return;
+    if (request.current || !(await ask(logoutConfirmation))) return;
     const controller = new AbortController();
     request.current = controller;
     setPending(true);

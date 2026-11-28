@@ -8,6 +8,10 @@ import { z } from 'zod';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { submitLogout } from '@/modules/auth/presentation/logout-client';
 import {
+  logoutConfirmation,
+  useActionConfirmation,
+} from '@/components/confirmation/use-action-confirmation';
+import {
   kmuttDepartments,
   kmuttEducation,
 } from '@/modules/users/domain/kmutt-education';
@@ -50,6 +54,7 @@ export function CompleteProfileForm({ initial }: { initial: EducationFields }) {
   const [failure, setFailure] = useState('');
   const busy = useRef(false);
   const alert = useRef<HTMLDivElement>(null);
+  const ask = useActionConfirmation();
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   useEffect(() => {
     if (failure) alert.current?.focus();
@@ -111,6 +116,16 @@ export function CompleteProfileForm({ initial }: { initial: EducationFields }) {
 
   async function execute(action: Action, request: () => Promise<unknown>) {
     if (busy.current) return;
+    const confirmed = await ask(
+      action === 'logout'
+        ? logoutConfirmation
+        : {
+            title: 'บันทึกข้อมูลการศึกษา?',
+            confirmLabel: 'บันทึกและไปต่อ',
+            icon: 'user',
+          },
+    );
+    if (!confirmed) return;
     busy.current = true;
     setPending(action);
     setFailure('');
