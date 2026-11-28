@@ -4,6 +4,7 @@ import Dialog from '@mui/material/Dialog';
 import Skeleton from '@mui/material/Skeleton';
 import { ShellIcon } from '@/components/shell/shell-icon';
 import { useShellMotion } from '@/components/shell/shell-motion';
+import { PublisherContact } from '@/components/item-reports/publisher-contact';
 import {
   bangkokEventFields,
   formatEventTime,
@@ -13,7 +14,6 @@ import {
   loadReportImages,
   ReportRequestError,
   reportImageHref,
-  type ReportRow,
 } from '@/modules/item-reports/presentation/reports-client';
 import { reportDate, ReportStatus } from './report-table';
 import { ReportImageUpload } from './report-image-upload';
@@ -56,7 +56,7 @@ export function ReportDetail({
   const [state, setState] = useState<
     | { kind: 'loading' }
     | { kind: 'error'; missing: boolean }
-    | { kind: 'ready'; row: ReportRow }
+    | { kind: 'ready'; row: Awaited<ReturnType<typeof loadReportDetail>> }
   >({ kind: 'loading' });
   useEffect(() => {
     if (mode !== null || !returnFocus.current) return;
@@ -332,6 +332,12 @@ export function ReportDetail({
                     <span className={styles.srOnly}>ในแท็บใหม่</span>
                   </a>
                 )}
+                <section className={styles.publisher}>
+                  <h3>ผู้แจ้งประกาศ</h3>
+                  <dl className={styles.publisherDetails}>
+                    <PublisherContact publisher={state.row.publisher} />
+                  </dl>
+                </section>
               </section>
             </div>
           </div>

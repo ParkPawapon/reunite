@@ -1,3 +1,4 @@
+import type { ReportPublisher } from '@/modules/item-reports/domain/report';
 import type { MatchAssessment } from './matching';
 import type { TextComparison } from './text-similarity';
 
@@ -20,6 +21,7 @@ export type MatchItem = {
   hasPhoto: boolean;
   photoCount: number;
   photoUrls: string[];
+  publisher: ReportPublisher;
 };
 
 export type MatchReturn = MatchRevision & {

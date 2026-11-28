@@ -1,7 +1,9 @@
 import 'server-only';
 import { query, type Sql } from '@campus/database';
+import { reportPublisher } from '../domain/report';
 import type {
   Report,
+  ReportDetail,
   ReportRepository,
   ReportInput,
   ReportFilter,
@@ -65,13 +67,18 @@ export class PgReportRepository implements ReportRepository {
     return rows.map(map);
   }
 
-  async find(id: number): Promise<Report | null> {
-    const [row] = await query<Row>(
+  async find(id: number): Promise<ReportDetail | null> {
+    const [row] = await query<
+      Row & { name: string; email: string; phone: string | null }
+    >(
       this.db,
-      `SELECT ${columns} FROM item_reports WHERE report_id = $1`,
+      `SELECT ${columns}, publisher.name, publisher.email, publisher.phone
+      FROM item_reports
+      JOIN (SELECT user_id, name, email, phone FROM users) AS publisher USING (user_id)
+      WHERE report_id = $1`,
       [id],
     );
-    return row ? map(row) : null;
+    return row ? { ...map(row), publisher: reportPublisher(row) } : null;
   }
 
   async create(userId: number, input: ReportInput) {

@@ -6,6 +6,8 @@ BE003 is implemented: public `GET /api/v1/locations` reads PostgreSQL and return
 
 Implemented read assignments: BE002, BE005, BE006, BE007, BE008. All assigned catalog, signed-in report and own-claim read endpoints now return their documented real-data responses. Integration coverage checks real PostgreSQL data, validation, pagination and privacy for delivered tasks. See [backend handoff](tasks/BACKEND_ENDPOINT_HANDOFF_TH.md).
 
+The signed-in report detail endpoint, `GET /item-reports/:id`, returns `publisher` with the account's display `name`, `email`, and `phone`. The name and phone are nullable.
+
 ## Private student profile and account notifications
 
 All routes below derive identity from the session, accept no target user ID, return `Cache-Control: no-store` and require authentication. Mutations also require the configured same Origin. The existing login/me response remains the minimal `{ userId, name, email }` contract.

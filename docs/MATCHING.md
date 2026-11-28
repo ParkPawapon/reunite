@@ -49,6 +49,8 @@ Image routes: authenticated `GET /api/v1/item-reports/:id/images`, `GET /api/v1/
 
 ## Confirming a return
 
+Both report cards in the comparison dialog show the publisher's display name, email, and phone number. The match detail response includes those fields for the two participants, with a nullable name and phone number.
+
 `GET /api/v1/matches/:id` is private to the two reporters. It returns the relevant report details, the caller's role, both revision strings, and the confirmation timestamps. `PUT /api/v1/matches/:id` accepts `{ lostRevision, foundRevision }` over same-origin authenticated requests. The server derives the role from ownership. After physically exchanging the item, the owner confirms receipt and the finder confirms handoff. The first confirmation leaves both reports open and alerts the other participant. The second resolves both reports and alerts both participants in one transaction. Retrying either confirmation preserves the recorded timestamp and does not emit another alert.
 
 Changing an open report invalidates pending confirmations. A stale submission is rejected so both reporters can review the updated pair. Confirming a return does not alter claim decisions. Migration `0009` adds columns to the existing tables.

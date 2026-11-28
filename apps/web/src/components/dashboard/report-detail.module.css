@@ -204,6 +204,30 @@
   margin: 4px 0 0;
   border-top: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
 }
+.publisher {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+.publisher h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.publisherDetails {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+}
+.publisherDetails dt {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.publisherDetails dd {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
 .metaRow {
   position: relative;
   display: flex;
@@ -1020,6 +1044,9 @@
   .viewStack,
   .sectionStack {
     gap: 16px;
+  }
+  .publisherDetails {
+    grid-template-columns: 1fr;
   }
   .photoFrame,
   .photoImage {

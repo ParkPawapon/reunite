@@ -13,6 +13,12 @@ export const browserMapAccount = {
   email: 'browser-map@example.test',
 };
 
+export const browserReportDetailAccount = {
+  ...browserAccount,
+  name: 'Browser report detail fixture',
+  email: 'browser-report-detail@example.test',
+};
+
 export async function authenticateBrowserAccount(
   request: APIRequestContext,
   account = browserAccount,

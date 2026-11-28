@@ -18,6 +18,14 @@ const reportSchema = z.object({
 });
 const categorySchema = z.object({ categoryId: id, categoryName: z.string() });
 const locationSchema = z.object({ locationId: id, locationName: z.string() });
+export const reportPublisherSchema = z.object({
+  name: z.string().nullable(),
+  email: z.string(),
+  phone: z.string().nullable(),
+});
+const reportDetailSchema = reportSchema.extend({
+  publisher: reportPublisherSchema,
+});
 export type ReportType = z.infer<typeof reportSchema>['type'];
 export type ReportStatus = z.infer<typeof reportSchema>['status'];
 type ReportRecord = z.infer<typeof reportSchema>;
@@ -142,10 +150,10 @@ export async function loadReportPage(
 }
 export async function loadReportDetail(reportId: number, signal: AbortSignal) {
   const [row, lookup] = await Promise.all([
-    request(`item-reports/${reportId}`, reportSchema, signal),
+    request(`item-reports/${reportId}`, reportDetailSchema, signal),
     names(signal),
   ]);
-  return describe(row, lookup);
+  return { ...describe(row, lookup), publisher: row.publisher };
 }
 export function updateReportDetails(
   reportId: number,

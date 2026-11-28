@@ -7,6 +7,7 @@ import {
 } from '@campus/database';
 import { AppError } from '@campus/shared';
 import type { Pool } from 'pg';
+import { reportPublisher } from '@/modules/item-reports/domain/report';
 import type {
   MatchItem,
   MatchReturn,
@@ -66,19 +67,23 @@ async function ownedPair(db: Sql, matchId: number, userId: number) {
         'reportId', l.report_id, 'title', l.title, 'description', l.description,
         'category', lc.category_name, 'location', ll.location_name,
         'occurredAt', l.event_datetime,
-        'hasPhoto', (l.image_data IS NOT NULL OR l.image_data_2 IS NOT NULL OR l.image_data_3 IS NOT NULL)
+        'hasPhoto', (l.image_data IS NOT NULL OR l.image_data_2 IS NOT NULL OR l.image_data_3 IS NOT NULL),
+        'publisher', json_build_object('name', lu.name, 'email', lu.email, 'phone', lu.phone)
       ) AS lost,
       json_build_object(
         'reportId', f.report_id, 'title', f.title, 'description', f.description,
         'category', fc.category_name, 'location', fl.location_name,
         'occurredAt', f.event_datetime,
-        'hasPhoto', (f.image_data IS NOT NULL OR f.image_data_2 IS NOT NULL OR f.image_data_3 IS NOT NULL)
+        'hasPhoto', (f.image_data IS NOT NULL OR f.image_data_2 IS NOT NULL OR f.image_data_3 IS NOT NULL),
+        'publisher', json_build_object('name', fu.name, 'email', fu.email, 'phone', fu.phone)
       ) AS found
       FROM report_matches m
       JOIN item_reports l ON l.report_id=m.lost_report_id
       JOIN item_reports f ON f.report_id=m.found_report_id
       JOIN categories lc ON lc.category_id=l.category_id
       JOIN categories fc ON fc.category_id=f.category_id
+      JOIN users lu ON lu.user_id=l.user_id
+      JOIN users fu ON fu.user_id=f.user_id
       JOIN locations ll ON ll.location_id=l.location_id
       JOIN locations fl ON fl.location_id=f.location_id
       WHERE m.match_id=$1 AND $2 IN (l.user_id,f.user_id)
@@ -126,12 +131,14 @@ async function toMatchReturn(row: PairRow): Promise<MatchReturn> {
       occurredAt: lostOccurredAt,
       photoCount: lostUrls.length,
       photoUrls: lostUrls,
+      publisher: reportPublisher(row.lost.publisher),
     },
     found: {
       ...row.found,
       occurredAt: foundOccurredAt,
       photoCount: foundUrls.length,
       photoUrls: foundUrls,
+      publisher: reportPublisher(row.found.publisher),
     },
     lostConfirmedAt: row.lost_confirmed_at?.toISOString() ?? null,
     foundConfirmedAt: row.found_confirmed_at?.toISOString() ?? null,

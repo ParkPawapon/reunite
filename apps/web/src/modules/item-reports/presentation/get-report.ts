@@ -18,6 +18,7 @@ export function getReport(
     return success({
       ...reportDto(report),
       isOwner: report.userId === user.userId,
+      publisher: report.publisher,
     });
   });
 }

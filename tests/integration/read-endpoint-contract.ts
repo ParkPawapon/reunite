@@ -127,11 +127,12 @@ export function verifyReadEndpointContract(
       users.push(
         (
           await db.query<{ user_id: number }>(
-            'INSERT INTO users(name,email,password_hash) VALUES($1,$2,$3) RETURNING user_id',
+            'INSERT INTO users(name,email,password_hash,phone) VALUES($1,$2,$3,$4) RETURNING user_id',
             [
               name,
               `${name.toLowerCase()}@review.test`,
               'synthetic-review-only',
+              name === 'Owner' ? '0812345678' : null,
             ],
           )
         ).rows[0]?.user_id ?? 0,
@@ -483,6 +484,7 @@ export function verifyReadEndpointContract(
                 'createdAt',
                 'updatedAt',
                 'isOwner',
+                'publisher',
               ];
         expect(Object.keys(data).sort()).toEqual([...fields].sort());
         if (task === 'BE008')
@@ -498,6 +500,11 @@ export function verifyReadEndpointContract(
             description: null,
             image: null,
             eventDatetime: '2026-11-04T05:30:00.000Z',
+          });
+          expect(data.publisher).toEqual({
+            name: 'Owner',
+            email: 'owner@review.test',
+            phone: '0812345678',
           });
           expect(data).not.toHaveProperty('userId');
         }
@@ -550,7 +557,24 @@ export function verifyReadEndpointContract(
             await get(`${base}/${reports[0]}`, cookie(peerToken)),
             200,
           ),
-        ).toMatchObject({ data: { reportId: reports[0], isOwner: false } });
+        ).toMatchObject({
+          data: {
+            reportId: reports[0],
+            isOwner: false,
+            publisher: {
+              name: 'Owner',
+              email: 'owner@review.test',
+              phone: '0812345678',
+            },
+          },
+        });
+        expect(
+          await checked(await get(`${base}/${reports[1]}`, cookie(token)), 200),
+        ).toMatchObject({
+          data: {
+            publisher: { name: 'Peer', email: 'peer@review.test', phone: null },
+          },
+        });
       });
     if (task === 'BE005')
       it('requires a valid session for the report feed', async () => {
