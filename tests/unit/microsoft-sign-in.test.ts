@@ -280,6 +280,14 @@ it('uses the verified authorization code flow and rejects invalid responses', as
     }),
   );
   expect(started.status).toBe(303);
+  const authorizationUrl = new URL(started.headers.get('location') ?? '');
+  expect(authorizationUrl.searchParams.getAll('prompt')).toEqual([
+    'select_account',
+  ]);
+  expect(authorizationUrl.searchParams.has('login_hint')).toBe(false);
+  expect(authorizationUrl.searchParams.get('state')).not.toBe(
+    transaction.state,
+  );
   expect(started.headers.get('set-cookie')).toContain('HttpOnly; SameSite=Lax');
 
   const oldToken = 'x'.repeat(43);
