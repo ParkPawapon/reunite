@@ -108,6 +108,7 @@ export async function startMicrosoftAuthorization(
     redirect_uri: callback.href,
     scope: 'openid profile',
     response_mode: 'query',
+    prompt: 'select_account',
     state: transaction.state,
     nonce: transaction.nonce,
     code_challenge: await oidc.calculatePKCECodeChallenge(transaction.verifier),

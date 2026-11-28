@@ -2,6 +2,8 @@
 
 Reunite uses Microsoft Entra OpenID Connect authorization code flow through `openid-client`. Microsoft handles credential collection, password verification and MFA on its sign-in pages. Reunite verifies the ID token signature, issuer, audience and expiration against the single-tenant authority at `https://login.microsoftonline.com/{tenantId}/v2.0`. State, nonce and S256 PKCE are tied to a signed, HttpOnly, SameSite=Lax cookie that expires in 10 minutes. Production requires HTTPS. Reunite creates its normal opaque PostgreSQL-backed session and discards the Microsoft tokens after verification.
 
+Each Microsoft sign-in requests the account picker with `prompt=select_account`. Users can select a remembered account or enter a different KMUTT email. Microsoft applies the tenant's password and MFA requirements after account selection. Signing out revokes the Reunite session. Microsoft sessions in the same browser remain available in the picker.
+
 ## Environment and redirect URIs
 
 | Server variable           | Value                                                                                           |
@@ -58,7 +60,7 @@ Confirm exactly one returned row before committing. A uniqueness error or zero r
 ## Local verification and deployment
 
 1. Apply `bun run db:migrate` to the local database. Set the Microsoft variables and `APP_BASE_URL=http://localhost:3000`, run `bun run env:check`, and start `bun run dev`.
-2. While signed out, visit `/profile` or another protected page and choose **Sign in with KMUTT account**. Verify that a new eligible KMUTT member reaches `/complete-profile`, that protected APIs return 403 until completion, and that submitting valid profile data opens the dashboard. Repeat sign-in and confirm the original protected destination is restored. Verify that logout returns the protected API to HTTP 401.
+2. While signed out, visit `/profile` or another protected page and choose **Sign in with KMUTT account**. Verify that a new eligible KMUTT member reaches `/complete-profile`, that protected APIs return 403 until completion, and that submitting valid profile data opens the dashboard. Verify that logout returns the protected API to HTTP 401. Keep the Microsoft session active in the browser and repeat sign-in. Check that the account picker opens with a single remembered account, that it offers a different account, and that an eligible sign-in restores the original protected destination.
 3. Test cancellation, a guest, an external tenant account and a personal Microsoft account. If assignment is required by the tenant, also test an unassigned account. Try a KMUTT UPN that conflicts with a locally provisioned password account. Verify that the conflict requires verified linking and that the password API still works for existing accounts.
 4. Run `bun run lint`, `bun run typecheck`, and `bun run test` against the [isolated integration test database](DEVELOPMENT.md). Automated tests simulate Entra responses, so they can run without tenant credentials.
 5. Before enabling Microsoft sign-in in production, use the migration connection to apply migrations through `0013`, reapply [runtime grants](../infra/supabase/runtime-grants.sql), set the required server variables, and register the final HTTPS redirect URI. Configure any hosting, proxy or tracing logs to omit callback query strings. When rotating the client secret, in-flight sign-ins will need to restart.
