@@ -311,19 +311,43 @@ test('keeps photo upload errors actionable, renders the full item photo and retr
   const file = { name: 'item-test.png', mimeType: 'image/png', buffer };
   let rejectUpload = true;
   let rejectImage = true;
-  await page.route(`**${reportPath()}/image`, (route) => {
-    if (route.request().method() === 'PUT' && rejectUpload)
+  let releaseUpload = () => {};
+  const uploadGate = new Promise<void>((resolve) => {
+    releaseUpload = resolve;
+  });
+  await page.route(`**${reportPath()}/image`, async (route) => {
+    if (route.request().method() === 'PUT' && rejectUpload) {
+      await uploadGate;
       return route.fulfill({
         status: 503,
         json: { error: { code: 'UNAVAILABLE' } },
       });
+    }
     if (route.request().method() === 'GET' && rejectImage)
       return route.fulfill({ status: 503 });
     return route.continue();
   });
-  await picker.setInputFiles(file);
-  await confirmAction(page, 'แนบรูป');
+  const dismiss = dialog.getByRole('button', {
+    name: 'ปิดรายละเอียด',
+    exact: true,
+  });
+  try {
+    await picker.setInputFiles([file, { ...file, name: 'second.png' }]);
+    await confirmAction(page, 'แนบรูป');
+    await expect(dialog.getByRole('status')).toContainText(
+      'กำลังบันทึกรูป 1 จาก 2',
+    );
+    await expect(dismiss).toBeDisabled();
+    await expect(
+      dialog.getByRole('button', { name: 'กลับไปดูรายการ', exact: true }),
+    ).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeVisible();
+  } finally {
+    releaseUpload();
+  }
   await expect(dialog.getByRole('alert')).toContainText('บันทึกรูปไม่สำเร็จ');
+  await expect(dismiss).toBeEnabled();
   rejectUpload = false;
   await picker.setInputFiles(file);
   await confirmAction(page, 'แนบรูป');

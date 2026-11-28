@@ -1,11 +1,12 @@
 import 'server-only';
+import { z } from 'zod';
 import { getPool } from '@campus/database';
 import { AppError } from '@campus/shared';
 import { services, type createServices } from '@/lib/composition';
 import { serverConfig } from '@/config/server';
 import { assertSameOrigin } from '@/lib/security/origin';
 import { readSessionToken, sessionCookie } from '@/lib/security/session';
-import { api, jsonBody, parse, success, idSchema } from './api';
+import { api, jsonBody, parse, queryInput, success, idSchema } from './api';
 import { loginSchema } from '@/modules/auth/presentation/schemas';
 import {
   reportCreateSchema,
@@ -27,6 +28,11 @@ import { listLocations } from '@/modules/locations/presentation/list-locations';
 export type RouteContext = { params: Promise<{ id: string }> };
 type Services = ReturnType<typeof createServices>;
 type Dependencies = { services: () => Services; ping: () => Promise<void> };
+const contactPreferences = z.strictObject({
+  shareEmail: z.boolean(),
+  sharePhone: z.boolean(),
+});
+const contactQuery = z.strictObject({ matchId: idSchema.optional() });
 const defaults: Dependencies = {
   services,
   ping: async () => {
@@ -126,6 +132,27 @@ export function createHandlers(deps: Dependencies = defaults) {
       listReports(request, requireUser, () => deps.services().reports),
     getReport: (request: Request, context: RouteContext) =>
       getReport(request, context, requireUser, () => deps.services().reports),
+    getReportContact: (request: Request, context: RouteContext) =>
+      api(request, async () => {
+        const user = await requireUser(request);
+        const id = parse(idSchema, (await context.params).id);
+        const { matchId } = parse(contactQuery, queryInput(request));
+        return success(
+          await deps.services().reportContacts.read(id, user.userId, matchId),
+        );
+      }),
+    putReportContact: (request: Request, context: RouteContext) =>
+      api(request, async () => {
+        mutation(request);
+        const user = await requireUser(request);
+        const id = parse(idSchema, (await context.params).id);
+        const preferences = parse(contactPreferences, await jsonBody(request));
+        return success(
+          await deps
+            .services()
+            .reportContacts.save(id, user.userId, preferences),
+        );
+      }),
     createReport: (request: Request) =>
       api(request, async () => {
         mutation(request);

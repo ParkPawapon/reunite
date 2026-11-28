@@ -23,14 +23,16 @@ const statusLabel = {
 export function ReportClaims({
   row,
   onPendingChange,
+  initiallyExpanded = false,
 }: {
   row: ReportRow;
   onPendingChange: (pending: boolean) => void;
+  initiallyExpanded?: boolean;
 }) {
   const headingId = useId();
   const ask = useActionConfirmation();
   const owner = row.isOwner === true;
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(initiallyExpanded);
   const [page, setPage] = useState(0);
   const [revision, setRevision] = useState(0);
   const [result, setResult] = useState<{
@@ -49,6 +51,8 @@ export function ReportClaims({
   const current = result?.key === key ? result : null;
   const claims = current?.data?.claims ?? [];
   const claimable = row.status === 'OPEN';
+  const hasPendingClaim =
+    !owner && claims.some((claim) => claim.status === 'PENDING');
 
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
@@ -90,9 +94,13 @@ export function ReportClaims({
       setError(
         status === 401
           ? 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบอีกครั้ง'
-          : status === 404 || status === 409
-            ? 'คำร้องหรือสถานะประกาศเปลี่ยนแล้ว กรุณาตรวจรายการล่าสุด'
-            : 'บันทึกคำร้องไม่สำเร็จ กรุณาลองอีกครั้ง',
+          : status === 409 && !owner
+            ? 'คุณมีคำร้องที่รอตรวจสอบอยู่แล้ว'
+            : status === 422 && !owner
+              ? 'ประกาศนี้เปิดรับคำร้องไม่ได้แล้ว'
+              : status === 404 || status === 409
+                ? 'คำร้องหรือสถานะประกาศเปลี่ยนแล้ว กรุณาตรวจรายการล่าสุด'
+                : 'บันทึกคำร้องไม่สำเร็จ กรุณาลองอีกครั้ง',
       );
     } finally {
       request.current = null;
@@ -333,7 +341,7 @@ export function ReportClaims({
                   </button>
                 </div>
               )}
-              {!owner && page === 0 && claimable && (
+              {!owner && page === 0 && claimable && !hasPendingClaim && (
                 <form
                   className={styles.manageForm}
                   onSubmit={(event) => {

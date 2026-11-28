@@ -21,6 +21,8 @@ import { reportDate, ReportStatus } from './report-table';
 import { ReportImageUpload } from './report-image-upload';
 import { ReportManagement } from './report-management';
 import { ReportClaims } from './report-claims';
+import { ReportContact } from '@/components/item-reports/report-contact';
+import { ReportMatchingStatus } from '@/components/item-reports/report-matching-status';
 import { ReportDetailSkeleton } from './report-detail-skeleton';
 import { ReportPhoto } from './report-photo';
 import styles from './report-detail.module.css';
@@ -29,10 +31,14 @@ export function ReportDetail({
   reportId,
   onClose,
   onManaged,
+  showClaims = false,
+  showMatching = false,
 }: {
   reportId: number;
   onClose: () => void;
   onManaged?: () => void;
+  showClaims?: boolean;
+  showMatching?: boolean;
 }) {
   const titleId = useId();
   const editFormId = useId();
@@ -47,6 +53,7 @@ export function ReportDetail({
   const [refreshing, setRefreshing] = useState(false);
   const [managing, setManaging] = useState(false);
   const [claimPending, setClaimPending] = useState(false);
+  const [photoProgress, setPhotoProgress] = useState('');
   const [editing, setEditing] = useState(false);
   const [editCatalogReady, setEditCatalogReady] = useState(false);
   const [notice, setNotice] = useState('');
@@ -125,7 +132,7 @@ export function ReportDetail({
         ? [imageHref]
         : [];
   const canManage = Boolean(row && onManaged);
-  const saving = managing || claimPending;
+  const saving = managing || claimPending || Boolean(photoProgress);
   const close = () => {
     if (!saving) setOpen(false);
   };
@@ -404,10 +411,14 @@ export function ReportDetail({
           />
         )}
         <div className={styles.sectionStack} hidden={editing}>
+          {showMatching && row?.isOwner && !editing && (
+            <ReportMatchingStatus reportId={row.reportId} />
+          )}
           <ReportImageUpload
             reportId={reportId}
             shown={state.kind === 'ready'}
             refreshing={refreshing}
+            onProgress={setPhotoProgress}
             onUpdated={({ hasImage, hrefs }) => {
               // The mutation has committed: update gallery immediately before revalidating the row.
               const nextRevision = revision + 1;
@@ -431,13 +442,31 @@ export function ReportDetail({
             }}
           />
           {row &&
+            row.status === 'OPEN' &&
+            (row.isOwner || row.type === 'FOUND') && (
+              <ReportContact
+                key={`${row.reportId}:${revision}`}
+                reportId={row.reportId}
+                owner={row.isOwner}
+              />
+            )}
+          {row &&
             (row.isOwner === true ||
               (row.isOwner === false && row.type === 'FOUND')) && (
-              <ReportClaims row={row} onPendingChange={setClaimPending} />
+              <ReportClaims
+                row={row}
+                onPendingChange={setClaimPending}
+                initiallyExpanded={showClaims}
+              />
             )}
         </div>
       </div>
       <footer className={styles.footer}>
+        {photoProgress && (
+          <p className={styles.photoProgress} role="status">
+            {photoProgress}
+          </p>
+        )}
         {editing ? (
           <>
             <p className={styles.footerMeta}>แก้ไขข้อมูลรายการ</p>

@@ -9,6 +9,10 @@ export type MatchSuggestion = {
   completedAt: string;
 };
 export interface MatchReader {
+  reportStatus(
+    userId: number,
+    reportId: number,
+  ): Promise<ReportMatchingStatus | null>;
   listOwned(
     userId: number,
     before?: number,
@@ -21,3 +25,11 @@ export interface MatchReader {
     freeAttemptsToday: number;
   }>;
 }
+
+export type ReportMatchingStatus = {
+  open: boolean;
+  pendingCount: number;
+  failedCount: number;
+  checkedCount: number;
+  latestMatchId: number | null;
+};

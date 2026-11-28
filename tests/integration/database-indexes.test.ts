@@ -77,7 +77,7 @@ beforeAll(async () => {
     ['2026-01-01T00:00:00Z'],
   );
   await pool.query(`INSERT INTO claims (report_id,user_id,evidence)
-    SELECT (g % 40000)+1, (g % 500)+1, 'Synthetic benchmark evidence'
+    SELECT (g % 40000)+1, ((g + (g - 1) / 40000) % 500)+1, 'Synthetic benchmark evidence'
     FROM generate_series(1,80000) AS g`);
   // Recreate the previous index layout inside this disposable schema only.
   await pool.query('DROP INDEX claims_user_claim_idx');

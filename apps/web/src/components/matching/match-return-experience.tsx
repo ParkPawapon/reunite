@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionConfirmation } from '@/components/confirmation/use-action-confirmation';
+import { ReportContact } from '@/components/item-reports/report-contact';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Image from 'next/image';
@@ -489,6 +490,19 @@ export function MatchReturnExperience({
               </section>
             </>
           )}
+          {pair &&
+            (stage === 'review' || stage === 'progress') &&
+            !pair.returnedAt && (
+              <ReportContact
+                key={`${pair.matchId}:${pair.lostRevision}:${pair.foundRevision}`}
+                reportId={
+                  pair.role === 'LOST'
+                    ? pair.found.reportId
+                    : pair.lost.reportId
+                }
+                matchId={pair.matchId}
+              />
+            )}
           {pair && stage !== 'review' && (
             <>
               {pair.returnedAt && (
