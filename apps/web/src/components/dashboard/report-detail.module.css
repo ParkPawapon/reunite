@@ -809,6 +809,17 @@
   border-radius: 12px;
   background: var(--color-surface);
 }
+.claimHandover {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--color-orange-50);
+}
+
 .claimMeta {
   display: flex;
   flex-wrap: wrap;

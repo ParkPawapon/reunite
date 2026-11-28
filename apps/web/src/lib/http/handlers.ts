@@ -17,7 +17,10 @@ import { listReports } from '@/modules/item-reports/presentation/list-reports';
 import { getReport } from '@/modules/item-reports/presentation/get-report';
 import { updateReportStatus } from '@/modules/item-reports/presentation/update-report-status';
 import { listOwnedReports } from '@/modules/item-reports/presentation/list-owned-reports';
-import { claimCreateSchema } from '@/modules/claims/presentation/schemas';
+import {
+  claimCreateSchema,
+  claimHandoverSchema,
+} from '@/modules/claims/presentation/schemas';
 import { listClaims } from '@/modules/claims/presentation/list-claims';
 import { getClaim } from '@/modules/claims/presentation/get-claim';
 import { updateClaimStatus } from '@/modules/claims/presentation/update-claim-status';
@@ -207,6 +210,17 @@ export function createHandlers(deps: Dependencies = defaults) {
         () => deps.services().claims,
         mutation,
       ),
+    confirmClaimHandover: (request: Request, context: RouteContext) =>
+      api(request, async () => {
+        mutation(request);
+        const user = await requireUser(request);
+        const id = parse(idSchema, (await context.params).id);
+        parse(claimHandoverSchema, await jsonBody(request));
+        return success(
+          await deps.services().claims.confirmHandover(id, user.userId),
+          200,
+        );
+      }),
     listReportClaims: (request: Request, context: RouteContext) =>
       listReportClaims(
         request,

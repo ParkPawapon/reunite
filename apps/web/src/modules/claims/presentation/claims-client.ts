@@ -5,6 +5,8 @@ const claimSchema = z.object({
   evidence: z.string(),
   status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
   resolutionNote: z.string().optional(),
+  finderConfirmedAt: z.iso.datetime().optional(),
+  claimantConfirmedAt: z.iso.datetime().optional(),
   claimDate: z.iso.datetime(),
 });
 
@@ -82,5 +84,12 @@ export function reviewClaim(
   return request(`claims/${claimId}/status`, claimSchema, signal, {
     method: 'PATCH',
     body: { status, resolutionNote: resolutionNote || null },
+  });
+}
+
+export function confirmClaimHandover(claimId: number, signal: AbortSignal) {
+  return request(`claims/${claimId}/handover`, claimSchema, signal, {
+    method: 'PATCH',
+    body: { confirmed: true },
   });
 }

@@ -457,6 +457,11 @@ export function ReportDetail({
                 row={row}
                 onPendingChange={setClaimPending}
                 initiallyExpanded={showClaims}
+                onHandoverCompleted={() => {
+                  setRefreshing(true);
+                  setRevision((value) => value + 1);
+                  onManaged?.();
+                }}
               />
             )}
         </div>

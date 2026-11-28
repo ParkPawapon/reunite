@@ -28,6 +28,8 @@ const pageSchema = z.object({
         'CLAIM_SUBMITTED',
         'CLAIM_APPROVED',
         'CLAIM_REJECTED',
+        'CLAIM_PARTNER_CONFIRMED',
+        'CLAIM_RETURNED',
       ]),
       matchId: z.number().int().positive().optional(),
       reportId: z.number().int().positive().optional(),
@@ -54,6 +56,16 @@ const content = {
     title: 'คำร้องขอรับของไม่ได้รับอนุมัติ',
     description: 'เปิดประกาศเพื่อดูผลพิจารณา',
     icon: 'box',
+  },
+  CLAIM_PARTNER_CONFIRMED: {
+    title: 'อีกฝ่ายยืนยันการคืนของแล้ว',
+    description: 'เปิดคำร้องเพื่อยืนยันเมื่อส่งมอบของเรียบร้อย',
+    icon: 'check',
+  },
+  CLAIM_RETURNED: {
+    title: 'คืนของสำเร็จ',
+    description: 'ทั้งสองฝ่ายยืนยันแล้ว เปิดคำร้องเพื่อดูรายละเอียด',
+    icon: 'check',
   },
   MATCH_SUGGESTED: {
     title: 'ของสองชิ้นนี้อาจตรงกัน',
@@ -105,9 +117,6 @@ export function NotificationBell({
   const [suggestion, setSuggestion] = useState<number | null>(null);
   const [activeMatch, setActiveMatch] = useState<number | null>(null);
   const [activeReport, setActiveReport] = useState<number | null>(null);
-  const queuedDialog = useRef<{ type: 'match' | 'report'; id: number } | null>(
-    null,
-  );
   const bell = useRef<HTMLButtonElement>(null);
   const newest = useRef<number | null>(null);
   const request = useRef<AbortController | null>(null);
@@ -224,12 +233,8 @@ export function NotificationBell({
   }
   function openMatch(matchId: number) {
     setSuggestion(null);
-    if (anchor) {
-      queuedDialog.current = { type: 'match', id: matchId };
-      setAnchor(null);
-    } else {
-      setActiveMatch(matchId);
-    }
+    setAnchor(null);
+    setActiveMatch(matchId);
   }
 
   return (
@@ -257,6 +262,11 @@ export function NotificationBell({
         )}
       </button>
       <Popover
+        key={
+          activeMatch === null && activeReport === null
+            ? 'notifications'
+            : 'detail'
+        }
         open={Boolean(anchor)}
         anchorEl={anchor}
         onClose={() => setAnchor(null)}
@@ -264,15 +274,6 @@ export function NotificationBell({
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         transitionDuration={reducedMotion ? 0 : 180}
         slotProps={{
-          transition: {
-            onExited: () => {
-              const next = queuedDialog.current;
-              if (!next) return;
-              queuedDialog.current = null;
-              if (next.type === 'match') setActiveMatch(next.id);
-              else setActiveReport(next.id);
-            },
-          },
           paper: {
             id: 'notification-panel',
             role: 'dialog',
@@ -389,11 +390,8 @@ export function NotificationBell({
                           onClick={() => {
                             if (item.matchId) openMatch(item.matchId);
                             else if (item.reportId) {
-                              queuedDialog.current = {
-                                type: 'report',
-                                id: item.reportId,
-                              };
                               setAnchor(null);
+                              setActiveReport(item.reportId);
                             }
                           }}
                         >

@@ -17,11 +17,17 @@ type Row = {
   status: Claim['status'];
   resolution_note?: string | null;
   resolved_by?: number | null;
+  finder_confirmed_at: Date | null;
+  claimant_confirmed_at: Date | null;
   claim_date: Date;
   updated_at: Date;
 };
 const columns =
-  'claim_id, report_id, user_id, evidence, status, resolution_note, resolved_by, claim_date, updated_at';
+  'claim_id, report_id, user_id, evidence, status, resolution_note, resolved_by, claim_date, updated_at, finder_confirmed_at, claimant_confirmed_at';
+const claimColumns = columns
+  .split(', ')
+  .map((column) => `c.${column}`)
+  .join(', ');
 const map = (row: Row): Claim => ({
   claimId: row.claim_id,
   reportId: row.report_id,
@@ -36,6 +42,12 @@ const map = (row: Row): Claim => ({
     : {}),
   claimDate: row.claim_date.toISOString(),
   updatedAt: row.updated_at.toISOString(),
+  ...(row.finder_confirmed_at
+    ? { finderConfirmedAt: row.finder_confirmed_at.toISOString() }
+    : {}),
+  ...(row.claimant_confirmed_at
+    ? { claimantConfirmedAt: row.claimant_confirmed_at.toISOString() }
+    : {}),
 });
 export class PgClaimRepository implements ClaimRepository {
   constructor(private readonly db: Sql) {}
@@ -90,18 +102,22 @@ export class PgClaimRepository implements ClaimRepository {
   ): Promise<Claim | null> {
     const [row] = await query<Row>(
       this.db,
-      `WITH reviewed AS (UPDATE claims c
+      `WITH eligible AS (
+         SELECT r.report_id
+         FROM item_reports r JOIN claims c USING (report_id)
+         WHERE c.claim_id = $1 AND r.user_id = $2
+           AND r.type = 'FOUND' AND r.status = 'OPEN'
+         FOR UPDATE OF r
+       ), reviewed AS (UPDATE claims c
        SET status = $3,
            resolution_note = $4,
            resolved_by = $2,
            updated_at = NOW()
-       FROM item_reports r
+       FROM eligible r
        WHERE c.report_id = r.report_id
          AND c.claim_id = $1
-         AND r.user_id = $2
          AND c.status = 'PENDING'
-       RETURNING c.claim_id, c.report_id, c.user_id, c.evidence, c.status,
-                 c.resolution_note, c.resolved_by, c.claim_date, c.updated_at
+       RETURNING ${claimColumns}
        ), notified AS (
          INSERT INTO notifications (user_id, kind, report_id)
          SELECT user_id, CASE WHEN status = 'APPROVED' THEN 'CLAIM_APPROVED' ELSE 'CLAIM_REJECTED' END, report_id
@@ -113,6 +129,51 @@ export class PgClaimRepository implements ClaimRepository {
         decision.status,
         decision.resolutionNote ?? null,
       ],
+    );
+    return row ? map(row) : null;
+  }
+  async confirmHandover(claimId: number, userId: number) {
+    const [row] = await query<Row>(
+      this.db,
+      `WITH report AS (
+         SELECT r.report_id, r.user_id AS finder_id, r.status
+         FROM item_reports r JOIN claims c USING (report_id)
+         WHERE c.claim_id = $1 AND r.type = 'FOUND'
+           AND $2 IN (r.user_id, c.user_id)
+         FOR UPDATE OF r
+       ), eligible AS (
+         SELECT ${claimColumns}, r.finder_id,
+                CASE WHEN r.finder_id = $2 THEN c.finder_confirmed_at
+                     ELSE c.claimant_confirmed_at END AS confirmed_at
+         FROM claims c JOIN report r USING (report_id)
+         WHERE c.claim_id = $1 AND c.status = 'APPROVED'
+           AND (r.status = 'OPEN'
+             OR (c.finder_confirmed_at IS NOT NULL AND c.claimant_confirmed_at IS NOT NULL))
+         FOR UPDATE OF c
+       ), confirmed AS (
+         UPDATE claims c SET
+           finder_confirmed_at = CASE WHEN e.finder_id = $2 THEN NOW() ELSE c.finder_confirmed_at END,
+           claimant_confirmed_at = CASE WHEN e.user_id = $2 THEN NOW() ELSE c.claimant_confirmed_at END,
+           updated_at = NOW()
+         FROM eligible e WHERE c.claim_id = e.claim_id AND e.confirmed_at IS NULL
+         RETURNING ${claimColumns}
+       ), returned AS (
+         UPDATE item_reports r SET status = 'RESOLVED', updated_at = NOW()
+         FROM confirmed c WHERE r.report_id = c.report_id AND r.status = 'OPEN'
+           AND c.finder_confirmed_at IS NOT NULL AND c.claimant_confirmed_at IS NOT NULL
+         RETURNING r.report_id
+       ), notified AS (
+         INSERT INTO notifications (user_id, kind, report_id)
+         SELECT CASE WHEN e.finder_id = $2 THEN e.user_id ELSE e.finder_id END,
+                CASE WHEN r.report_id IS NULL THEN 'CLAIM_PARTNER_CONFIRMED' ELSE 'CLAIM_RETURNED' END,
+                c.report_id
+         FROM confirmed c JOIN eligible e USING (claim_id)
+         LEFT JOIN returned r ON r.report_id = c.report_id
+       )
+       SELECT ${columns} FROM confirmed
+       UNION ALL
+       SELECT ${columns} FROM eligible WHERE confirmed_at IS NOT NULL`,
+      [claimId, userId],
     );
     return row ? map(row) : null;
   }
@@ -130,8 +191,7 @@ export class PgClaimRepository implements ClaimRepository {
 
     const rows = await query<Row>(
       this.db,
-      `SELECT c.claim_id, c.report_id, c.user_id, c.evidence, c.status,
-              c.resolution_note, c.resolved_by, c.claim_date, c.updated_at
+      `SELECT ${claimColumns}
        FROM claims c
        WHERE c.report_id = $1
        ORDER BY c.claim_id DESC

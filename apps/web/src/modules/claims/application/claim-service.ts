@@ -40,4 +40,9 @@ export class ClaimService {
   ): Promise<Claim[]> {
     return this.repository.listForReportOwner(reportId, reportOwnerId, page);
   }
+  async confirmHandover(id: number, userId: number): Promise<Claim> {
+    const claim = await this.repository.confirmHandover(id, userId);
+    if (!claim) throw new AppError('NOT_FOUND', 404, 'Claim not found');
+    return claim;
+  }
 }
